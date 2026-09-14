@@ -24,7 +24,7 @@ export function CAQHUpdatesForm({ onNext, onPrevious, isFirstStep }: FormProps) 
         </p>
         <ContextualHelpLink
           slug="how-to-fill-out-caqh-in-2026"
-          label="Guide: How to reach 100% completion & avoid 120-day expiration gaps →"
+          label="How to reach 100% CAQH completion & avoid 120-day attestation gaps"
         />
       </div>
 

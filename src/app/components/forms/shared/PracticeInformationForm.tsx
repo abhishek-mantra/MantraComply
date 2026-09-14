@@ -259,7 +259,7 @@ export function PracticeInformationForm({
         </select>
         <ContextualHelpLink
           slug="practice-location-and-tax-id-rules"
-          label="Learn about W-9 Tax IDs, group vs solo billing & multi-location rules →"
+          label="W-9 Tax IDs, group vs. solo billing & multi-location rules"
         />
       </div>
 

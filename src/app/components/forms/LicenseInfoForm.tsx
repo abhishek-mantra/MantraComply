@@ -125,7 +125,7 @@ export function LicenseInfoForm({ specialty, onNext, onPrevious, isFirstStep, se
         />
         <ContextualHelpLink
           slug="state-medical-license-verification"
-          label="How are state licenses, compacts (PSYPACT/IMLC) & expirations verified? →"
+          label="How state licenses, compacts (PSYPACT/IMLC) & expirations are verified"
         />
       </div>
 

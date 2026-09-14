@@ -193,7 +193,7 @@ export function BoardCertificationForm({ specialty, onNext, onPrevious, isFirstS
       </div>
       <ContextualHelpLink
         slug="board-certification-and-payer-tiers"
-        label="When do commercial and Medicaid health plans require board certification? →"
+        label="When do commercial and Medicaid health plans require board certification?"
       />
 
       {!noBoardCert && (

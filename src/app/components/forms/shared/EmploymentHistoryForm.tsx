@@ -160,7 +160,7 @@ export function EmploymentHistoryForm({
           </p>
           <ContextualHelpLink
             slug="work-history-gaps-and-attestations"
-            label="How do payers review employment gaps & what explanation counts? →"
+            label="How payers evaluate employment history gaps and acceptable explanations"
           />
         </div>
       </div>

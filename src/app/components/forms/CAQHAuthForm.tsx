@@ -42,8 +42,7 @@ export function CAQHAuthForm({ onNext, onPrevious, isFirstStep }: FormProps) {
         </p>
         <ContextualHelpLink
           slug="caqh-authorization-and-cvo-access"
-          label="Why is CAQH authorization required & how does CVO access work? →"
-          hint="Learn how MantraComply uses authorized CVO access to fast-track payer approvals"
+          label="Why is CAQH authorization required?"
         />
       </div>
 

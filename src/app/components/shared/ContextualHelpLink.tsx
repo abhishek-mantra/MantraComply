@@ -16,25 +16,21 @@ export function ContextualHelpLink({
   className = "",
 }: ContextualHelpLinkProps) {
   const url = getHelpArticleUrl(slug);
+  const cleanLabel = label.replace(/\s*→\s*$/, "");
 
   return (
-    <div className={`mt-2 flex flex-col gap-0.5 ${className}`}>
+    <div className={`mt-2 inline-flex items-center ${className}`}>
       <a
         href={url}
         target="_blank"
         rel="noopener noreferrer"
         className="inline-flex items-center gap-1.5 text-xs font-medium text-[#2196F3] hover:text-[#1976D2] hover:underline transition-colors group cursor-pointer"
-        title="Opens Help Center guide in a new tab"
+        title={hint || "Opens Help Center guide in a new tab"}
       >
         <HelpCircle className="w-3.5 h-3.5 shrink-0 text-[#2196F3] group-hover:scale-105 transition-transform" />
-        <span>{label}</span>
+        <span>{cleanLabel}</span>
         <ExternalLink className="w-3 h-3 shrink-0 opacity-70 group-hover:opacity-100 transition-opacity" />
       </a>
-      {hint && (
-        <span className="text-[11px] text-gray-500 pl-5 leading-tight">
-          {hint}
-        </span>
-      )}
     </div>
   );
 }

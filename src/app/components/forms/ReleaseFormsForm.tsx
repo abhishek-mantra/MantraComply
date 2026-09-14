@@ -36,7 +36,7 @@ export function ReleaseFormsForm({ onNext, onPrevious, isFirstStep }: FormProps)
           <p className="text-sm text-yellow-800 mt-1">These documents are required to proceed with credentialing</p>
           <ContextualHelpLink
             slug="background-checks-and-release-forms"
-            label="What background checks & release authorizations do payers run? →"
+            label="What background checks & release authorizations do payers run?"
           />
         </div>
       </div>

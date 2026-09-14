@@ -103,7 +103,7 @@ export function MalpracticeInsuranceForm({
           </p>
           <ContextualHelpLink
             slug="malpractice-insurance-and-coi-requirements"
-            label="Learn about Certificate of Insurance (COI) limits, claims-made vs occurrence & tail coverage →"
+            label="Malpractice insurance COI limits ($1M/$3M), policy types & tail coverage"
           />
         </div>
       </div>

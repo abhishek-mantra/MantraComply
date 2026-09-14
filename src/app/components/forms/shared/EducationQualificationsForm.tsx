@@ -220,7 +220,7 @@ export function EducationQualificationsForm({
         </p>
         <ContextualHelpLink
           slug="medical-education-and-residency-documentation"
-          label="What residency, fellowship & foreign medical school documents are needed? →"
+          label="Required residency, fellowship & degree verification documents"
         />
       </div>
 

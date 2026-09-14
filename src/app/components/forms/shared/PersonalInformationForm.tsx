@@ -201,8 +201,7 @@ export function PersonalInformationForm({
           </div>
           <ContextualHelpLink
             slug="primary-source-verification-and-identity"
-            label="Why is SSN required for primary source verification? →"
-            hint="Learn how payers conduct identity matching and OIG/SAM exclusion checks"
+            label="Why SSN is required for primary source verification & OIG checks"
           />
         </div>
       )}

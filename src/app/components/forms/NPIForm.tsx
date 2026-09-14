@@ -203,8 +203,7 @@ export function NPIForm({
             </p>
             <ContextualHelpLink
               slug="why-npi-is-needed-and-how-to-find-it"
-              label="Why is NPI needed & how to verify in NPPES? →"
-              hint="Read our guide explaining Type 1 individual NPIs and taxonomy codes"
+              label="Why NPI is needed and how to verify in NPPES"
             />
           </div>
 

@@ -47,8 +47,7 @@ export function InsuranceForm({ onNext, onPrevious, isFirstStep, isLastStep }: F
         </p>
         <ContextualHelpLink
           slug="choosing-commercial-vs-government-health-plans"
-          label="Guide: Commercial vs Government payers — which ones to enroll with first? →"
-          hint="Learn about Medicare 855I, Medicaid PAR agreements, and commercial credentialing timelines"
+          label="Choosing commercial vs. government health plans for your practice"
         />
       </div>
 
