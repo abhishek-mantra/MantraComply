@@ -1,0 +1,491 @@
+import { useState } from "react";
+import { Search, Download, ChevronLeft, Settings, X } from "lucide-react";
+
+interface InsuranceRequest {
+  id: number;
+  payer: string;
+  state: string;
+  payerType: string;
+  status: string;
+  effectiveDate: string;
+  revalidationDate: string;
+}
+
+interface Rate {
+  cptCode: string;
+  description: string;
+  rate: string;
+}
+
+const DUMMY_DATA: InsuranceRequest[] = [
+  {
+    id: 1,
+    payer: "Sedgwick Workers Compensation",
+    state: "CO",
+    payerType: "Government",
+    status: "Intake Prep",
+    effectiveDate: "N/A",
+    revalidationDate: "-",
+  },
+  {
+    id: 2,
+    payer: "Medicare - CO",
+    state: "CO",
+    payerType: "Government",
+    status: "Ready for Intake",
+    effectiveDate: "N/A",
+    revalidationDate: "-",
+  },
+  {
+    id: 3,
+    payer: "Medicaid - CO",
+    state: "CO",
+    payerType: "Government",
+    status: "Intake Assigned",
+    effectiveDate: "N/A",
+    revalidationDate: "-",
+  },
+  {
+    id: 4,
+    payer: "Humana",
+    state: "CO",
+    payerType: "Insurance",
+    status: "Input Required",
+    effectiveDate: "N/A",
+    revalidationDate: "-",
+  },
+  {
+    id: 5,
+    payer: "Cigna",
+    state: "WY",
+    payerType: "Insurance",
+    status: "Request Stopped",
+    effectiveDate: "N/A",
+    revalidationDate: "-",
+  },
+  {
+    id: 6,
+    payer: "Aetna",
+    state: "WY",
+    payerType: "Insurance",
+    status: "Requested",
+    effectiveDate: "N/A",
+    revalidationDate: "04/23/2025",
+  },
+  {
+    id: 7,
+    payer: "Meta",
+    state: "WY",
+    payerType: "Employer",
+    status: "Completed",
+    effectiveDate: "12/15/2024",
+    revalidationDate: "04/12/2025",
+  },
+];
+
+// Mock rates data - in reality, this would be fetched based on the insurance
+const getRatesForInsurance = (insuranceId: number): Rate[] => {
+  const baseRates: Rate[] = [
+    { cptCode: "90791", description: "Diagnostic Evaluation", rate: "$150" },
+    { cptCode: "90837", description: "60 min Therapy", rate: "$120" },
+    { cptCode: "90834", description: "45 min Therapy", rate: "$105" },
+    { cptCode: "90832", description: "30 min Therapy", rate: "$85" },
+    { cptCode: "90847", description: "Family Therapy", rate: "$135" },
+    { cptCode: "90853", description: "Group Therapy", rate: "$65" },
+  ];
+
+  // Add some variation based on insurance for demo purposes
+  return baseRates.map((rate) => ({
+    ...rate,
+    rate: `$${parseInt(rate.rate.substring(1)) + (insuranceId * 5)}`,
+  }));
+};
+
+const STATUS_OPTIONS = [
+  "Intake Prep",
+  "Ready for Intake",
+  "Intake Assigned",
+  "Input Required",
+  "Request Stopped",
+  "Requested",
+  "Completed",
+];
+
+const PAYER_TYPE_OPTIONS = ["Government", "Insurance", "Employer"];
+
+export function ActiveInsurance() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedInsurance, setSelectedInsurance] = useState<InsuranceRequest | null>(null);
+  const [settingsInsurance, setSettingsInsurance] = useState<InsuranceRequest | null>(null);
+  const [settingsForm, setSettingsForm] = useState<InsuranceRequest | null>(null);
+
+  const filteredData = DUMMY_DATA.filter((item) =>
+    Object.values(item).some((val) =>
+      String(val).toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  );
+
+  const getStatusConfig = (status: string): { dot: string; bg: string; text: string } => {
+    switch (status) {
+      case "Completed":
+        return { dot: "bg-emerald-500", bg: "bg-emerald-50", text: "text-emerald-700" };
+      case "Request Stopped":
+        return { dot: "bg-red-500", bg: "bg-red-50", text: "text-red-700" };
+      case "Input Required":
+        return { dot: "bg-amber-500", bg: "bg-amber-50", text: "text-amber-700" };
+      case "Ready for Intake":
+        return { dot: "bg-violet-500", bg: "bg-violet-50", text: "text-violet-700" };
+      case "Intake Assigned":
+        return { dot: "bg-blue-500", bg: "bg-blue-50", text: "text-blue-700" };
+      case "Intake Prep":
+        return { dot: "bg-sky-400", bg: "bg-sky-50", text: "text-sky-700" };
+      case "Requested":
+        return { dot: "bg-gray-400", bg: "bg-gray-100", text: "text-gray-600" };
+      default:
+        return { dot: "bg-gray-400", bg: "bg-gray-100", text: "text-gray-600" };
+    }
+  };
+
+  const handleRowClick = (insurance: InsuranceRequest) => {
+    setSelectedInsurance(insurance);
+  };
+
+  const handleBackToList = () => {
+    setSelectedInsurance(null);
+  };
+
+  const openSettings = (e: React.MouseEvent, insurance: InsuranceRequest) => {
+    e.stopPropagation();
+    setSettingsInsurance(insurance);
+    setSettingsForm({ ...insurance });
+  };
+
+  const closeSettings = () => {
+    setSettingsInsurance(null);
+    setSettingsForm(null);
+  };
+
+  const saveSettings = () => {
+    // In a real app this would persist; here we just close
+    closeSettings();
+  };
+
+  if (selectedInsurance) {
+    const rates = getRatesForInsurance(selectedInsurance.id);
+
+    return (
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-6">
+          <button
+            onClick={handleBackToList}
+            className="flex items-center gap-2 text-[#2196F3] hover:text-[#1976D2] mb-4 transition-colors"
+          >
+            <ChevronLeft className="w-5 h-5" />
+            <span className="font-medium">Back to Active Insurance</span>
+          </button>
+          <h1 className="text-2xl font-semibold text-gray-900 mb-2">
+            Rates - {selectedInsurance.payer}
+          </h1>
+          <p className="text-gray-600">View reimbursement rates for this insurance</p>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          {/* Insurance Details */}
+          <div className="p-6 border-b border-gray-200 bg-gray-50">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div>
+                <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+                  State
+                </div>
+                <div className="text-sm font-medium text-gray-900">{selectedInsurance.state}</div>
+              </div>
+              <div>
+                <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+                  Status
+                </div>
+                {(() => {
+                  const cfg = getStatusConfig(selectedInsurance.status);
+                  return (
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${cfg.bg} ${cfg.text}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+                      {selectedInsurance.status}
+                    </span>
+                  );
+                })()}
+              </div>
+              <div>
+                <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+                  Effective Date
+                </div>
+                <div className="text-sm font-medium text-gray-900">
+                  {selectedInsurance.effectiveDate}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Rates Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                    CPT Code
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                    Description
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                    Rate
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {rates.map((rate, index) => (
+                  <tr key={index} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{rate.cptCode}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{rate.description}</td>
+                    <td className="px-6 py-4 text-sm font-medium text-[#2196F3]">{rate.rate}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-7xl mx-auto">
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold text-gray-900 mb-2">Active Insurance</h1>
+        <p className="text-gray-600">Track credentialing requests and insurance status. Click on any insurance to view rates.</p>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        {/* Header with Search and Download */}
+        <div className="p-4 border-b border-gray-200 flex items-center justify-between gap-4">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none"
+            />
+          </div>
+          <button className="flex items-center gap-2 px-4 py-2 bg-[#2196F3] text-white rounded-md text-sm font-medium hover:bg-[#1976D2] transition-colors">
+            <Download className="w-4 h-4" />
+            Download
+          </button>
+        </div>
+
+        {/* Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  Payer
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  State
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  Payer Type
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  Effective Date
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  Revalidation Date
+                </th>
+                <th className="w-10 px-4 py-3"></th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredData.map((item) => (
+                <tr
+                  key={item.id}
+                  onClick={() => handleRowClick(item)}
+                  className="hover:bg-gray-50 transition-colors cursor-pointer"
+                >
+                  <td className="px-6 py-4">
+                    <div className="text-sm font-medium text-[#2196F3] hover:underline">
+                      {item.payer}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-900">{item.state}</td>
+                  <td className="px-6 py-4">
+                    {(() => {
+                      const cfg = getStatusConfig(item.status);
+                      return (
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${cfg.bg} ${cfg.text}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${cfg.dot}`} />
+                          {item.status}
+                        </span>
+                      );
+                    })()}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-900">{item.payerType}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900">{item.effectiveDate}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900">{item.revalidationDate}</td>
+                  <td className="px-4 py-4">
+                    <button
+                      onClick={(e) => openSettings(e, item)}
+                      className="text-gray-400 hover:text-[#2196F3] transition-colors"
+                      title="Settings"
+                    >
+                      <Settings className="w-4 h-4" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {filteredData.length === 0 && (
+          <div className="p-12 text-center">
+            <p className="text-gray-500">No insurance requests found.</p>
+          </div>
+        )}
+
+        {/* Settings Modal */}
+        {settingsInsurance && settingsForm && (
+          <div
+            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            onClick={closeSettings}
+          >
+            <div
+              className="bg-white rounded-xl shadow-xl w-full max-w-lg"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">Insurance Settings</h2>
+                  <p className="text-sm text-gray-500 mt-0.5">{settingsInsurance.payer}</p>
+                </div>
+                <button
+                  onClick={closeSettings}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="px-6 py-5 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">State</label>
+                    <input
+                      type="text"
+                      value={settingsForm.state}
+                      onChange={(e) => setSettingsForm({ ...settingsForm, state: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none"
+                    />
+                  </div>
+                </div>
+
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Status</label>
+                  <select
+                    value={settingsForm.status}
+                    onChange={(e) => setSettingsForm({ ...settingsForm, status: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none bg-white"
+                  >
+                    {STATUS_OPTIONS.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Payer Type</label>
+                  <select
+                    value={settingsForm.payerType}
+                    onChange={(e) => setSettingsForm({ ...settingsForm, payerType: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none bg-white"
+                  >
+                    {PAYER_TYPE_OPTIONS.map((t) => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Effective Date</label>
+                    <input
+                      type="text"
+                      value={settingsForm.effectiveDate}
+                      onChange={(e) => setSettingsForm({ ...settingsForm, effectiveDate: e.target.value })}
+                      placeholder="MM/DD/YYYY or N/A"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Revalidation Date</label>
+                    <input
+                      type="text"
+                      value={settingsForm.revalidationDate}
+                      onChange={(e) => setSettingsForm({ ...settingsForm, revalidationDate: e.target.value })}
+                      placeholder="MM/DD/YYYY or -"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+                <button
+                  onClick={closeSettings}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveSettings}
+                  className="px-4 py-2 text-sm font-medium text-white bg-[#2196F3] rounded-md hover:bg-[#1976D2] transition-colors"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Pagination Footer */}
+        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-600">
+              1 - {filteredData.length} of {filteredData.length} Requests
+            </div>
+            <div className="flex items-center gap-2">
+              <button className="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
+                Previous
+              </button>
+              <button className="px-3 py-1 bg-[#2196F3] text-white rounded text-sm hover:bg-[#1976D2]">
+                1
+              </button>
+              <button className="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
+                Next
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default ActiveInsurance;

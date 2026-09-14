@@ -1,0 +1,112 @@
+IMPORTANT: These changes apply ONLY to the UAE credentialing flow. Do not modify any US, UK, or other country flows. Do not change the Therapy, Dietetics, or Physiotherapy flows in any way. Only add and adjust logic specific to a new "Doctor" service within the existing UAE form.
+
+CONTEXT
+I have an existing 14-step UAE credentialing form for Therapy (with Dietetics and Physiotherapy as other service options). The form is built as a multi-step wizard with a left sidebar showing progress (steps 1–14) and a right panel rendering each step. I need to make this form dynamically support a new primary service: Doctor, with sub-specialization selection. All changes below are scoped exclusively to the UAE Doctor flow.
+
+CHANGE 1 — Step 1: Service Selection
+Add a new selectable card to the existing Service Selection step (Step 1 of 14) with the following content:
+
+Title: Doctor
+Subtitle: Medical and surgical healthcare services
+This card should appear as the first option in the list, above Therapy.
+Selecting "Doctor" should set service = "doctor" in global form state.
+All existing cards (Therapy, Dietetics, Physiotherapy) must remain exactly as they are.
+
+
+CHANGE 2 — Insert New Step 1B (Doctor-only): Specialization Selection
+When service === "doctor", inject a new step immediately after Step 1 (before Emirate & Authority Selection). This step should:
+
+Be titled "Medical Specialization"
+Show step indicator as "Step 1B of 15" (total steps become 15 for doctor flow only; all other service flows remain 14 steps)
+Display an info banner: "Your specialization determines the specific licensing pathway, exam requirements, and documentation needed for your UAE health authority application."
+Render a single-select card list with the following 22 options (each as a selectable card with title only):
+
+Cardiologist
+Dentist
+Dermatologist
+Endocrinologist
+ENT Specialist
+Fertility / IVF Specialist
+Gastroenterologist
+General Physician
+General Surgery
+Gynecologist
+Hypertension Specialist
+Nephrologist
+Neurosurgeon
+Oncologist
+Ophthalmologist
+Orthopedician
+Paediatrician
+Pulmonologist (Lung)
+Rheumatologist
+Sexologist
+Urologist (Kidney & Urinary Tract)
+Other (text input appears inline when selected)
+
+
+Store selected value as doctorSpecialization in global form state.
+This step must have Back and Next buttons identical in style to all other steps.
+If service is NOT "doctor", this step must be completely skipped and not rendered.
+
+
+CHANGE 3 — Step 2: Emirate & Authority Selection (Doctor-specific Professional Category)
+The existing "Professional Category" dropdown on this step currently has options for therapy roles. When service === "doctor", replace the dropdown options with:
+
+General Practitioner (GP)
+Specialist
+Consultant
+Senior Specialist / Senior Consultant
+Dental Practitioner
+Specialist Dentist
+Resident / Trainee Doctor
+
+When service !== "doctor", the dropdown options must remain exactly as they currently are. Do not change the dropdown label, layout, or any other field on this step.
+
+CHANGE 4 — Step 4: Home Country License (Doctor-specific hints)
+When service === "doctor", update only the placeholder/hint text for two fields:
+
+"Home Country Regulatory Body" placeholder: change to "e.g., GMC (UK), MCI (India), AHPRA (Australia), USMLE/ECFMG (USA)"
+Add a helper note below "Years of Post-Qualification Experience": "DHA requires minimum 2 years post-qualification experience for Specialists. GP track requires minimum 1 year."
+
+All other fields, labels, upload components, and layout must remain unchanged. When service !== "doctor", this step must appear exactly as it currently does.
+
+CHANGE 5 — Step 5: Education & Qualifications (Doctor-specific degree and field options)
+When service === "doctor", update the dropdown option lists as follows:
+"Degree" dropdown — replace existing options with:
+
+MBBS (Bachelor of Medicine, Bachelor of Surgery)
+MBChB
+MD (Doctor of Medicine)
+BDS (Bachelor of Dental Surgery)
+MDS (Master of Dental Surgery)
+MS (Master of Surgery)
+MCh (Magister Chirurgiae)
+DM (Doctorate of Medicine)
+FRCS / MRCS
+FRCP / MRCP
+Other Postgraduate Medical Qualification
+
+"Field of Study" dropdown — replace existing options with the 22 specializations from Change 2 above, plus "General Medicine" and "Basic Medical Sciences".
+All other fields (institution name, country, dates, attestation checkbox, upload areas) must remain exactly as they are. When service !== "doctor", both dropdowns must show their original options unchanged.
+
+CHANGE 6 — Step 12: Practice Information (Doctor-specific specialty pre-fill)
+When service === "doctor":
+
+Pre-populate the "Primary Specialty" dropdown with the value from doctorSpecialization (set in Change 2). The user can still change it.
+"Secondary Specialty" dropdown should list all 22 doctor specializations from Change 2.
+Replace the existing specialty options in both dropdowns with the 22 doctor specializations.
+
+When service !== "doctor", both specialty dropdowns must remain exactly as they currently are. No other field on this step should change.
+
+GLOBAL RULES
+
+Use conditional rendering based on service state variable throughout.
+Left sidebar step list must dynamically show 15 steps (inserting "1B Specialization" between "Service Selection" and "Emirate & Authority Selection") when service === "doctor", and remain at 14 steps for all other services.
+Progress indicator (e.g., "Step X of 14" / "Step X of 15") must update accordingly.
+The PROGRESS counter in the left panel sidebar must count correctly for both 14-step and 15-step flows.
+Form state reset: if a user goes back to Step 1 and changes service away from "doctor", clear doctorSpecialization and reset any doctor-specific field values.
+No changes to the US flow, UK flow, or any non-UAE form section.
+No changes to Therapy, Dietetics, or Physiotherapy steps.
+No changes to steps 6, 7, 8, 9, 10, 11, 13, or 14 under any condition.
+Maintain all existing UI patterns: card selection style, blue progress bar, sidebar navigation, Back/Next button placement, info banners, yellow "Need Help?" boxes, and upload component design.
