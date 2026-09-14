@@ -9,6 +9,7 @@ import MyProfile from "./pages/MyProfile";
 // Eager load provider page components
 import Tasks from "./pages/Tasks";
 import { ActiveInsurance } from "./pages/ActiveInsurance";
+import { Referrals } from "./pages/Referrals";
 
 // Eager load admin pages to avoid dynamic import errors
 import Overview from "./pages/admin/Overview";
@@ -43,8 +44,10 @@ export const router = createBrowserRouter([
       { path: "credentialing", Component: MyProfile },
       { path: "tasks", Component: Tasks },
       { path: "active-insurance", Component: ActiveInsurance },
+      { path: "referrals", Component: Referrals },
     ],
   },
+
   {
     path: "/admin",
     Component: AdminLayout,

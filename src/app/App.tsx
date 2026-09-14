@@ -1,6 +1,7 @@
 import { RouterProvider } from "react-router";
 import { Suspense } from "react";
 import { router } from "./routes";
+import { ReferralProvider } from "./contexts/ReferralContext";
 
 export default function App() {
   return (
@@ -12,7 +13,9 @@ export default function App() {
         </div>
       </div>
     }>
-      <RouterProvider router={router} />
+      <ReferralProvider>
+        <RouterProvider router={router} />
+      </ReferralProvider>
     </Suspense>
   );
-}
+}

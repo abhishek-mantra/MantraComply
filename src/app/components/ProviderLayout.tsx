@@ -1,15 +1,24 @@
 import { Outlet, NavLink, useNavigate } from "react-router";
-import { FileText, ListTodo, Shield, Menu, LogOut } from "lucide-react";
+import { FileText, ListTodo, Shield, Menu, LogOut, Zap } from "lucide-react";
 import { useState } from "react";
+import { useReferrals } from "../contexts/ReferralContext";
 
 export function ProviderLayout() {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { completedCount, isPriorityBoosted } = useReferrals();
 
   const navItems = [
     { name: "My Profile", path: "/provider/credentialing", icon: FileText },
     { name: "Tasks", path: "/provider/tasks", icon: ListTodo },
     { name: "Active Insurance", path: "/provider/active-insurance", icon: Shield },
+    {
+      name: "Refer & Boost",
+      path: "/provider/referrals",
+      icon: Zap,
+      badge: isPriorityBoosted ? "Boosted ⚡" : `${completedCount}/5`,
+      badgeColor: isPriorityBoosted ? "bg-emerald-100 text-emerald-800 border-emerald-300" : "bg-blue-100 text-[#2196F3] border-blue-200",
+    },
   ];
 
   const handleLogout = () => {
@@ -18,6 +27,7 @@ export function ProviderLayout() {
 
   return (
     <div className="min-h-screen bg-[#f5f7fa]">
+
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 z-50">
         <div className="h-full px-6 flex items-center justify-between">
@@ -80,17 +90,25 @@ export function ProviderLayout() {
               key={item.path}
               to={item.path}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+                `flex items-center justify-between px-4 py-3 rounded-lg transition-all ${
                   isActive
                     ? "bg-[#E3F2FD] text-[#2196F3]"
                     : "text-gray-700 hover:bg-gray-50"
                 }`
               }
             >
-              <item.icon className="w-5 h-5" />
-              <span className="font-medium">{item.name}</span>
+              <div className="flex items-center gap-3">
+                <item.icon className="w-5 h-5" />
+                <span className="font-medium">{item.name}</span>
+              </div>
+              {item.badge && (
+                <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${item.badgeColor}`}>
+                  {item.badge}
+                </span>
+              )}
             </NavLink>
           ))}
+
         </nav>
 
         {/* Logout Button */}
