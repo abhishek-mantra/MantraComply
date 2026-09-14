@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { FormButtons } from "./FormButtons";
 import { CountrySwitcher } from "../CountrySwitcher";
+import { ContextualHelpLink } from "../shared/ContextualHelpLink";
 
 interface FormProps {
   specialty: string;
@@ -200,6 +201,11 @@ export function NPIForm({
             <p className="text-xs text-gray-500 mt-1">
               Your National Provider Identifier (NPI) is a 10-digit number.
             </p>
+            <ContextualHelpLink
+              slug="why-npi-is-needed-and-how-to-find-it"
+              label="Why is NPI needed & how to verify in NPPES? →"
+              hint="Read our guide explaining Type 1 individual NPIs and taxonomy codes"
+            />
           </div>
 
           <div>

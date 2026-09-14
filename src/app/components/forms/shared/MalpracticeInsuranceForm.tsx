@@ -5,6 +5,7 @@ import { UKFormButtons } from "../uk/UKFormButtons";
 import { CanadaFormButtons } from "../canada/CanadaFormButtons";
 import { AustraliaFormButtons } from "../australia/AustraliaFormButtons";
 import { UAEFormButtons } from "../uae/UAEFormButtons";
+import { ContextualHelpLink } from "../../shared/ContextualHelpLink";
 
 type Country = "US" | "UK" | "Canada" | "Australia" | "UAE";
 
@@ -100,6 +101,10 @@ export function MalpracticeInsuranceForm({
             {country === "UAE" && "Professional indemnity insurance is mandatory for all licensed healthcare providers in the UAE. Minimum coverage required: "}
             <strong>{getMinCoverageNote()}</strong>
           </p>
+          <ContextualHelpLink
+            slug="malpractice-insurance-and-coi-requirements"
+            label="Learn about Certificate of Insurance (COI) limits, claims-made vs occurrence & tail coverage →"
+          />
         </div>
       </div>
 

@@ -5,6 +5,7 @@ import { UKFormButtons } from "../uk/UKFormButtons";
 import { CanadaFormButtons } from "../canada/CanadaFormButtons";
 import { AustraliaFormButtons } from "../australia/AustraliaFormButtons";
 import { UAEFormButtons } from "../uae/UAEFormButtons";
+import { ContextualHelpLink } from "../../shared/ContextualHelpLink";
 
 type Country = "US" | "UK" | "Canada" | "Australia" | "UAE";
 
@@ -157,6 +158,10 @@ export function EmploymentHistoryForm({
               ? "Provide complete employment history for the last 5 years. Include gaps in employment."
               : "Please provide a complete employment history. If there are gaps in employment, use the 'Add Gap' button to explain them."}
           </p>
+          <ContextualHelpLink
+            slug="work-history-gaps-and-attestations"
+            label="How do payers review employment gaps & what explanation counts? →"
+          />
         </div>
       </div>
 

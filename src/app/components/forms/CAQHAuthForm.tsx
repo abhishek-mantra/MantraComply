@@ -1,4 +1,5 @@
 import { FormButtons } from "./FormButtons";
+import { ContextualHelpLink } from "../shared/ContextualHelpLink";
 
 interface FormProps {
   specialty: string;
@@ -39,6 +40,11 @@ export function CAQHAuthForm({ onNext, onPrevious, isFirstStep }: FormProps) {
             Create an account
           </a>
         </p>
+        <ContextualHelpLink
+          slug="caqh-authorization-and-cvo-access"
+          label="Why is CAQH authorization required & how does CVO access work? →"
+          hint="Learn how MantraComply uses authorized CVO access to fast-track payer approvals"
+        />
       </div>
 
       <div>

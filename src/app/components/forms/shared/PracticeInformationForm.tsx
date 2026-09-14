@@ -8,6 +8,7 @@ import { UAEFormButtons } from "../uae/UAEFormButtons";
 import { StateDropdown } from "../StateDropdown";
 import { UK_SERVICE_CONFIG, type UKServiceType } from "../../../config/ukServiceConfig";
 import { UAE_SERVICE_CONFIG, type UAEServiceType } from "../../../config/uaeServiceConfig";
+import { ContextualHelpLink } from "../../shared/ContextualHelpLink";
 
 type Country = "US" | "UK" | "Canada" | "Australia" | "UAE";
 
@@ -256,9 +257,12 @@ export function PracticeInformationForm({
             </option>
           ))}
         </select>
+        <ContextualHelpLink
+          slug="practice-location-and-tax-id-rules"
+          label="Learn about W-9 Tax IDs, group vs solo billing & multi-location rules →"
+        />
       </div>
 
-      {/* Office Contact Information */}
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">

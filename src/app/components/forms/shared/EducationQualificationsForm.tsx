@@ -7,6 +7,7 @@ import { AustraliaFormButtons } from "../australia/AustraliaFormButtons";
 import { UAEFormButtons } from "../uae/UAEFormButtons";
 import { UK_SERVICE_CONFIG, type UKServiceType } from "../../../config/ukServiceConfig";
 import { UAE_SERVICE_CONFIG, type UAEServiceType } from "../../../config/uaeServiceConfig";
+import { ContextualHelpLink } from "../../shared/ContextualHelpLink";
 
 type Country = "US" | "UK" | "Canada" | "Australia" | "UAE";
 
@@ -217,6 +218,10 @@ export function EducationQualificationsForm({
           {country === "Canada" && " International degrees may require assessment by provincial regulatory bodies."}
           {country === "UK" && " International qualifications may need verification through UK ENIC or professional body."}
         </p>
+        <ContextualHelpLink
+          slug="medical-education-and-residency-documentation"
+          label="What residency, fellowship & foreign medical school documents are needed? →"
+        />
       </div>
 
       {/* Education Entries */}

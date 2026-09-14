@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { FormButtons } from "./FormButtons";
 import { MultiSelect } from "./MultiSelect";
+import { ContextualHelpLink } from "../shared/ContextualHelpLink";
 
 interface FormProps {
   specialty: string;
@@ -44,6 +45,11 @@ export function InsuranceForm({ onNext, onPrevious, isFirstStep, isLastStep }: F
         <p className="text-sm text-gray-700">
           Please indicate which insurance panels you are currently credentialed with (if any), and select which insurance carriers you'd like to credential with through Mantra.
         </p>
+        <ContextualHelpLink
+          slug="choosing-commercial-vs-government-health-plans"
+          label="Guide: Commercial vs Government payers — which ones to enroll with first? →"
+          hint="Learn about Medicare 855I, Medicaid PAR agreements, and commercial credentialing timelines"
+        />
       </div>
 
       <MultiSelect

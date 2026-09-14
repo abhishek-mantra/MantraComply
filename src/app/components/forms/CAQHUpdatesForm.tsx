@@ -1,4 +1,5 @@
 import { FormButtons } from "./FormButtons";
+import { ContextualHelpLink } from "../shared/ContextualHelpLink";
 
 interface FormProps {
   specialty: string;
@@ -21,6 +22,10 @@ export function CAQHUpdatesForm({ onNext, onPrevious, isFirstStep }: FormProps) 
         <p className="text-sm text-gray-700">
           Please confirm the following items are up to date in your CAQH profile:
         </p>
+        <ContextualHelpLink
+          slug="how-to-fill-out-caqh-in-2026"
+          label="Guide: How to reach 100% completion & avoid 120-day expiration gaps →"
+        />
       </div>
 
       <div className="space-y-3">

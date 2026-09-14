@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { FormButtons } from "./FormButtons";
+import { ContextualHelpLink } from "../shared/ContextualHelpLink";
 
 interface FormProps {
   specialty: string;
@@ -33,6 +34,10 @@ export function ReleaseFormsForm({ onNext, onPrevious, isFirstStep }: FormProps)
         <div>
           <p className="font-medium text-yellow-900 text-sm">Please review and sign the following agreements</p>
           <p className="text-sm text-yellow-800 mt-1">These documents are required to proceed with credentialing</p>
+          <ContextualHelpLink
+            slug="background-checks-and-release-forms"
+            label="What background checks & release authorizations do payers run? →"
+          />
         </div>
       </div>
 

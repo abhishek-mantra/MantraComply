@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { FormButtons } from "./FormButtons";
 import { Trash2, Eye } from "lucide-react";
+import { ContextualHelpLink } from "../shared/ContextualHelpLink";
 
 interface FormProps {
   specialty: string;
@@ -190,6 +191,10 @@ export function BoardCertificationForm({ specialty, onNext, onPrevious, isFirstS
           N/A - I do not have board certification
         </label>
       </div>
+      <ContextualHelpLink
+        slug="board-certification-and-payer-tiers"
+        label="When do commercial and Medicaid health plans require board certification? →"
+      />
 
       {!noBoardCert && (
         <>

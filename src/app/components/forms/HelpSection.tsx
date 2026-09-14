@@ -1,3 +1,5 @@
+import { HELP_CENTER_BASE_URL } from "../../config/helpCenter";
+
 export function HelpSection() {
   return (
     <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
@@ -8,13 +10,18 @@ export function HelpSection() {
         <div>
           <p className="font-medium text-gray-900 text-sm">Need Help?</p>
           <p className="text-sm text-gray-700">
-            Our credentialing specialists are here to assist you.
+            Our credentialing specialists and compliance guides are here to assist you.
           </p>
-          <a href="#" className="text-sm text-[#2196F3] hover:underline mt-1 inline-block">
-            Visit Help Center →
+          <a
+            href={HELP_CENTER_BASE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-[#2196F3] hover:underline mt-1 inline-flex items-center gap-1"
+          >
+            <span>Visit MantraComply Help Center →</span>
           </a>
         </div>
       </div>
     </div>
   );
-}
+}

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { FormButtons } from "./FormButtons";
 import { StateDropdown } from "./StateDropdown";
 import { Trash2, Eye } from "lucide-react";
+import { ContextualHelpLink } from "../shared/ContextualHelpLink";
 
 interface FormProps {
   specialty: string;
@@ -121,6 +122,10 @@ export function LicenseInfoForm({ specialty, onNext, onPrevious, isFirstStep, se
           onChange={(e) => setCurrentLicense({ ...currentLicense, number: e.target.value })}
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none text-sm"
           placeholder="Enter license number"
+        />
+        <ContextualHelpLink
+          slug="state-medical-license-verification"
+          label="How are state licenses, compacts (PSYPACT/IMLC) & expirations verified? →"
         />
       </div>
 

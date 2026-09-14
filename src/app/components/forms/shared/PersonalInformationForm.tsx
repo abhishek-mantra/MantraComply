@@ -5,6 +5,7 @@ import { CanadaFormButtons } from "../canada/CanadaFormButtons";
 import { AustraliaFormButtons } from "../australia/AustraliaFormButtons";
 import { UAEFormButtons } from "../uae/UAEFormButtons";
 import { StateDropdown } from "../StateDropdown";
+import { ContextualHelpLink } from "../../shared/ContextualHelpLink";
 
 type Country = "US" | "UK" | "Canada" | "Australia" | "UAE";
 
@@ -198,6 +199,11 @@ export function PersonalInformationForm({
             </svg>
             <p className="text-xs text-gray-600">This information is encrypted and securely stored</p>
           </div>
+          <ContextualHelpLink
+            slug="primary-source-verification-and-identity"
+            label="Why is SSN required for primary source verification? →"
+            hint="Learn how payers conduct identity matching and OIG/SAM exclusion checks"
+          />
         </div>
       )}
 
