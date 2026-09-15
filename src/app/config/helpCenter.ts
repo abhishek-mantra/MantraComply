@@ -5,7 +5,7 @@
 
 export const HELP_CENTER_BASE_URL =
   (import.meta as any).env?.VITE_HELP_CENTER_URL ||
-  "https://mantracompy-help-centre.vercel.app";
+  "https://help.mantracomply.com";
 
 export const getHelpArticleUrl = (slug: string): string => {
   return `${HELP_CENTER_BASE_URL}/articles/${slug}`;
