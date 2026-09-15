@@ -617,7 +617,7 @@ export function GroupDetail() {
                               type="text"
                               value={profileData.dateOfIncorporation}
                               onChange={(e) => setProfileData({ ...profileData, dateOfIncorporation: e.target.value })}
-                              placeholder="dd-mm-yyyy"
+                              placeholder="mm-dd-yyyy"
                               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none"
                             />
                           </div>

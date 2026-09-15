@@ -107,7 +107,7 @@ Radio button rows:
 - Associate Member
 
 **Field: Registration Expiry Date** *(required)*
-Date input — placeholder: `dd-mm-yyyy`
+Date input — placeholder: `mm-dd-yyyy`
 
 **Field: Secondary Professional Body** *(optional)*
 Dropdown — same options as Primary (for dual-accredited practitioners, e.g., AFT + UKCP)
@@ -141,7 +141,7 @@ Radio button rows:
 Text input — placeholder: `Enter your DBS certificate number`
 
 **Field: DBS Issue Date** *(required)*
-Date input — placeholder: `dd-mm-yyyy`
+Date input — placeholder: `mm-dd-yyyy`
 
 **Field: Enhanced DBS Certificate** *(required)*
 File upload zone — `Click to upload or drag and drop` / `PDF, JPG, or PNG (max 10MB)`
@@ -183,10 +183,10 @@ Text input — placeholder: `e.g., £1,000,000`
 Text input — placeholder: `e.g., £3,000,000`
 
 **Field: Effective Date** *(required)*
-Date input — placeholder: `dd-mm-yyyy`
+Date input — placeholder: `mm-dd-yyyy`
 
 **Field: Expiry Date** *(required)*
-Date input — placeholder: `dd-mm-yyyy`
+Date input — placeholder: `mm-dd-yyyy`
 
 **Field: Certificate of Professional Indemnity Insurance** *(required)*
 File upload zone
@@ -226,7 +226,7 @@ Text input — placeholder: `e.g., University of Edinburgh`
 Dropdown: United Kingdom / Ireland / Other (specify)
 
 **Field: Graduation Date** *(required)*
-Date input — placeholder: `dd-mm-yyyy`
+Date input — placeholder: `mm-dd-yyyy`
 
 **Field: Field of Study** *(optional)*
 Text input — placeholder: `e.g., Clinical Psychology`

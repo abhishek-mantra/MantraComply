@@ -166,7 +166,7 @@ export function LicenseInfoForm({ specialty, onNext, onPrevious, isFirstStep, se
             value={currentLicense.expirationDate}
             onChange={(e) => setCurrentLicense({ ...currentLicense, expirationDate: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none text-sm"
-            placeholder="dd-mm-yyyy"
+            placeholder="mm-dd-yyyy"
           />
         </div>
       </div>
