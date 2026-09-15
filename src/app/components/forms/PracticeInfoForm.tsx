@@ -2,158 +2,195 @@ import { useState } from "react";
 import { FormButtons } from "./FormButtons";
 import { MultiSelect } from "./MultiSelect";
 
-interface FormProps {
-  specialty: string;
-  onNext: () => void;
-  onPrevious: () => void;
-  isFirstStep: boolean;
-  isLastStep: boolean;
+interface PracticeInfoFormProps {
+  specialty?: string;
+  selectedSpecialization?: string;
+  onNext: (data?: any) => void;
+  onPrevious?: () => void;
+  onBack?: () => void;
+  isFirstStep?: boolean;
+  isLastStep?: boolean;
 }
 
-export function PracticeInfoForm({ specialty, onNext, onPrevious, isFirstStep }: FormProps) {
-  const [focusAreas, setFocusAreas] = useState<string[]>([]);
-  const [modalities, setModalities] = useState<string[]>([]);
-  const [languages, setLanguages] = useState<string[]>([]);
+export function PracticeInfoForm({
+  onNext,
+  onPrevious,
+  onBack,
+  isFirstStep = false,
+  isLastStep = false,
+}: PracticeInfoFormProps) {
+  const [practiceType, setPracticeType] = useState<string>("Virtual Only");
+  const [officePhone, setOfficePhone] = useState<string>("123");
+  const [clinicalSpecialties, setClinicalSpecialties] = useState<string[]>(["Anxiety"]);
+  const [therapeuticApproaches, setTherapeuticApproaches] = useState<string[]>(["CBT"]);
+  const [languages, setLanguages] = useState<string[]>(["English"]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onNext();
+    onNext({
+      practiceType,
+      officePhone,
+      clinicalSpecialties,
+      therapeuticApproaches,
+      languages,
+    });
   };
 
-  const getFocusAreas = () => {
-    if (specialty === "therapy") {
-      return [
-        "Anxiety", "Depression", "PTSD", "OCD", "ADHD", "Bipolar Disorder",
-        "CBT", "DBT", "Grief & Loss", "Relationship Issues", "Trauma", "Sleep Disorders",
-        "Stress Management", "Self-Esteem", "Life Transitions", "Anger Management"
-      ];
-    } else if (specialty === "dietitian") {
-      return [
-        "Weight Management", "Diabetes", "Heart Health", "Sports Nutrition",
-        "Eating Disorders", "Food Allergies", "Digestive Health", "Pediatric Nutrition"
-      ];
-    } else if (specialty === "physiotherapy") {
-      return [
-        "Sports Injuries", "Post-Surgery Rehab", "Chronic Pain", "Back Pain",
-        "Neck Pain", "Joint Pain", "Balance Training", "Mobility Issues"
-      ];
-    }
-    return [];
-  };
+  const practiceTypeOptions = [
+    { id: "Virtual Only", label: "Virtual Only" },
+    { id: "Physical Only", label: "Physical Only" },
+    { id: "Hybrid", label: "Hybrid" },
+  ];
 
-  const getModalities = () => {
-    if (specialty === "therapy") {
-      return [
-        "CBT (Cognitive Behavioral Therapy)",
-        "DBT (Dialectical Behavior Therapy)",
-        "EMDR",
-        "Psychodynamic Therapy",
-        "Solution-Focused Therapy",
-        "Mindfulness-Based Therapy",
-        "Acceptance and Commitment Therapy (ACT)",
-        "Motivational Interviewing",
-        "Interpersonal Therapy",
-        "Family Systems Therapy",
-        "Play Therapy",
-        "Art Therapy",
-        "Narrative Therapy",
-        "Gottman Method",
-        "Exposure Therapy",
-        "Trauma-Focused Therapy"
-      ];
-    } else if (specialty === "dietitian") {
-      return [
-        "Medical Nutrition Therapy",
-        "Behavioral Nutrition",
-        "Intuitive Eating",
-        "Meal Planning"
-      ];
-    } else if (specialty === "physiotherapy") {
-      return [
-        "Manual Therapy",
-        "Exercise Therapy",
-        "Dry Needling",
-        "Aquatic Therapy"
-      ];
-    }
-    return [];
-  };
+  const clinicalSpecialtyOptions = [
+    "Anxiety",
+    "Depression",
+    "PTSD",
+    "OCD",
+    "ADHD",
+    "Bipolar Disorder",
+    "CBT",
+    "DBT",
+    "Grief & Loss",
+    "Relationship Issues",
+    "Trauma",
+    "Sleep Disorders",
+    "Stress Management",
+    "Self-Esteem",
+    "Life Transitions",
+    "Anger Management",
+    "Eating Disorders",
+    "Substance Abuse",
+    "Chronic Illness",
+  ];
 
-  const getLanguages = () => {
-    return [
-      "English", "Spanish",
-      "Mandarin", "French",
-      "Arabic", "Hindi",
-      "Portuguese", "Russian",
-      "German", "Japanese",
-      "Korean", "Italian",
-      "Vietnamese", "Tagalog",
-      "Polish", "Urdu",
-      "Bengali", "Hebrew"
-    ];
-  };
+  const therapeuticApproachOptions = [
+    "CBT",
+    "DBT",
+    "EMDR",
+    "Psychodynamic Therapy",
+    "Solution-Focused Therapy",
+    "Mindfulness-Based Therapy",
+    "Acceptance and Commitment Therapy (ACT)",
+    "Motivational Interviewing",
+    "Interpersonal Therapy",
+    "Family Systems Therapy",
+    "Play Therapy",
+    "Art Therapy",
+    "Narrative Therapy",
+    "Gottman Method",
+    "Exposure Therapy",
+    "Trauma-Focused Therapy",
+  ];
+
+  const languageOptions = [
+    "English",
+    "Spanish",
+    "French",
+    "Mandarin",
+    "Arabic",
+    "Hindi",
+    "Portuguese",
+    "German",
+    "Japanese",
+    "Russian",
+    "Korean",
+    "Italian",
+    "Vietnamese",
+    "Tagalog",
+    "Polish",
+    "Hebrew",
+  ];
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div>
-        <label className="block text-sm font-medium text-gray-900 mb-3">
-          Practice Setting <span className="text-red-500">*</span>
-        </label>
-        <div className="space-y-2">
-          <label className="flex items-center p-3 border border-gray-200 rounded-md hover:bg-gray-50 cursor-pointer">
-            <input type="radio" name="practiceSetting" value="virtual" className="mr-3" />
-            <span className="text-sm">Virtual/Telehealth Only</span>
+      {/* Row 1: Practice Type & Office Phone Number */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-900 mb-2">
+            Practice Type <span className="text-red-500">*</span>
           </label>
-          <label className="flex items-center p-3 border border-gray-200 rounded-md hover:bg-gray-50 cursor-pointer">
-            <input type="radio" name="practiceSetting" value="physical" className="mr-3" />
-            <span className="text-sm">Physical Office Location</span>
+          <div className="space-y-3">
+            {practiceTypeOptions.map((option) => {
+              const isSelected = practiceType === option.id;
+              return (
+                <div
+                  key={option.id}
+                  onClick={() => setPracticeType(option.id)}
+                  className={`w-full flex items-center px-4 py-3.5 rounded-xl border transition-all cursor-pointer ${
+                    isSelected
+                      ? "border-[#2196F3] bg-[#F0F7FF] text-gray-900 font-medium shadow-sm"
+                      : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50/50"
+                  }`}
+                >
+                  <div
+                    className={`w-5 h-5 rounded-full border-2 mr-3 flex items-center justify-center transition-colors ${
+                      isSelected ? "border-[#2196F3] bg-white" : "border-gray-300"
+                    }`}
+                  >
+                    {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-[#2196F3]" />}
+                  </div>
+                  <span className="text-sm">{option.label}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-900 mb-2">
+            Office Phone Number <span className="text-red-500">*</span>
           </label>
-          <label className="flex items-center p-3 border border-gray-200 rounded-md hover:bg-gray-50 cursor-pointer">
-            <input type="radio" name="practiceSetting" value="hybrid" className="mr-3" />
-            <span className="text-sm">Hybrid (Both Virtual and Physical)</span>
-          </label>
+          <input
+            type="tel"
+            required
+            value={officePhone}
+            onChange={(e) => setOfficePhone(e.target.value)}
+            placeholder="123"
+            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#2196F3] focus:ring-2 focus:ring-[#2196F3] outline-none text-sm text-gray-900 transition-all placeholder:text-gray-400"
+          />
         </div>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-900 mb-2">
-          Office Phone Number
-        </label>
-        <input
-          type="tel"
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none text-sm"
-          placeholder="(XXX) XXX-XXXX"
+      {/* Row 2: Clinical Specialties & Therapeutic Approaches */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <MultiSelect
+          label="Clinical Specialties"
+          options={clinicalSpecialtyOptions}
+          value={clinicalSpecialties}
+          onChange={setClinicalSpecialties}
+          placeholder="Select clinical specialties..."
+          required
+        />
+
+        <MultiSelect
+          label="Therapeutic Approaches"
+          options={therapeuticApproachOptions}
+          value={therapeuticApproaches}
+          onChange={setTherapeuticApproaches}
+          placeholder="Select therapeutic approaches..."
+          required
         />
       </div>
 
-      <MultiSelect
-        label="Clinical Specialties"
-        options={getFocusAreas()}
-        value={focusAreas}
-        onChange={setFocusAreas}
-        placeholder="Select clinical areas you treat"
-        required
-      />
+      {/* Row 3: Languages Spoken Fluently */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <MultiSelect
+          label="Languages Spoken Fluently"
+          options={languageOptions}
+          value={languages}
+          onChange={setLanguages}
+          placeholder="Select languages..."
+          required
+        />
+      </div>
 
-      <MultiSelect
-        label="Therapeutic Approaches"
-        options={getModalities()}
-        value={modalities}
-        onChange={setModalities}
-        placeholder="Select therapeutic approaches you practice"
-        required
+      {/* Form Navigation Buttons */}
+      <FormButtons
+        onPrevious={onPrevious || onBack}
+        isFirstStep={isFirstStep}
+        isLastStep={isLastStep}
       />
-
-      <MultiSelect
-        label="Languages Spoken Fluently"
-        options={getLanguages()}
-        value={languages}
-        onChange={setLanguages}
-        placeholder="Select languages you can provide services in"
-        required
-      />
-
-      <FormButtons onPrevious={onPrevious} isFirstStep={isFirstStep} />
     </form>
   );
 }

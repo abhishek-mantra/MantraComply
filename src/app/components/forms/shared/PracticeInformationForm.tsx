@@ -9,6 +9,7 @@ import { StateDropdown } from "../StateDropdown";
 import { UK_SERVICE_CONFIG, type UKServiceType } from "../../../config/ukServiceConfig";
 import { UAE_SERVICE_CONFIG, type UAEServiceType } from "../../../config/uaeServiceConfig";
 import { ContextualHelpLink } from "../../shared/ContextualHelpLink";
+import { PracticeInfoForm } from "../PracticeInfoForm";
 
 type Country = "US" | "UK" | "Canada" | "Australia" | "UAE";
 
@@ -94,6 +95,18 @@ export function PracticeInformationForm({
   specialty = "",
   selectedSpecialization = "",
 }: PracticeInformationFormProps) {
+  if (country === "US") {
+    return (
+      <PracticeInfoForm
+        specialty={specialty}
+        selectedSpecialization={selectedSpecialization}
+        onNext={onNext}
+        onBack={onBack}
+        isFirstStep={isFirstStep}
+        isLastStep={isLastStep}
+      />
+    );
+  }
 
   const hospitalAffiliationsSpecializations = [
     "Cardiologist",
