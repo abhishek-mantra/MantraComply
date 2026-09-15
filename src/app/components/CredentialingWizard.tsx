@@ -208,9 +208,9 @@ export function CredentialingWizard({
             )}
           </div>
 
-          {/* Help Section */}
+          {/* Help Section with step-specific articles */}
           <div className="mt-8">
-            <HelpSection />
+            <HelpSection currentStep={currentStep} />
           </div>
         </div>
       </div>

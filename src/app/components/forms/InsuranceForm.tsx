@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Info } from "lucide-react";
 import { FormButtons } from "./FormButtons";
 import { MultiSelect } from "./MultiSelect";
 import { ContextualHelpLink } from "../shared/ContextualHelpLink";
@@ -109,6 +110,28 @@ export function InsuranceForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Informational Banner with Help Center Article Links */}
+      <div className="bg-blue-50/80 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
+        <Info className="w-5 h-5 text-[#2196F3] shrink-0 mt-0.5" />
+        <div className="space-y-1">
+          <p className="text-sm font-semibold text-gray-900">
+            Insurance Panels & Payer Portal Access
+          </p>
+          <p className="text-xs text-gray-600">
+            Select the insurance carriers you want to credential with. Payer portal accounts (I&A, One Healthcare ID, Availity) enable electronic roster submissions.
+          </p>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1">
+            <ContextualHelpLink
+              slug="choosing-commercial-vs-government-health-plans"
+              label="Choosing commercial vs. government health plans for your practice"
+            />
+            <ContextualHelpLink
+              slug="tracking-active-insurance-status"
+              label="Why I&A, One Healthcare ID & Availity accounts are required"
+            />
+          </div>
+        </div>
+      </div>
       {/* Row 1: Current Insurance Panels & Desired Insurance Carriers */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <MultiSelect
