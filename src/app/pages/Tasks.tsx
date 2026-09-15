@@ -287,7 +287,7 @@ export function Tasks() {
                       <td className="px-6 py-4">{getStatusBadge(task.status)}</td>
                       <td className="px-6 py-4">
                         <div className="text-sm text-gray-900">
-                          {new Date(task.dueDate).toLocaleDateString()}
+                          {new Date(task.dueDate).toLocaleDateString("en-US")}
                         </div>
                         {task.status !== "completed" && (
                           <div className={`text-xs mt-1 ${daysUntilDue < 0 ? "text-red-600" : daysUntilDue <= 7 ? "text-orange-600" : "text-gray-500"}`}>
@@ -300,7 +300,7 @@ export function Tasks() {
                       <td className="px-6 py-4">
                         <div className="text-sm text-gray-900">{task.assignedBy}</div>
                         <div className="text-xs text-gray-500 mt-1">
-                          {new Date(task.assignedDate).toLocaleDateString()}
+                          {new Date(task.assignedDate).toLocaleDateString("en-US")}
                         </div>
                       </td>
                     </tr>

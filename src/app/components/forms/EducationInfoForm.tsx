@@ -172,7 +172,7 @@ export function EducationInfoForm({ onNext, onPrevious, isFirstStep }: FormProps
                   <td className="px-4 py-3 text-sm text-gray-900">{education.degree}</td>
                   <td className="px-4 py-3 text-sm text-gray-900">{education.institution}</td>
                   <td className="px-4 py-3 text-sm text-gray-900">
-                    {new Date(education.graduationDate).toLocaleDateString()}
+                    {new Date(education.graduationDate).toLocaleDateString("en-US")}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-900">
                     {education.fieldOfStudy || "-"}

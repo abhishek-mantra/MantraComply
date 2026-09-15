@@ -265,7 +265,7 @@ export function PayersProvider({ children }: { children: ReactNode }) {
             payerName: request.payerName,
             networkType,
             practiceLocation: "Main Office",
-            effectiveDate: new Date().toLocaleDateString(),
+            effectiveDate: new Date().toLocaleDateString("en-US"),
             status: "Active",
             tpv: false,
           },

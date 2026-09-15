@@ -301,7 +301,7 @@ export function Providers() {
         payerName: payer?.name || "",
         state: "FL",
         type: payer?.type || "Commercial",
-        submittedDate: new Date().toLocaleDateString(),
+        submittedDate: new Date().toLocaleDateString("en-US"),
         status: "Pending" as const,
         priority: "Normal" as const,
         lastUpdated: "Just now",

@@ -250,10 +250,10 @@ export function EmploymentInfoForm({ onNext, onPrevious, isFirstStep }: FormProp
                     {employment.position || "-"}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-900">
-                    {new Date(employment.startDate).toLocaleDateString()}
+                    {new Date(employment.startDate).toLocaleDateString("en-US")}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-900">
-                    {new Date(employment.endDate).toLocaleDateString()}
+                    {new Date(employment.endDate).toLocaleDateString("en-US")}
                   </td>
                   <td className="px-4 py-3 text-sm">
                     <button

@@ -205,10 +205,10 @@ export function MalpracticeInfoForm({ onNext, onPrevious, isFirstStep }: FormPro
                   <td className="px-4 py-3 text-sm text-gray-900">{malpractice.policyNumber}</td>
                   <td className="px-4 py-3 text-sm text-gray-900">{malpractice.coverageAmount}</td>
                   <td className="px-4 py-3 text-sm text-gray-900">
-                    {new Date(malpractice.effectiveDate).toLocaleDateString()}
+                    {new Date(malpractice.effectiveDate).toLocaleDateString("en-US")}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-900">
-                    {new Date(malpractice.expirationDate).toLocaleDateString()}
+                    {new Date(malpractice.expirationDate).toLocaleDateString("en-US")}
                   </td>
                   <td className="px-4 py-3 text-sm">
                     <div className="flex items-center gap-2">

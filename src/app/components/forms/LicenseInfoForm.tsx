@@ -222,7 +222,7 @@ export function LicenseInfoForm({ specialty, onNext, onPrevious, isFirstStep, se
                   <td className="px-4 py-3 text-sm text-gray-900">{license.number}</td>
                   <td className="px-4 py-3 text-sm text-gray-900">{license.state}</td>
                   <td className="px-4 py-3 text-sm text-gray-900">
-                    {new Date(license.expirationDate).toLocaleDateString()}
+                    {new Date(license.expirationDate).toLocaleDateString("en-US")}
                   </td>
                   <td className="px-4 py-3 text-sm">
                     <div className="flex items-center gap-2">

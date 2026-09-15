@@ -398,10 +398,10 @@ export function BoardCertificationForm({ specialty, onNext, onPrevious, isFirstS
                   <td className="px-4 py-3 text-sm text-gray-900">{cert.board}</td>
                   <td className="px-4 py-3 text-sm text-gray-900">{cert.specialty}</td>
                   <td className="px-4 py-3 text-sm text-gray-900">
-                    {new Date(cert.certificationDate).toLocaleDateString()}
+                    {new Date(cert.certificationDate).toLocaleDateString("en-US")}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-900">
-                    {new Date(cert.expirationDate).toLocaleDateString()}
+                    {new Date(cert.expirationDate).toLocaleDateString("en-US")}
                   </td>
                   <td className="px-4 py-3 text-sm">
                     <div className="flex items-center gap-2">
