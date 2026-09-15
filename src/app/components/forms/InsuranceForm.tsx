@@ -141,21 +141,35 @@ export function InsuranceForm({
 
       {/* Row 2: I&A Account & One Healthcare ID */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {renderRadioCards("Do you have an I&A account?", hasIAAccount, setHasIAAccount)}
-        {renderRadioCards(
-          "Do you have a One Healthcare ID?",
-          hasOneHealthcareId,
-          setHasOneHealthcareId
-        )}
+        <div>
+          {renderRadioCards("Do you have an I&A account?", hasIAAccount, setHasIAAccount)}
+          <ContextualHelpLink
+            slug="cms-identity-and-access-ia-account-guide"
+            label="What is a CMS I&A account and how to set it up"
+          />
+        </div>
+        <div>
+          {renderRadioCards(
+            "Do you have a One Healthcare ID?",
+            hasOneHealthcareId,
+            setHasOneHealthcareId
+          )}
+        </div>
       </div>
 
       {/* Row 3: Availity Account */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {renderRadioCards(
-          "Do you have an Availity account?",
-          hasAvailityAccount,
-          setHasAvailityAccount
-        )}
+        <div>
+          {renderRadioCards(
+            "Do you have an Availity account?",
+            hasAvailityAccount,
+            setHasAvailityAccount
+          )}
+          <ContextualHelpLink
+            slug="availity-essentials-account-guide"
+            label="What is Availity and how to set up your provider account"
+          />
+        </div>
       </div>
 
       {/* Form Navigation Buttons */}
