@@ -106,22 +106,6 @@ export function PracticeInfoForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Informational Banner with Help Center Article Link */}
-      <div className="bg-blue-50/80 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
-        <Info className="w-5 h-5 text-[#2196F3] shrink-0 mt-0.5" />
-        <div className="space-y-1">
-          <p className="text-sm font-semibold text-gray-900">
-            Practice Setting & Telehealth Guidelines
-          </p>
-          <p className="text-xs text-gray-600">
-            Ensure your practice setting (virtual, physical, or hybrid) aligns with your active state medical licenses and billing tax ID.
-          </p>
-          <ContextualHelpLink
-            slug="practice-location-and-tax-id-rules"
-            label="Virtual vs. physical practice settings, W-9 Tax IDs & billing rules"
-          />
-        </div>
-      </div>
       {/* Row 1: Practice Type & Office Phone Number */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
