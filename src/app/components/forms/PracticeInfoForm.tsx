@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { FormButtons } from "./FormButtons";
 import { MultiSelect } from "./MultiSelect";
+import { ContextualHelpLink } from "../shared/ContextualHelpLink";
 
 interface PracticeInfoFormProps {
   specialty?: string;
@@ -148,6 +149,10 @@ export function PracticeInfoForm({
             onChange={(e) => setOfficePhone(e.target.value)}
             placeholder="123"
             className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#2196F3] focus:ring-2 focus:ring-[#2196F3] outline-none text-sm text-gray-900 transition-all placeholder:text-gray-400"
+          />
+          <ContextualHelpLink
+            slug="practice-location-and-tax-id-rules"
+            label="Virtual vs. physical practice settings, W-9 Tax IDs & billing rules"
           />
         </div>
       </div>

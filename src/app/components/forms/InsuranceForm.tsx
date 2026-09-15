@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { FormButtons } from "./FormButtons";
 import { MultiSelect } from "./MultiSelect";
+import { ContextualHelpLink } from "../shared/ContextualHelpLink";
 
 interface InsuranceFormProps {
   specialty?: string;
@@ -120,15 +121,21 @@ export function InsuranceForm({
           required
         />
 
-        <MultiSelect
-          label="Desired Insurance Carriers"
-          options={insuranceOptions.filter((opt) => opt !== "None")}
-          value={desiredCarriers}
-          onChange={setDesiredCarriers}
-          placeholder="Select desired carriers..."
-          helperText="Choose all insurance payors you want to enroll or credential with"
-          required
-        />
+        <div>
+          <MultiSelect
+            label="Desired Insurance Carriers"
+            options={insuranceOptions.filter((opt) => opt !== "None")}
+            value={desiredCarriers}
+            onChange={setDesiredCarriers}
+            placeholder="Select desired carriers..."
+            helperText="Choose all insurance payors you want to enroll or credential with"
+            required
+          />
+          <ContextualHelpLink
+            slug="choosing-commercial-vs-government-health-plans"
+            label="Choosing commercial vs. government health plans for your practice"
+          />
+        </div>
       </div>
 
       {/* Row 2: I&A Account & One Healthcare ID */}
@@ -141,13 +148,19 @@ export function InsuranceForm({
         )}
       </div>
 
-      {/* Row 3: Availity Account */}
+      {/* Row 3: Availity Account & Portal Assistance */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {renderRadioCards(
           "Do you have an Availity account?",
           hasAvailityAccount,
           setHasAvailityAccount
         )}
+        <div className="flex flex-col justify-end pb-4">
+          <ContextualHelpLink
+            slug="tracking-active-insurance-status"
+            label="Why I&A, One Healthcare ID & Availity accounts are required for payer portals"
+          />
+        </div>
       </div>
 
       {/* Form Navigation Buttons */}
