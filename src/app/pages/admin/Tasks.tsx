@@ -512,10 +512,11 @@ export function Tasks() {
               Due Date <span className="text-red-500">*</span>
             </label>
             <input
-              type="date"
+              type="text"
               value={newTask.dueDate}
               onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none"
+              placeholder="MM/DD/YYYY"
             />
           </div>
 
@@ -615,10 +616,11 @@ export function Tasks() {
               Due Date <span className="text-red-500">*</span>
             </label>
             <input
-              type="date"
+              type="text"
               value={newTask.dueDate}
               onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none"
+              placeholder="MM/DD/YYYY"
             />
           </div>
 

@@ -111,13 +111,14 @@ export function DataFlowVerificationForm({ onNext, onBack }: DataFlowVerificatio
               Estimated Completion Date
             </label>
             <input
-              type="date"
+              type="text"
               id="estimated-date"
               name="estimated-date"
               required
               value={estimatedDate}
               onChange={(e) => setEstimatedDate(e.target.value)}
               className="w-full px-4 py-2 border border-[#E2E8F0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+              placeholder="MM/DD/YYYY"
             />
           </div>
         </div>

@@ -63,11 +63,12 @@ export function TerminateModal({
               Termination Date <span className="text-red-500">*</span>
             </label>
             <input
-              type="date"
+              type="text"
               value={terminationDate}
               onChange={(e) => setTerminationDate(e.target.value)}
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none text-sm"
+              placeholder="MM/DD/YYYY"
             />
           </div>
 

@@ -61,11 +61,12 @@ export function PersonalInformationForm({ onNext, onBack }: PersonalInformationF
           Date of Birth <span className="text-red-500">*</span>
         </label>
         <input
-          type="date"
+          type="text"
           id="dob"
           name="dob"
           required
           className="w-full px-4 py-2 border border-[#E2E8F0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+          placeholder="MM/DD/YYYY"
         />
       </div>
 

@@ -114,11 +114,12 @@ export function EmploymentHistoryForm({ onNext, onBack }: EmploymentHistoryFormP
                 Start Date <span className="text-red-500">*</span>
               </label>
               <input
-                type="date"
+                type="text"
                 id={`start-date-${entry.id}`}
                 name={`start-date-${entry.id}`}
                 required
                 className="w-full px-4 py-2 border border-[#E2E8F0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+                placeholder="MM/DD/YYYY"
               />
             </div>
 
@@ -127,11 +128,12 @@ export function EmploymentHistoryForm({ onNext, onBack }: EmploymentHistoryFormP
                 End Date <span className="text-red-500">*</span>
               </label>
               <input
-                type="date"
+                type="text"
                 id={`end-date-${entry.id}`}
                 name={`end-date-${entry.id}`}
                 required
                 className="w-full px-4 py-2 border border-[#E2E8F0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+                placeholder="MM/DD/YYYY"
               />
             </div>
           </div>

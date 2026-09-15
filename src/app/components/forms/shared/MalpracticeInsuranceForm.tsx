@@ -165,11 +165,12 @@ export function MalpracticeInsuranceForm({
                 Effective Date <span className="text-red-500">*</span>
               </label>
               <input
-                type="date"
+                type="text"
                 required
                 value={effectiveDate}
                 onChange={(e) => setEffectiveDate(e.target.value)}
                 className={inputClassName}
+                placeholder="MM/DD/YYYY"
               />
             </div>
 
@@ -178,11 +179,12 @@ export function MalpracticeInsuranceForm({
                 Expiration Date <span className="text-red-500">*</span>
               </label>
               <input
-                type="date"
+                type="text"
                 required
                 value={expirationDate}
                 onChange={(e) => setExpirationDate(e.target.value)}
                 className={inputClassName}
+                placeholder="MM/DD/YYYY"
               />
             </div>
           </div>

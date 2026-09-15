@@ -122,21 +122,23 @@ export function WorkExperienceForm({ onNext, onBack, selectedService }: WorkExpe
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Start Date <span className="text-red-500">*</span></label>
               <input
-                type="date"
+                type="text"
                 value={exp.startDate}
                 onChange={(e) => updateExperience(exp.id, "startDate", e.target.value)}
                 required
                 className="w-full px-4 py-2 border border-[#E2E8F0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+                placeholder="MM/DD/YYYY"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">End Date <span className="text-red-500">*</span></label>
               <input
-                type="date"
+                type="text"
                 value={exp.endDate}
                 onChange={(e) => updateExperience(exp.id, "endDate", e.target.value)}
                 required
                 className="w-full px-4 py-2 border border-[#E2E8F0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+                placeholder="MM/DD/YYYY"
               />
             </div>
           </div>

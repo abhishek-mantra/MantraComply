@@ -56,8 +56,9 @@ export function PersonalInfoForm({ onNext, onPrevious, isFirstStep }: FormProps)
           Date of Birth <span className="text-red-500">*</span>
         </label>
         <input
-          type="date"
+          type="text"
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none text-sm"
+          placeholder="MM/DD/YYYY"
         />
       </div>
 

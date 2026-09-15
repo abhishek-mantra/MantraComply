@@ -99,13 +99,14 @@ export function PassportPersonalInformationForm({ onNext, onBack }: PassportPers
           Date of Birth <span className="text-red-500">*</span>
         </label>
         <input
-          type="date"
+          type="text"
           id="dob"
           name="dob"
           required
           value={dateOfBirth}
           onChange={(e) => setDateOfBirth(e.target.value)}
           className="w-full px-4 py-2 border border-[#E2E8F0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+          placeholder="MM/DD/YYYY"
         />
       </div>
 
@@ -182,13 +183,14 @@ export function PassportPersonalInformationForm({ onNext, onBack }: PassportPers
             Passport Issue Date <span className="text-red-500">*</span>
           </label>
           <input
-            type="date"
+            type="text"
             id="passport-issue-date"
             name="passport-issue-date"
             required
             value={passportIssueDate}
             onChange={(e) => setPassportIssueDate(e.target.value)}
             className="w-full px-4 py-2 border border-[#E2E8F0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+            placeholder="MM/DD/YYYY"
           />
         </div>
 
@@ -197,13 +199,14 @@ export function PassportPersonalInformationForm({ onNext, onBack }: PassportPers
             Passport Expiry Date <span className="text-red-500">*</span>
           </label>
           <input
-            type="date"
+            type="text"
             id="passport-expiry-date"
             name="passport-expiry-date"
             required
             value={passportExpiryDate}
             onChange={(e) => setPassportExpiryDate(e.target.value)}
             className="w-full px-4 py-2 border border-[#E2E8F0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+            placeholder="MM/DD/YYYY"
           />
         </div>
       </div>

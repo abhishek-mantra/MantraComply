@@ -286,11 +286,12 @@ export function EmploymentHistoryForm({
                       Start Date <span className="text-red-500">*</span>
                     </label>
                     <input
-                      type="date"
+                      type="text"
                       required
                       value={entry.startDate}
                       onChange={(e) => updateEntry(entry.id, "startDate", e.target.value)}
                       className={inputClassName}
+                      placeholder="MM/DD/YYYY"
                     />
                   </div>
 
@@ -299,11 +300,12 @@ export function EmploymentHistoryForm({
                       End Date <span className="text-red-500">*</span>
                     </label>
                     <input
-                      type="date"
+                      type="text"
                       required
                       value={entry.endDate}
                       onChange={(e) => updateEntry(entry.id, "endDate", e.target.value)}
                       className={inputClassName}
+                      placeholder="MM/DD/YYYY"
                     />
                   </div>
                 </div>
@@ -353,11 +355,12 @@ export function EmploymentHistoryForm({
                       Gap Start Date <span className="text-red-500">*</span>
                     </label>
                     <input
-                      type="date"
+                      type="text"
                       required
                       value={entry.startDate}
                       onChange={(e) => updateEntry(entry.id, "startDate", e.target.value)}
                       className={inputClassName}
+                      placeholder="MM/DD/YYYY"
                     />
                   </div>
 
@@ -366,11 +369,12 @@ export function EmploymentHistoryForm({
                       Gap End Date <span className="text-red-500">*</span>
                     </label>
                     <input
-                      type="date"
+                      type="text"
                       required
                       value={entry.endDate}
                       onChange={(e) => updateEntry(entry.id, "endDate", e.target.value)}
                       className={inputClassName}
+                      placeholder="MM/DD/YYYY"
                     />
                   </div>
                 </div>

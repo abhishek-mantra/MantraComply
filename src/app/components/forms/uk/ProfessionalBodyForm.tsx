@@ -228,11 +228,12 @@ export function ProfessionalBodyForm({ onNext, onBack, selectedService: initialS
               Registration Expiry Date <span className="text-red-500">*</span>
             </label>
             <input
-              type="date"
+              type="text"
               id="expiry-date"
               name="expiry-date"
               required
               className="w-full px-4 py-2 border border-[#E2E8F0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+              placeholder="MM/DD/YYYY"
             />
           </div>
 

@@ -163,13 +163,14 @@ export function PersonalInformationForm({
           Date of Birth <span className="text-red-500">*</span>
         </label>
         <input
-          type="date"
+          type="text"
           id="dob"
           name="dob"
           required
           value={dob}
           onChange={(e) => setDob(e.target.value)}
           className={inputClassName}
+          placeholder="MM/DD/YYYY"
         />
       </div>
 

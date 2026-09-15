@@ -85,13 +85,14 @@ export function PrometricExaminationForm({ onNext, onBack, selectedService }: Pr
               Pass Date
             </label>
             <input
-              type="date"
+              type="text"
               id="pass-date"
               name="pass-date"
               required
               value={passDate}
               onChange={(e) => setPassDate(e.target.value)}
               className="w-full px-4 py-2 border border-[#E2E8F0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+              placeholder="MM/DD/YYYY"
             />
           </div>
 
@@ -120,13 +121,14 @@ export function PrometricExaminationForm({ onNext, onBack, selectedService }: Pr
               Exam Date
             </label>
             <input
-              type="date"
+              type="text"
               id="exam-date"
               name="exam-date"
               required
               value={examDate}
               onChange={(e) => setExamDate(e.target.value)}
               className="w-full px-4 py-2 border border-[#E2E8F0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+              placeholder="MM/DD/YYYY"
             />
           </div>
 

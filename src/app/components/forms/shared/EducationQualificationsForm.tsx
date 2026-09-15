@@ -382,11 +382,12 @@ export function EducationQualificationsForm({
                       Residency Start Year <span className="text-red-500">*</span>
                     </label>
                     <input
-                      type="date"
+                      type="text"
                       required
                       value={entry.residencyStartYear}
                       onChange={(e) => updateEntry(entry.id, "residencyStartYear", e.target.value)}
                       className={inputClassName}
+                      placeholder="MM/DD/YYYY"
                     />
                   </div>
 
@@ -395,11 +396,12 @@ export function EducationQualificationsForm({
                       Residency End Year <span className="text-red-500">*</span>
                     </label>
                     <input
-                      type="date"
+                      type="text"
                       required
                       value={entry.residencyEndYear}
                       onChange={(e) => updateEntry(entry.id, "residencyEndYear", e.target.value)}
                       className={inputClassName}
+                      placeholder="MM/DD/YYYY"
                     />
                   </div>
                 </div>
@@ -438,10 +440,11 @@ export function EducationQualificationsForm({
                         Fellowship Completion Year <span className="text-gray-400">(optional)</span>
                       </label>
                       <input
-                        type="date"
+                        type="text"
                         value={entry.fellowshipCompletionYear}
                         onChange={(e) => updateEntry(entry.id, "fellowshipCompletionYear", e.target.value)}
                         className={inputClassName}
+                        placeholder="MM/DD/YYYY"
                       />
                     </div>
                   </>
@@ -456,11 +459,12 @@ export function EducationQualificationsForm({
                   Start Date <span className="text-red-500">*</span>
                 </label>
                 <input
-                  type="date"
+                  type="text"
                   required
                   value={entry.startDate}
                   onChange={(e) => updateEntry(entry.id, "startDate", e.target.value)}
                   className={inputClassName}
+                  placeholder="MM/DD/YYYY"
                 />
               </div>
 
@@ -469,11 +473,12 @@ export function EducationQualificationsForm({
                   Graduation Date <span className="text-red-500">*</span>
                 </label>
                 <input
-                  type="date"
+                  type="text"
                   required
                   value={entry.endDate}
                   onChange={(e) => updateEntry(entry.id, "endDate", e.target.value)}
                   className={inputClassName}
+                  placeholder="MM/DD/YYYY"
                 />
               </div>
             </div>

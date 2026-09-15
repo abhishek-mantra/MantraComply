@@ -215,13 +215,14 @@ export function EmirateAuthoritySelectionForm({
               License Expiry Date
             </label>
             <input
-              type="date"
+              type="text"
               id="license-expiry"
               name="license-expiry"
               required
               value={licenseExpiry}
               onChange={(e) => setLicenseExpiry(e.target.value)}
               className="w-full px-4 py-2 border border-[#E2E8F0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+              placeholder="MM/DD/YYYY"
             />
           </div>
         </div>
