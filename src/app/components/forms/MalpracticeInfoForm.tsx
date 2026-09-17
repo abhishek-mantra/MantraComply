@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { FormButtons } from "./FormButtons";
 import { Trash2, Eye } from "lucide-react";
+import { DateInput } from "../ui/DateInput";
 
 interface FormProps {
   specialty: string;
@@ -15,18 +16,16 @@ interface Malpractice {
   carrier: string;
   policyNumber: string;
   coverageAmount: string;
-  aggregateAmount: string;
   effectiveDate: string;
   expirationDate: string;
 }
 
-export function MalpracticeInfoForm({ onNext, onPrevious, isFirstStep }: FormProps) {
+export function MalpracticeInfoForm({ specialty: _specialty, onNext, onPrevious, isFirstStep }: FormProps) {
   const [malpractices, setMalpractices] = useState<Malpractice[]>([]);
   const [currentMalpractice, setCurrentMalpractice] = useState({
     carrier: "",
     policyNumber: "",
     coverageAmount: "",
-    aggregateAmount: "",
     effectiveDate: "",
     expirationDate: "",
   });
@@ -41,20 +40,23 @@ export function MalpracticeInfoForm({ onNext, onPrevious, isFirstStep }: FormPro
       currentMalpractice.carrier &&
       currentMalpractice.policyNumber &&
       currentMalpractice.coverageAmount &&
-      currentMalpractice.aggregateAmount &&
       currentMalpractice.effectiveDate &&
       currentMalpractice.expirationDate
     ) {
       const newMalpractice: Malpractice = {
         id: Date.now().toString(),
-        ...currentMalpractice,
+        carrier: currentMalpractice.carrier,
+        policyNumber: currentMalpractice.policyNumber,
+        coverageAmount: currentMalpractice.coverageAmount,
+        effectiveDate: currentMalpractice.effectiveDate,
+        expirationDate: currentMalpractice.expirationDate,
       };
+
       setMalpractices([...malpractices, newMalpractice]);
       setCurrentMalpractice({
         carrier: "",
         policyNumber: "",
         coverageAmount: "",
-        aggregateAmount: "",
         effectiveDate: "",
         expirationDate: "",
       });
@@ -62,8 +64,31 @@ export function MalpracticeInfoForm({ onNext, onPrevious, isFirstStep }: FormPro
   };
 
   const handleDeleteMalpractice = (id: string) => {
-    setMalpractices(malpractices.filter((m) => m.id !== id));
+    setMalpractices(malpractices.filter((malpractice) => malpractice.id !== id));
   };
+
+  const carrierOptions = [
+    "The Doctors Company",
+    "MedPro Group",
+    "NORCAL Group",
+    "ProAssurance",
+    "Coverys",
+    "MAG Mutual",
+    "Curi",
+    "State Volunteer Mutual (SVMIC)",
+    "Physicians Insurance",
+    "Other"
+  ];
+
+  const coverageAmounts = [
+    "$1,000,000 / $3,000,000",
+    "$1,000,000 / $1,000,000",
+    "$2,000,000 / $4,000,000",
+    "$2,000,000 / $6,000,000",
+    "$500,000 / $1,500,000",
+    "$250,000 / $750,000",
+    "Other"
+  ];
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -131,22 +156,22 @@ export function MalpracticeInfoForm({ onNext, onPrevious, isFirstStep }: FormPro
           <label className="block text-sm font-medium text-gray-900 mb-2">
             Effective Date <span className="text-red-500">*</span>
           </label>
-          <input
-            type="date"
+          <DateInput
             value={currentMalpractice.effectiveDate}
-            onChange={(e) => setCurrentMalpractice({ ...currentMalpractice, effectiveDate: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none text-sm"
+            onChange={(val) => setCurrentMalpractice({ ...currentMalpractice, effectiveDate: val })}
+            placeholder="mm/dd/yyyy"
+            required
           />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-900 mb-2">
             Expiration Date <span className="text-red-500">*</span>
           </label>
-          <input
-            type="date"
+          <DateInput
             value={currentMalpractice.expirationDate}
-            onChange={(e) => setCurrentMalpractice({ ...currentMalpractice, expirationDate: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none text-sm"
+            onChange={(val) => setCurrentMalpractice({ ...currentMalpractice, expirationDate: val })}
+            placeholder="mm/dd/yyyy"
+            required
           />
         </div>
       </div>
@@ -205,10 +230,14 @@ export function MalpracticeInfoForm({ onNext, onPrevious, isFirstStep }: FormPro
                   <td className="px-4 py-3 text-sm text-gray-900">{malpractice.policyNumber}</td>
                   <td className="px-4 py-3 text-sm text-gray-900">{malpractice.coverageAmount}</td>
                   <td className="px-4 py-3 text-sm text-gray-900">
-                    {new Date(malpractice.effectiveDate).toLocaleDateString("en-US")}
+                    {malpractice.effectiveDate.includes("/")
+                      ? malpractice.effectiveDate
+                      : new Date(malpractice.effectiveDate).toLocaleDateString("en-US")}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-900">
-                    {new Date(malpractice.expirationDate).toLocaleDateString("en-US")}
+                    {malpractice.expirationDate.includes("/")
+                      ? malpractice.expirationDate
+                      : new Date(malpractice.expirationDate).toLocaleDateString("en-US")}
                   </td>
                   <td className="px-4 py-3 text-sm">
                     <div className="flex items-center gap-2">

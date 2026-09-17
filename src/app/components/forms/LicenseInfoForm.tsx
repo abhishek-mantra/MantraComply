@@ -3,6 +3,7 @@ import { FormButtons } from "./FormButtons";
 import { StateDropdown } from "./StateDropdown";
 import { Trash2, Eye } from "lucide-react";
 import { ContextualHelpLink } from "../shared/ContextualHelpLink";
+import { DateInput } from "../ui/DateInput";
 
 interface FormProps {
   specialty: string;
@@ -77,6 +78,7 @@ export function LicenseInfoForm({ specialty, onNext, onPrevious, isFirstStep, se
         expirationDate: currentLicense.expirationDate,
         ...(specialty === "doctor" && currentLicense.deaNumber && { deaNumber: currentLicense.deaNumber }),
       };
+
       setLicenses([...licenses, newLicense]);
       setCurrentLicense({
         type: "",
@@ -161,12 +163,11 @@ export function LicenseInfoForm({ specialty, onNext, onPrevious, isFirstStep, se
           <label className="block text-sm font-medium text-gray-900 mb-2">
             Expiration Date <span className="text-red-500">*</span>
           </label>
-          <input
-            type="date"
+          <DateInput
             value={currentLicense.expirationDate}
-            onChange={(e) => setCurrentLicense({ ...currentLicense, expirationDate: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none text-sm"
-            placeholder="mm-dd-yyyy"
+            onChange={(val) => setCurrentLicense({ ...currentLicense, expirationDate: val })}
+            placeholder="mm/dd/yyyy"
+            required
           />
         </div>
       </div>
@@ -222,7 +223,9 @@ export function LicenseInfoForm({ specialty, onNext, onPrevious, isFirstStep, se
                   <td className="px-4 py-3 text-sm text-gray-900">{license.number}</td>
                   <td className="px-4 py-3 text-sm text-gray-900">{license.state}</td>
                   <td className="px-4 py-3 text-sm text-gray-900">
-                    {new Date(license.expirationDate).toLocaleDateString("en-US")}
+                    {license.expirationDate.includes("/")
+                      ? license.expirationDate
+                      : new Date(license.expirationDate).toLocaleDateString("en-US")}
                   </td>
                   <td className="px-4 py-3 text-sm">
                     <div className="flex items-center gap-2">

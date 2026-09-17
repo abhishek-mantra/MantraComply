@@ -2,6 +2,7 @@ import { useState } from "react";
 import { FormButtons } from "./FormButtons";
 import { Trash2, Eye } from "lucide-react";
 import { ContextualHelpLink } from "../shared/ContextualHelpLink";
+import { DateInput } from "../ui/DateInput";
 
 interface FormProps {
   specialty: string;
@@ -109,41 +110,42 @@ export function BoardCertificationForm({ specialty, onNext, onPrevious, isFirstS
       return [
         "Clinical Psychology",
         "Counseling Psychology",
+        "Clinical Child & Adolescent Psychology",
+        "Behavioral and Cognitive Psychology",
+        "Clinical Neuropsychology",
+        "Psychiatry",
         "Child and Adolescent Psychiatry",
-        "Geriatric Psychiatry",
-        "Addiction Psychiatry",
-        "Forensic Psychiatry",
-        "Neuropsychology"
+        "Addiction Psychiatry"
       ];
+    } else if (specialty === "doctor" && selectedSpecialization) {
+      return [selectedSpecialization];
     } else if (specialty === "dietitian") {
       return [
-        "Pediatric Nutrition",
-        "Renal Nutrition",
-        "Oncology Nutrition",
-        "Sports Dietetics",
-        "Gerontological Nutrition",
-        "Obesity and Weight Management"
+        "Sports Dietetics (CSSD)",
+        "Pediatric Nutrition (CSP)",
+        "Renal Nutrition (CSR)",
+        "Oncology Nutrition (CSO)",
+        "Gerontological Nutrition (CSG)"
       ];
     } else if (specialty === "physiotherapy") {
       return [
-        "Orthopedic Physical Therapy",
-        "Sports Physical Therapy",
-        "Neurologic Physical Therapy",
-        "Cardiovascular & Pulmonary",
-        "Geriatric Physical Therapy",
-        "Pediatric Physical Therapy",
-        "Electrophysiologic Physical Therapy"
+        "Orthopaedics (OCS)",
+        "Sports (SCS)",
+        "Neurology (NCS)",
+        "Cardiovascular and Pulmonary (CCS)",
+        "Pediatrics (PCS)",
+        "Geriatrics (GCS)"
       ];
     }
     return [];
   };
 
   const handleAddCertification = () => {
-    const requiredFieldsFilled = specialty === "doctor"
+    const isValid = specialty === "doctor"
       ? currentCert.board && currentCert.specialty && currentCert.certificationDate && currentCert.expirationDate && currentCert.residencyProgram && currentCert.residencyStartYear && currentCert.residencyEndYear
       : currentCert.board && currentCert.specialty && currentCert.certificationDate && currentCert.expirationDate;
 
-    if (requiredFieldsFilled) {
+    if (isValid) {
       const newCert: Certification = {
         id: Date.now().toString(),
         board: currentCert.board,
@@ -154,10 +156,11 @@ export function BoardCertificationForm({ specialty, onNext, onPrevious, isFirstS
           residencyProgram: currentCert.residencyProgram,
           residencyStartYear: currentCert.residencyStartYear,
           residencyEndYear: currentCert.residencyEndYear,
-          ...(currentCert.fellowshipProgram && { fellowshipProgram: currentCert.fellowshipProgram }),
-          ...(currentCert.fellowshipCompletionYear && { fellowshipCompletionYear: currentCert.fellowshipCompletionYear }),
+          fellowshipProgram: currentCert.fellowshipProgram || undefined,
+          fellowshipCompletionYear: currentCert.fellowshipCompletionYear || undefined,
         }),
       };
+
       setCertifications([...certifications, newCert]);
       setCurrentCert({
         board: "",
@@ -239,22 +242,22 @@ export function BoardCertificationForm({ specialty, onNext, onPrevious, isFirstS
               <label className="block text-sm font-medium text-gray-900 mb-2">
                 Certification Date <span className="text-red-500">*</span>
               </label>
-              <input
-                type="date"
+              <DateInput
                 value={currentCert.certificationDate}
-                onChange={(e) => setCurrentCert({ ...currentCert, certificationDate: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none text-sm"
+                onChange={(val) => setCurrentCert({ ...currentCert, certificationDate: val })}
+                placeholder="mm/dd/yyyy"
+                required
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-900 mb-2">
                 Expiration Date <span className="text-red-500">*</span>
               </label>
-              <input
-                type="date"
+              <DateInput
                 value={currentCert.expirationDate}
-                onChange={(e) => setCurrentCert({ ...currentCert, expirationDate: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none text-sm"
+                onChange={(val) => setCurrentCert({ ...currentCert, expirationDate: val })}
+                placeholder="mm/dd/yyyy"
+                required
               />
             </div>
           </div>
@@ -279,22 +282,22 @@ export function BoardCertificationForm({ specialty, onNext, onPrevious, isFirstS
                   <label className="block text-sm font-medium text-gray-900 mb-2">
                     Residency Start Year <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="date"
+                  <DateInput
                     value={currentCert.residencyStartYear}
-                    onChange={(e) => setCurrentCert({ ...currentCert, residencyStartYear: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none text-sm"
+                    onChange={(val) => setCurrentCert({ ...currentCert, residencyStartYear: val })}
+                    placeholder="mm/dd/yyyy"
+                    required
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-900 mb-2">
                     Residency End Year <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="date"
+                  <DateInput
                     value={currentCert.residencyEndYear}
-                    onChange={(e) => setCurrentCert({ ...currentCert, residencyEndYear: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none text-sm"
+                    onChange={(val) => setCurrentCert({ ...currentCert, residencyEndYear: val })}
+                    placeholder="mm/dd/yyyy"
+                    required
                   />
                 </div>
               </div>
@@ -318,11 +321,10 @@ export function BoardCertificationForm({ specialty, onNext, onPrevious, isFirstS
                     <label className="block text-sm font-medium text-gray-900 mb-2">
                       Fellowship Completion Year <span className="text-gray-400">(optional)</span>
                     </label>
-                    <input
-                      type="date"
+                    <DateInput
                       value={currentCert.fellowshipCompletionYear}
-                      onChange={(e) => setCurrentCert({ ...currentCert, fellowshipCompletionYear: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none text-sm"
+                      onChange={(val) => setCurrentCert({ ...currentCert, fellowshipCompletionYear: val })}
+                      placeholder="mm/dd/yyyy"
                     />
                   </div>
                 </>
@@ -398,10 +400,14 @@ export function BoardCertificationForm({ specialty, onNext, onPrevious, isFirstS
                   <td className="px-4 py-3 text-sm text-gray-900">{cert.board}</td>
                   <td className="px-4 py-3 text-sm text-gray-900">{cert.specialty}</td>
                   <td className="px-4 py-3 text-sm text-gray-900">
-                    {new Date(cert.certificationDate).toLocaleDateString("en-US")}
+                    {cert.certificationDate.includes("/")
+                      ? cert.certificationDate
+                      : new Date(cert.certificationDate).toLocaleDateString("en-US")}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-900">
-                    {new Date(cert.expirationDate).toLocaleDateString("en-US")}
+                    {cert.expirationDate.includes("/")
+                      ? cert.expirationDate
+                      : new Date(cert.expirationDate).toLocaleDateString("en-US")}
                   </td>
                   <td className="px-4 py-3 text-sm">
                     <div className="flex items-center gap-2">
