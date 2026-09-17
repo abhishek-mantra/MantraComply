@@ -1,25 +1,11 @@
-import React, { useState } from "react";
+import React from "react";
 import {
+  Zap,
+  ArrowRight,
   CheckCircle2,
-  Copy,
-  Check,
-  Plus,
-  Trash2,
-  Send,
-  Clock,
-  Users,
-  ShieldCheck,
-  ArrowUpRight,
-  Sparkles,
 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "./ui/dialog";
-import { useReferrals, ReferralInviteInput } from "../contexts/ReferralContext";
+import { useNavigate } from "react-router";
+import { Dialog, DialogContent } from "./ui/dialog";
 
 interface ReferralBoostModalProps {
   isOpen: boolean;
@@ -27,334 +13,115 @@ interface ReferralBoostModalProps {
   onComplete?: () => void;
 }
 
-interface ColleagueRow {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-}
-
 export function ReferralBoostModal({
   isOpen,
   onClose,
-  onComplete,
 }: ReferralBoostModalProps) {
-  const {
-    referralLink,
-    targetCount,
-    completedCount,
-    remainingCount,
-    isPriorityBoosted,
-    addMultipleReferrals,
-  } = useReferrals();
+  const navigate = useNavigate();
 
-  const [copied, setCopied] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Multiple invite rows
-  const [rows, setRows] = useState<ColleagueRow[]>([
-    { id: "row-1", name: "", email: "", phone: "" },
-  ]);
-
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
+  const handleGoToReferrals = () => {
+    onClose();
+    navigate("/provider/referrals");
   };
-
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(referralLink);
-    setCopied(true);
-    showToast("Referral link copied to clipboard");
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleAddRow = () => {
-    setRows((prev) => [
-      ...prev,
-      {
-        id: `row-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
-        name: "",
-        email: "",
-        phone: "",
-      },
-    ]);
-  };
-
-  const handleRemoveRow = (id: string) => {
-    if (rows.length === 1) {
-      setRows([{ id: "row-1", name: "", email: "", phone: "" }]);
-      return;
-    }
-    setRows((prev) => prev.filter((r) => r.id !== id));
-  };
-
-  const handleRowChange = (id: string, field: keyof ColleagueRow, value: string) => {
-    setRows((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, [field]: value } : r))
-    );
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const validInvites: ReferralInviteInput[] = rows
-      .filter((r) => r.email.trim() && r.email.includes("@"))
-      .map((r) => ({
-        name: r.name.trim() || r.email.split("@")[0],
-        email: r.email.trim(),
-        phone: r.phone.trim() || undefined,
-      }));
-
-    if (validInvites.length === 0) {
-      showToast("Please enter at least one valid colleague email");
-      return;
-    }
-
-    setIsSubmitting(true);
-    setTimeout(() => {
-      const res = addMultipleReferrals(validInvites);
-      setIsSubmitting(false);
-
-      if (res.added > 0) {
-        showToast(
-          res.added === 1
-            ? "Invite sent successfully"
-            : `${res.added} invites sent successfully`
-        );
-        setRows([{ id: "row-1", name: "", email: "", phone: "" }]);
-        if (onComplete) {
-          setTimeout(() => onComplete(), 1000);
-        } else {
-          setTimeout(() => onClose(), 1000);
-        }
-      } else {
-        showToast("The entered email address(es) have already been invited");
-      }
-    }, 300);
-  };
-
-  const filledCount = rows.filter((r) => r.email.trim().includes("@")).length;
-  const progressPercent = Math.min(100, Math.round((completedCount / targetCount) * 100));
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 rounded-2xl border border-gray-200 bg-white shadow-xl">
-        {/* Toast */}
-        {toastMessage && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-gray-900 text-white px-4 py-2 rounded-lg shadow-md text-xs font-medium">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-            <span>{toastMessage}</span>
-          </div>
-        )}
-
-        {/* Clean Enterprise Header */}
-        <div className="p-6 sm:p-7 border-b border-gray-100 bg-white">
-          <div className="flex items-center gap-2 mb-2.5">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-50 text-[#043570] border border-blue-100">
-              <Clock className="w-3.5 h-3.5 text-[#043570]" />
-              Priority Review Program
+      <DialogContent className="max-w-2xl p-0 rounded-3xl border border-slate-200 bg-white shadow-2xl overflow-hidden">
+        {/* Modal Header & Value Proposition */}
+        <div className="p-7 sm:p-9 bg-linear-to-b from-blue-50/60 via-slate-50/30 to-white space-y-6">
+          {/* Top Pill Badges */}
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-[#043570] border border-blue-200/60 shadow-2xs">
+              <Zap className="size-3.5 text-amber-500 fill-amber-500" />
+              <span>Priority Credentialing Fast-Track</span>
             </span>
-            {isPriorityBoosted && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                <Check className="w-3.5 h-3.5 text-emerald-600" />
-                Active
-              </span>
-            )}
+            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+              Save 60 Days
+            </span>
           </div>
 
-          <DialogTitle className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
-            Fast-Track Your Credentialing Review
-          </DialogTitle>
+          {/* Headline & Subline */}
+          <div className="space-y-2">
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-tight">
+              Want your payer approval in 14–30 days instead of 60–90?
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-500 max-w-xl leading-relaxed">
+              Commercial insurance panels normally take 2 to 3 months. When you invite <strong>5 healthcare colleagues</strong> to MantraComply, our CVO team elevates your file to daily proactive payer follow-ups.
+            </p>
+          </div>
 
-          <DialogDescription className="text-sm text-gray-600 mt-1.5 leading-relaxed">
-            Commercial payer panels standardly take <strong>60 to 90 days</strong>. Invite 5 healthcare colleagues to join MantraComply — once they sign up, your file is elevated to our <strong>Priority Verification Queue (14–30 days)</strong> with dedicated coordinator outreach.
-          </DialogDescription>
-
-          {/* Clean 2-Column Comparison Card */}
-          <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="p-3.5 rounded-xl border border-gray-200 bg-gray-50/70">
-              <div className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
-                Standard Queue
-              </div>
-              <div className="text-lg font-bold text-gray-400 line-through mt-0.5">
-                60 – 90 Days
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-                Standard commercial payer review pace
-              </p>
+          {/* Visual Speed Comparison Meter */}
+          <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-3">
+            <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-500">
+              <span>Processing Pace Comparison</span>
+              <span className="text-[10px] text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full font-extrabold">
+                -67% TIME
+              </span>
             </div>
 
-            <div className="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/50">
-              <div className="flex items-center justify-between">
-                <div className="text-[11px] font-semibold text-emerald-800 uppercase tracking-wider">
-                  Priority Review
+            <div className="space-y-2.5">
+              {/* Standard */}
+              <div className="flex items-center gap-3">
+                <span className="w-28 text-xs font-semibold text-slate-500 shrink-0">Standard Queue:</span>
+                <div className="flex-1 bg-slate-100 rounded-full h-3 overflow-hidden">
+                  <div className="bg-slate-400 h-full w-full rounded-full" />
                 </div>
-                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded">
-                  5 Referrals
+                <span className="text-xs font-bold text-slate-400 line-through w-24 text-right shrink-0">
+                  60–90 Days
                 </span>
               </div>
-              <div className="text-lg font-bold text-emerald-700 mt-0.5">
-                14 – 30 Days
+
+              {/* Priority */}
+              <div className="flex items-center gap-3">
+                <span className="w-28 text-xs font-bold text-emerald-800 shrink-0 flex items-center gap-1">
+                  <Zap className="size-3 text-amber-500 fill-amber-500" />
+                  <span>Priority Review:</span>
+                </span>
+                <div className="flex-1 bg-emerald-100 rounded-full h-3 overflow-hidden">
+                  <div className="bg-emerald-600 h-full w-[33%] rounded-full animate-pulse shadow-xs" />
+                </div>
+                <span className="text-sm font-black text-emerald-700 w-24 text-right shrink-0">
+                  14–30 Days ⚡
+                </span>
               </div>
-              <p className="text-xs text-emerald-700/90 mt-1">
-                Proactive daily payer follow-ups by CVO team
-              </p>
             </div>
+          </div>
+
+          {/* Micro Perks Row */}
+          <div className="flex flex-wrap items-center justify-center gap-5 text-xs font-semibold text-slate-600 pt-1">
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="size-4 text-emerald-600" />
+              Save 45–60 Wait Days
+            </span>
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="size-4 text-emerald-600" />
+              5 Peer Signups Required
+            </span>
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="size-4 text-emerald-600" />
+              100% Free for Colleagues
+            </span>
           </div>
         </div>
 
-        {/* Modal Body */}
-        <div className="p-6 sm:p-7 space-y-6 bg-white">
-          {/* Progress Status Bar */}
-          <div className="p-4 rounded-xl border border-gray-200 bg-gray-50/60 space-y-2">
-            <div className="flex items-center justify-between text-xs font-medium">
-              <span className="text-gray-900 font-semibold flex items-center gap-1.5">
-                <Users className="w-4 h-4 text-gray-500" />
-                {isPriorityBoosted
-                  ? "Priority Review Unlocked (14–30 Days)"
-                  : `${completedCount} of ${targetCount} Colleagues Joined`}
-              </span>
-              <span className="text-gray-600">
-                {isPriorityBoosted ? "Expedited" : `${remainingCount} more needed`}
-              </span>
-            </div>
+        {/* Clean Redirection Action Bar */}
+        <div className="p-6 bg-slate-50/90 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full sm:w-auto text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors cursor-pointer text-center sm:text-left order-2 sm:order-1"
+          >
+            I'll do this later (View Profile)
+          </button>
 
-            <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-500 ${
-                  isPriorityBoosted ? "bg-emerald-600" : "bg-[#043570]"
-                }`}
-                style={{ width: `${progressPercent}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="text-sm font-semibold text-gray-900">
-                  Colleague Information
-                </h4>
-                <p className="text-xs text-gray-500">
-                  Name and email required; phone is optional.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleAddRow}
-                className="inline-flex items-center gap-1 text-xs font-medium text-[#043570] hover:text-[#2196F3] bg-blue-50 hover:bg-blue-100/80 px-2.5 py-1.5 rounded-lg border border-blue-200 transition-colors"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Add Another</span>
-              </button>
-            </div>
-
-            {/* Rows List */}
-            <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
-              {rows.map((row, idx) => (
-                <div
-                  key={row.id}
-                  className="p-3 bg-white border border-gray-200 rounded-xl space-y-2 hover:border-gray-300 transition-colors"
-                >
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <span className="font-medium text-gray-700">Colleague {idx + 1}</span>
-                    {rows.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveRow(row.id)}
-                        className="text-gray-400 hover:text-red-500 transition-colors p-0.5"
-                        title="Remove"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
-                    {/* Name */}
-                    <div className="sm:col-span-4">
-                      <input
-                        type="text"
-                        placeholder="Full Name *"
-                        value={row.name}
-                        onChange={(e) => handleRowChange(row.id, "name", e.target.value)}
-                        className="w-full text-xs bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3]"
-                      />
-                    </div>
-
-                    {/* Email */}
-                    <div className="sm:col-span-4">
-                      <input
-                        type="email"
-                        placeholder="Work Email *"
-                        value={row.email}
-                        onChange={(e) => handleRowChange(row.id, "email", e.target.value)}
-                        className="w-full text-xs bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3]"
-                      />
-                    </div>
-
-                    {/* Phone (Optional) */}
-                    <div className="sm:col-span-4">
-                      <input
-                        type="tel"
-                        placeholder="Phone (Optional)"
-                        value={row.phone}
-                        onChange={(e) => handleRowChange(row.id, "phone", e.target.value)}
-                        className="w-full text-xs bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3]"
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Direct Share Link */}
-            <div className="pt-2 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-              <span className="text-gray-500 font-medium">Or copy direct link:</span>
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                <span className="truncate max-w-[240px] text-gray-600 font-mono bg-gray-50 px-2.5 py-1.5 rounded-lg border border-gray-200">
-                  {referralLink}
-                </span>
-                <button
-                  type="button"
-                  onClick={handleCopyLink}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-lg transition-colors shrink-0"
-                >
-                  {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copied ? "Copied" : "Copy"}</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="pt-3 border-t border-gray-100 flex flex-col-reverse sm:flex-row items-center justify-between gap-3">
-              <button
-                type="button"
-                onClick={onClose}
-                className="w-full sm:w-auto text-xs font-medium text-gray-500 hover:text-gray-800 py-2.5 px-3 transition-colors"
-              >
-                Skip for now, I'll do this later
-              </button>
-
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-[#043570] hover:bg-[#032855] text-white font-medium text-xs sm:text-sm transition-colors shadow-sm disabled:opacity-50"
-              >
-                <Send className="w-3.5 h-3.5" />
-                <span>
-                  {isSubmitting
-                    ? "Sending..."
-                    : filledCount > 1
-                    ? `Send ${filledCount} Invites & Fast-Track`
-                    : "Send Invite & Fast-Track"}
-                </span>
-              </button>
-            </div>
-          </form>
+          <button
+            type="button"
+            onClick={handleGoToReferrals}
+            className="w-full sm:w-auto px-7 py-3 rounded-xl bg-[#043570] hover:bg-[#06428c] text-white font-bold text-xs sm:text-sm inline-flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer group order-1 sm:order-2"
+          >
+            <span>Go to Refer &amp; Boost Screen</span>
+            <ArrowRight className="size-4 group-hover:translate-x-0.5 transition-transform" />
+          </button>
         </div>
       </DialogContent>
     </Dialog>
