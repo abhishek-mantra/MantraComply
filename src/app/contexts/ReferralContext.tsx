@@ -4,10 +4,18 @@ export interface Referral {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   specialty: string;
   dateInvited: string;
   status: "Pending Invite" | "Signed Up" | "Credentialing Started";
   joinedDate?: string;
+}
+
+export interface ReferralInviteInput {
+  name: string;
+  email: string;
+  phone?: string;
+  specialty?: string;
 }
 
 interface ReferralContextType {
@@ -18,19 +26,21 @@ interface ReferralContextType {
   completedCount: number;
   remainingCount: number;
   isPriorityBoosted: boolean;
-  addReferral: (name: string, email: string, specialty?: string) => boolean;
+  addReferral: (name: string, email: string, phone?: string, specialty?: string) => boolean;
+  addMultipleReferrals: (invites: ReferralInviteInput[]) => { added: number; skipped: number };
   simulateStatusChange: (id: string, newStatus: Referral["status"]) => void;
   resendInvite: (id: string) => void;
   resetToDefaults: () => void;
 }
 
-const STORAGE_KEY = "mantracomply_referrals_state_v2";
+const STORAGE_KEY = "mantracomply_referrals_state_v3";
 
 const INITIAL_REFERRALS: Referral[] = [
   {
     id: "ref-1",
     name: "Dr. Marcus Vance",
     email: "m.vance@chicagohealth.org",
+    phone: "+1 (312) 555-0143",
     specialty: "Psychiatry",
     dateInvited: "2026-09-08",
     status: "Signed Up",
@@ -40,6 +50,7 @@ const INITIAL_REFERRALS: Referral[] = [
     id: "ref-2",
     name: "Dr. Elena Rostova",
     email: "elena.rostova@mindwell.com",
+    phone: "+1 (415) 555-0188",
     specialty: "Clinical Psychology",
     dateInvited: "2026-09-10",
     status: "Credentialing Started",
@@ -49,6 +60,7 @@ const INITIAL_REFERRALS: Referral[] = [
     id: "ref-3",
     name: "Dr. Priya Sharma",
     email: "psharma@baybehavioral.com",
+    phone: "+1 (212) 555-0192",
     specialty: "LCSW / Psychotherapy",
     dateInvited: "2026-09-12",
     status: "Signed Up",
@@ -58,12 +70,12 @@ const INITIAL_REFERRALS: Referral[] = [
     id: "ref-4",
     name: "Dr. David Miller",
     email: "d.miller@metrohealth.org",
+    phone: "+1 (617) 555-0129",
     specialty: "Primary Care / Family Medicine",
     dateInvited: "2026-09-13",
     status: "Pending Invite",
   },
 ];
-
 
 const ReferralContext = createContext<ReferralContextType | undefined>(undefined);
 
@@ -98,27 +110,52 @@ export function ReferralProvider({ children }: { children: ReactNode }) {
   const remainingCount = Math.max(0, targetCount - completedCount);
   const isPriorityBoosted = completedCount >= targetCount;
 
-  const addReferral = (name: string, email: string, specialty?: string) => {
-    const trimmedEmail = email.trim().toLowerCase();
-    if (!trimmedEmail) return false;
-
-    // Check duplicate
-    if (referrals.some((r) => r.email.toLowerCase() === trimmedEmail)) {
-      return false;
-    }
-
+  const addMultipleReferrals = (
+    invites: ReferralInviteInput[]
+  ): { added: number; skipped: number } => {
     const today = new Date().toISOString().split("T")[0];
-    const newRef: Referral = {
-      id: `ref-${Date.now()}`,
-      name: name.trim() || trimmedEmail.split("@")[0],
-      email: trimmedEmail,
-      specialty: specialty?.trim() || "Mental Health / Physician",
-      dateInvited: today,
-      status: "Pending Invite",
-    };
+    let addedCount = 0;
+    let skippedCount = 0;
 
-    setReferrals((prev) => [newRef, ...prev]);
-    return true;
+    setReferrals((prev) => {
+      const existingEmails = new Set(prev.map((r) => r.email.toLowerCase()));
+      const batchEmails = new Set<string>();
+      const newItems: Referral[] = [];
+
+      for (const inv of invites) {
+        const trimmedEmail = inv.email.trim().toLowerCase();
+        if (!trimmedEmail || !trimmedEmail.includes("@")) {
+          skippedCount++;
+          continue;
+        }
+
+        if (existingEmails.has(trimmedEmail) || batchEmails.has(trimmedEmail)) {
+          skippedCount++;
+          continue;
+        }
+
+        batchEmails.add(trimmedEmail);
+        addedCount++;
+        newItems.push({
+          id: `ref-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+          name: inv.name.trim() || trimmedEmail.split("@")[0],
+          email: trimmedEmail,
+          phone: inv.phone?.trim() || undefined,
+          specialty: inv.specialty?.trim() || "Healthcare Provider",
+          dateInvited: today,
+          status: "Pending Invite",
+        });
+      }
+
+      return [...newItems, ...prev];
+    });
+
+    return { added: addedCount, skipped: skippedCount };
+  };
+
+  const addReferral = (name: string, email: string, phone?: string, specialty?: string) => {
+    const res = addMultipleReferrals([{ name, email, phone, specialty }]);
+    return res.added > 0;
   };
 
   const simulateStatusChange = (id: string, newStatus: Referral["status"]) => {
@@ -165,6 +202,7 @@ export function ReferralProvider({ children }: { children: ReactNode }) {
         remainingCount,
         isPriorityBoosted,
         addReferral,
+        addMultipleReferrals,
         simulateStatusChange,
         resendInvite,
         resetToDefaults,

@@ -28,6 +28,7 @@ export function InsuranceForm({
     "UnitedHealthcare",
     "Blue Cross Blue Shield",
   ]);
+  const [enrollInAllStatePayors, setEnrollInAllStatePayors] = useState<boolean>(false);
   const [hasIAAccount, setHasIAAccount] = useState<string>("");
   const [hasOneHealthcareId, setHasOneHealthcareId] = useState<string>("");
   const [hasAvailityAccount, setHasAvailityAccount] = useState<string>("");
@@ -42,6 +43,7 @@ export function InsuranceForm({
     onNext({
       currentPanels,
       desiredCarriers,
+      enrollInAllStatePayors,
       hasIAAccount,
       hasOneHealthcareId,
       hasAvailityAccount,
@@ -127,11 +129,45 @@ export function InsuranceForm({
             label="Desired Insurance Carriers"
             options={insuranceOptions.filter((opt) => opt !== "None")}
             value={desiredCarriers}
-            onChange={setDesiredCarriers}
+            onChange={(selected) => {
+              setDesiredCarriers(selected);
+              const allCarriers = insuranceOptions.filter((opt) => opt !== "None");
+              if (selected.length < allCarriers.length) {
+                setEnrollInAllStatePayors(false);
+              } else if (selected.length === allCarriers.length) {
+                setEnrollInAllStatePayors(true);
+              }
+            }}
             placeholder="Select desired carriers..."
             helperText="Choose all insurance payors you want to enroll or credential with"
             required
           />
+
+          {/* Provider Consent Checkbox */}
+          <div className="mt-3 flex items-start gap-2.5 p-3 rounded-xl border border-gray-200 bg-gray-50/70 hover:bg-[#F0F7FF] hover:border-[#2196F3]/40 transition-all">
+            <input
+              type="checkbox"
+              id="enrollInAllStatePayors"
+              name="enrollInAllStatePayors"
+              checked={enrollInAllStatePayors}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                setEnrollInAllStatePayors(checked);
+                if (checked) {
+                  const allCarriers = insuranceOptions.filter((opt) => opt !== "None");
+                  setDesiredCarriers(allCarriers);
+                }
+              }}
+              className="mt-0.5 w-4 h-4 text-[#2196F3] border-gray-300 rounded focus:ring-[#2196F3] cursor-pointer"
+            />
+            <label
+              htmlFor="enrollInAllStatePayors"
+              className="text-xs sm:text-sm font-medium text-gray-800 cursor-pointer select-none leading-snug"
+            >
+              Enroll me in all available insurance plans/payors in my state
+            </label>
+          </div>
+
           <ContextualHelpLink
             slug="choosing-commercial-vs-government-health-plans"
             label="Choosing commercial vs. government health plans for your practice"

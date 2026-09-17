@@ -248,7 +248,7 @@ export function ProviderAgreementReleaseForm({
                   $0 Credentialing Fee
                 </span>
                 <p className="text-xs text-gray-600 mt-0.5">
-                  Mantra provides client referrals (B2C, B2B, insurance), handles insurance billing natively, receives disbursements,
+                  Mantra provides client referrals (B2C, B2B, insurance) (subject to availability), handles insurance billing natively, receives disbursements,
                   and remits agreed provider payouts. Mantra manages portal logins solely for the duration of engagement.
                 </p>
               </div>
