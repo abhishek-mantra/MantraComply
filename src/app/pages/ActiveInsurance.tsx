@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Download, ChevronLeft, Settings, X } from "lucide-react";
+import { Search, Download, ChevronLeft, DollarSign } from "lucide-react";
 
 interface InsuranceRequest {
   id: number;
@@ -101,23 +101,9 @@ const getRatesForInsurance = (insuranceId: number): Rate[] => {
   }));
 };
 
-const STATUS_OPTIONS = [
-  "Intake Prep",
-  "Ready for Intake",
-  "Intake Assigned",
-  "Input Required",
-  "Request Stopped",
-  "Requested",
-  "Completed",
-];
-
-const PAYER_TYPE_OPTIONS = ["Government", "Insurance", "Employer"];
-
 export function ActiveInsurance() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedInsurance, setSelectedInsurance] = useState<InsuranceRequest | null>(null);
-  const [settingsInsurance, setSettingsInsurance] = useState<InsuranceRequest | null>(null);
-  const [settingsForm, setSettingsForm] = useState<InsuranceRequest | null>(null);
 
   const filteredData = DUMMY_DATA.filter((item) =>
     Object.values(item).some((val) =>
@@ -154,22 +140,6 @@ export function ActiveInsurance() {
     setSelectedInsurance(null);
   };
 
-  const openSettings = (e: React.MouseEvent, insurance: InsuranceRequest) => {
-    e.stopPropagation();
-    setSettingsInsurance(insurance);
-    setSettingsForm({ ...insurance });
-  };
-
-  const closeSettings = () => {
-    setSettingsInsurance(null);
-    setSettingsForm(null);
-  };
-
-  const saveSettings = () => {
-    // In a real app this would persist; here we just close
-    closeSettings();
-  };
-
   if (selectedInsurance) {
     const rates = getRatesForInsurance(selectedInsurance.id);
 
@@ -178,7 +148,7 @@ export function ActiveInsurance() {
         <div className="mb-6">
           <button
             onClick={handleBackToList}
-            className="flex items-center gap-2 text-[#2196F3] hover:text-[#1976D2] mb-4 transition-colors"
+            className="flex items-center gap-2 text-[#2196F3] hover:text-[#1976D2] mb-4 transition-colors cursor-pointer"
           >
             <ChevronLeft className="w-5 h-5" />
             <span className="font-medium">Back to Active Insurance</span>
@@ -260,7 +230,7 @@ export function ActiveInsurance() {
     <div className="max-w-7xl mx-auto">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-gray-900 mb-2">Active Insurance</h1>
-        <p className="text-gray-600">Track credentialing requests and insurance status. Click on any insurance to view rates.</p>
+        <p className="text-gray-600">Track credentialing requests and insurance status. Click "View Rates" on any insurance to see service codes and reimbursement rates.</p>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -276,7 +246,7 @@ export function ActiveInsurance() {
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none"
             />
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 bg-[#2196F3] text-white rounded-md text-sm font-medium hover:bg-[#1976D2] transition-colors">
+          <button className="flex items-center gap-2 px-4 py-2 bg-[#2196F3] text-white rounded-md text-sm font-medium hover:bg-[#1976D2] transition-colors cursor-pointer">
             <Download className="w-4 h-4" />
             Download
           </button>
@@ -305,7 +275,9 @@ export function ActiveInsurance() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                   Revalidation Date
                 </th>
-                <th className="w-10 px-4 py-3"></th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  Rates
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -335,13 +307,19 @@ export function ActiveInsurance() {
                   <td className="px-6 py-4 text-sm text-gray-900">{item.payerType}</td>
                   <td className="px-6 py-4 text-sm text-gray-900">{item.effectiveDate}</td>
                   <td className="px-6 py-4 text-sm text-gray-900">{item.revalidationDate}</td>
-                  <td className="px-4 py-4">
+                  <td className="px-6 py-4 text-right">
                     <button
-                      onClick={(e) => openSettings(e, item)}
-                      className="text-gray-400 hover:text-[#2196F3] transition-colors"
-                      title="Settings"
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedInsurance(item);
+                      }}
+                      id={`view-rates-btn-${item.id}`}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-[#2196F3] text-[#2196F3] hover:text-white text-xs font-semibold border border-blue-200 hover:border-[#2196F3] transition-all shadow-2xs cursor-pointer whitespace-nowrap"
+                      title={`View service codes & rates for ${item.payer}`}
                     >
-                      <Settings className="w-4 h-4" />
+                      <DollarSign className="w-3.5 h-3.5" />
+                      <span>View Rates</span>
                     </button>
                   </td>
                 </tr>
@@ -353,114 +331,6 @@ export function ActiveInsurance() {
         {filteredData.length === 0 && (
           <div className="p-12 text-center">
             <p className="text-gray-500">No insurance requests found.</p>
-          </div>
-        )}
-
-        {/* Settings Modal */}
-        {settingsInsurance && settingsForm && (
-          <div
-            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-            onClick={closeSettings}
-          >
-            <div
-              className="bg-white rounded-xl shadow-xl w-full max-w-lg"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Modal Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">Insurance Settings</h2>
-                  <p className="text-sm text-gray-500 mt-0.5">{settingsInsurance.payer}</p>
-                </div>
-                <button
-                  onClick={closeSettings}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Modal Body */}
-              <div className="px-6 py-5 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">State</label>
-                    <input
-                      type="text"
-                      value={settingsForm.state}
-                      onChange={(e) => setSettingsForm({ ...settingsForm, state: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none"
-                    />
-                  </div>
-                </div>
-
-
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Status</label>
-                  <select
-                    value={settingsForm.status}
-                    onChange={(e) => setSettingsForm({ ...settingsForm, status: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none bg-white"
-                  >
-                    {STATUS_OPTIONS.map((s) => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Payer Type</label>
-                  <select
-                    value={settingsForm.payerType}
-                    onChange={(e) => setSettingsForm({ ...settingsForm, payerType: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none bg-white"
-                  >
-                    {PAYER_TYPE_OPTIONS.map((t) => (
-                      <option key={t} value={t}>{t}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Effective Date</label>
-                    <input
-                      type="text"
-                      value={settingsForm.effectiveDate}
-                      onChange={(e) => setSettingsForm({ ...settingsForm, effectiveDate: e.target.value })}
-                      placeholder="MM/DD/YYYY or N/A"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Revalidation Date</label>
-                    <input
-                      type="text"
-                      value={settingsForm.revalidationDate}
-                      onChange={(e) => setSettingsForm({ ...settingsForm, revalidationDate: e.target.value })}
-                      placeholder="MM/DD/YYYY or -"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Modal Footer */}
-              <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-xl">
-                <button
-                  onClick={closeSettings}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={saveSettings}
-                  className="px-4 py-2 text-sm font-medium text-white bg-[#2196F3] rounded-md hover:bg-[#1976D2] transition-colors"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </div>
           </div>
         )}
 

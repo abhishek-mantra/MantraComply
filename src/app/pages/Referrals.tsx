@@ -4,21 +4,19 @@ import {
   Copy,
   Check,
   RotateCcw,
-  Send,
-  Plus,
-  Trash2,
   Users,
   CheckCircle,
   Zap,
+  Mail,
 } from "lucide-react";
-import { useReferrals, ReferralInviteInput } from "../contexts/ReferralContext";
-
-interface ColleagueRow {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-}
+import { useReferrals } from "../contexts/ReferralContext";
+import {
+  InviteColleaguesModal,
+  WhatsAppIcon,
+  FacebookIcon,
+  InstagramIcon,
+  SHARE_PROMO_TEXT,
+} from "../components/InviteColleaguesModal";
 
 export function Referrals() {
   const {
@@ -28,101 +26,55 @@ export function Referrals() {
     completedCount,
     remainingCount,
     isPriorityBoosted,
-    addMultipleReferrals,
     simulateStatusChange,
     resendInvite,
     resetToDefaults,
   } = useReferrals();
 
-  const [copied, setCopied] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [copiedMessage, setCopiedMessage] = useState(false);
 
-  // Multi-invite rows
-  const [rows, setRows] = useState<ColleagueRow[]>([
-    { id: "row-1", name: "", email: "", phone: "" },
-  ]);
+  const fullShareMessage = `${SHARE_PROMO_TEXT} ${referralLink}`;
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
+    setTimeout(() => setToastMessage(null), 3500);
   };
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(referralLink);
-    setCopied(true);
-    showToast("Referral link copied to clipboard");
-    setTimeout(() => setCopied(false), 2000);
+  const handleWhatsAppShare = () => {
+    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(fullShareMessage)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+    showToast("Opening WhatsApp with your referral invitation...");
   };
 
-  const handleAddRow = () => {
-    setRows((prev) => [
-      ...prev,
-      {
-        id: `row-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
-        name: "",
-        email: "",
-        phone: "",
-      },
-    ]);
+  const handleFacebookShare = () => {
+    const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(referralLink)}&quote=${encodeURIComponent(fullShareMessage)}`;
+    window.open(url, "_blank", "noopener,noreferrer,width=600,height=500");
+    showToast("Opening Facebook share dialog...");
   };
 
-  const handleRemoveRow = (id: string) => {
-    if (rows.length === 1) {
-      setRows([{ id: "row-1", name: "", email: "", phone: "" }]);
-      return;
-    }
-    setRows((prev) => prev.filter((r) => r.id !== id));
-  };
-
-  const handleRowChange = (id: string, field: keyof ColleagueRow, value: string) => {
-    setRows((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, [field]: value } : r))
-    );
-  };
-
-  const handleSendInvites = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const validInvites: ReferralInviteInput[] = rows
-      .filter((r) => r.email.trim() && r.email.includes("@"))
-      .map((r) => ({
-        name: r.name.trim() || r.email.split("@")[0],
-        email: r.email.trim(),
-        phone: r.phone.trim() || undefined,
-      }));
-
-    if (validInvites.length === 0) {
-      showToast("Please enter at least one colleague's name and email");
-      return;
-    }
-
-    setIsSubmitting(true);
+  const handleInstagramShare = () => {
+    navigator.clipboard.writeText(fullShareMessage);
+    showToast("Referral message & link copied to clipboard! Opening Instagram...");
     setTimeout(() => {
-      const res = addMultipleReferrals(validInvites);
-      setIsSubmitting(false);
-
-      if (res.added > 0) {
-        showToast(
-          res.added === 1
-            ? "Invite sent successfully"
-            : `${res.added} colleague invites sent successfully`
-        );
-        setRows([{ id: "row-1", name: "", email: "", phone: "" }]);
-      } else {
-        showToast("The email address(es) provided have already been invited");
-      }
-    }, 300);
+      window.open("https://www.instagram.com/", "_blank", "noopener,noreferrer");
+    }, 450);
   };
 
-  const filledCount = rows.filter((r) => r.email.trim().includes("@")).length;
+  const handleCopyShareMessage = () => {
+    navigator.clipboard.writeText(fullShareMessage);
+    setCopiedMessage(true);
+    showToast("Referral invitation message & link copied!");
+    setTimeout(() => setCopiedMessage(false), 2000);
+  };
 
   return (
     <div className="max-w-6xl mx-auto space-y-7 pb-16">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-xl text-sm font-semibold animate-fade-in border border-slate-800">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl text-sm font-semibold animate-fade-in border border-slate-800">
+          <CheckCircle2 className="w-4.5 h-4.5 text-emerald-400 shrink-0" />
           <span>{toastMessage}</span>
         </div>
       )}
@@ -134,7 +86,7 @@ export function Referrals() {
             Provider Growth &amp; Acceleration
           </span>
           <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-            Refer &amp; Boost
+            Refer &amp; Expedite
           </h1>
         </div>
 
@@ -152,9 +104,10 @@ export function Referrals() {
       </div>
 
       {/* ========================================================================= */}
-      {/* HERO: VISUAL SPEED COMPARISON GAUGE & 5-SEAT MILESTONE STEPPER            */}
+      {/* HERO: VALUE PROPOSITION & SPEED COMPARISON GAUGE                          */}
+      {/* (5-Seat Milestone Stepper has been removed as requested in Image 1)       */}
       {/* ========================================================================= */}
-      <div className="bg-white rounded-3xl border border-slate-200/90 p-7 sm:p-9 shadow-xs space-y-7">
+      <div className="bg-white rounded-3xl border border-slate-200/90 p-7 sm:p-9 shadow-xs space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
           {/* Left Column: Clear Value Proposition */}
           <div className="lg:col-span-7 space-y-4">
@@ -229,207 +182,118 @@ export function Referrals() {
             </div>
           </div>
         </div>
-
-        {/* 5-Seat Milestone Stepper */}
-        <div className="pt-6 border-t border-slate-100 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <Users className="size-4 text-[#043570]" />
-              <span className="text-sm font-bold text-slate-900">
-                {isPriorityBoosted
-                  ? "🏆 Priority Review Active (14–30 Days)"
-                  : `${completedCount} of ${targetCount} Peer Seats Unlocked`}
-              </span>
-            </div>
-            <span className="text-xs font-semibold text-slate-500">
-              {isPriorityBoosted
-                ? "Your file has been promoted to daily CVO follow-up"
-                : `${remainingCount} more colleague signup${remainingCount === 1 ? "" : "s"} needed`}
-            </span>
-          </div>
-
-          {/* 5 Interactive Seat Slots */}
-          <div className="grid grid-cols-5 gap-2 sm:gap-3">
-            {[1, 2, 3, 4, 5].map((seat) => {
-              const isFilled = seat <= completedCount;
-              const isFinal = seat === 5;
-              const refAtSeat = referrals[seat - 1];
-
-              return (
-                <div
-                  key={seat}
-                  className={`p-3 rounded-2xl border text-center transition-all ${
-                    isFilled
-                      ? "bg-emerald-50/70 border-emerald-300 shadow-2xs"
-                      : isFinal
-                      ? "bg-amber-50/60 border-amber-300 border-dashed"
-                      : "bg-slate-50/70 border-slate-200"
-                  }`}
-                >
-                  <div
-                    className={`size-9 mx-auto rounded-xl flex items-center justify-center font-bold text-xs transition-transform ${
-                      isFilled
-                        ? "bg-emerald-600 text-white shadow-xs"
-                        : isFinal
-                        ? "bg-amber-400 text-amber-950 font-black shadow-xs"
-                        : "bg-white text-slate-400 border border-slate-200"
-                    }`}
-                  >
-                    {isFilled ? <Check className="size-4.5 stroke-3" /> : isFinal ? "🏆" : seat}
-                  </div>
-
-                  <div className="mt-2">
-                    <div className="text-xs font-bold text-slate-900 truncate">
-                      {isFinal
-                        ? "Fast-Track"
-                        : refAtSeat
-                        ? refAtSeat.name.split(" ")[1] || refAtSeat.name
-                        : `Seat ${seat}`}
-                    </div>
-                    <span
-                      className={`text-[10px] font-semibold block truncate ${
-                        isFilled
-                          ? "text-emerald-700"
-                          : isFinal
-                          ? "text-amber-800 font-bold"
-                          : "text-slate-400"
-                      }`}
-                    >
-                      {isFilled ? "Joined" : isFinal ? "14–30 Days" : "Available"}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
       </div>
 
       {/* ========================================================================= */}
-      {/* STREAMLINED INVITE ACTION CARD                                            */}
+      {/* INVITE ACTION & SOCIAL SHARE SECTION                                      */}
+      {/* (Form opened in popup on click; plain link replaced by social logos)       */}
       {/* ========================================================================= */}
-      <div className="bg-white rounded-3xl border border-slate-200/90 p-7 sm:p-9 shadow-xs space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-5">
-          <div>
-            <h3 className="text-lg font-bold text-slate-900">
-              Invite Healthcare Colleagues
+      <div className="bg-white rounded-3xl border border-slate-200/90 p-7 sm:p-8 shadow-xs space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 border-b border-slate-100 pb-6">
+          <div className="space-y-1">
+            <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <Users className="size-5 text-[#043570]" />
+              <span>Invite Healthcare Colleagues</span>
             </h3>
-            <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-              Send invitations directly to colleagues or share your private fast-track link.
+            <p className="text-xs sm:text-sm text-slate-500 max-w-xl">
+              Send email invitations directly to colleagues or share your private expedited link across social channels to unlock 14–30 day credentialing.
             </p>
           </div>
 
           <button
             type="button"
-            onClick={handleAddRow}
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#043570] hover:text-[#00c0ff] bg-blue-50 hover:bg-blue-100/80 px-3.5 py-2 rounded-xl border border-blue-200 transition-colors cursor-pointer self-start sm:self-auto"
+            onClick={() => setIsInviteModalOpen(true)}
+            id="open-invite-popup-btn"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#043570] hover:bg-[#06428c] text-white rounded-xl text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition-all cursor-pointer shrink-0"
           >
-            <Plus className="size-3.5" />
-            <span>Add Another Colleague</span>
+            <Mail className="size-4" />
+            <span>Invite Colleagues</span>
           </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSendInvites} className="space-y-4">
-          <div className="space-y-3">
-            {rows.map((row, idx) => (
-              <div
-                key={row.id}
-                className="p-3.5 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-white hover:border-slate-300 transition-all space-y-2"
-              >
-                <div className="flex items-center justify-between text-xs text-slate-500">
-                  <span className="font-bold text-slate-700">Colleague {idx + 1}</span>
-                  {rows.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveRow(row.id)}
-                      className="text-slate-400 hover:text-rose-600 transition-colors p-0.5 cursor-pointer"
-                      title="Remove colleague"
-                    >
-                      <Trash2 className="size-3.5" />
-                    </button>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-                  <div className="sm:col-span-4">
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
-                      Full Name *
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Dr. Sarah Jenkins"
-                      value={row.name}
-                      onChange={(e) => handleRowChange(row.id, "name", e.target.value)}
-                      className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3 py-2.5 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#043570]"
-                    />
-                  </div>
-
-                  <div className="sm:col-span-5">
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
-                      Work Email *
-                    </label>
-                    <input
-                      type="email"
-                      placeholder="s.jenkins@hospital.org"
-                      value={row.email}
-                      onChange={(e) => handleRowChange(row.id, "email", e.target.value)}
-                      className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3 py-2.5 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#043570]"
-                    />
-                  </div>
-
-                  <div className="sm:col-span-3">
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
-                      Phone (Optional)
-                    </label>
-                    <input
-                      type="tel"
-                      placeholder="+1 (555) 000-0000"
-                      value={row.phone}
-                      onChange={(e) => handleRowChange(row.id, "phone", e.target.value)}
-                      className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3 py-2.5 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#043570]"
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Action Row: Link Copy & Send Button */}
-          <div className="pt-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-            {/* Share Link Bar */}
-            <div className="flex-1 flex items-center bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs">
-              <span className="text-slate-400 mr-2 font-bold uppercase text-[10px]">Share Link:</span>
-              <span className="text-slate-800 font-mono font-bold truncate select-all flex-1">
-                {referralLink}
+        {/* Social Sharing Logos & Promo Preview */}
+        <div className="bg-slate-50/80 rounded-2xl border border-slate-200 p-5 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <span className="text-xs font-bold text-slate-800 block">
+                Share Directly on Social Networks
               </span>
-              <button
-                type="button"
-                onClick={handleCopyLink}
-                className="ml-2 text-[#043570] hover:text-[#00c0ff] font-bold flex items-center gap-1 transition-colors px-2.5 py-1 rounded-lg hover:bg-white cursor-pointer"
-              >
-                {copied ? <Check className="size-3.5 text-emerald-600" /> : <Copy className="size-3.5" />}
-                <span>{copied ? "Copied" : "Copy"}</span>
-              </button>
+              <span className="text-[11px] text-slate-500">
+                Click any logo to share the referral invitation with your network
+              </span>
             </div>
 
-            {/* Send Button */}
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-7 py-3 bg-[#043570] hover:bg-[#06428c] text-white rounded-xl text-xs sm:text-sm font-bold inline-flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer disabled:opacity-50"
-            >
-              <Send className="size-3.5" />
-              <span>
-                {isSubmitting
-                  ? "Sending..."
-                  : filledCount > 1
-                  ? `Send ${filledCount} Invites & Fast-Track`
-                  : "Send Invites & Fast-Track"}
-              </span>
-            </button>
+            <div className="flex items-center flex-wrap gap-2.5">
+              {/* WhatsApp Logo Button */}
+              <button
+                type="button"
+                onClick={handleWhatsAppShare}
+                id="card-share-whatsapp-btn"
+                className="group flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-[#25D366] text-[#25D366] hover:text-white border border-slate-200 hover:border-[#25D366] font-bold text-xs shadow-2xs transition-all cursor-pointer"
+                title="Share on WhatsApp"
+              >
+                <WhatsAppIcon className="size-4.5" />
+                <span>WhatsApp</span>
+              </button>
+
+              {/* Facebook Logo Button */}
+              <button
+                type="button"
+                onClick={handleFacebookShare}
+                id="card-share-facebook-btn"
+                className="group flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-[#1877F2] text-[#1877F2] hover:text-white border border-slate-200 hover:border-[#1877F2] font-bold text-xs shadow-2xs transition-all cursor-pointer"
+                title="Share on Facebook"
+              >
+                <FacebookIcon className="size-4.5" />
+                <span>Facebook</span>
+              </button>
+
+              {/* Instagram Logo Button */}
+              <button
+                type="button"
+                onClick={handleInstagramShare}
+                id="card-share-instagram-btn"
+                className="group flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-gradient-to-tr hover:from-[#FD1D1D] hover:to-[#833AB4] text-[#E1306C] hover:text-white border border-slate-200 hover:border-[#E1306C] font-bold text-xs shadow-2xs transition-all cursor-pointer"
+                title="Copy message & open Instagram"
+              >
+                <InstagramIcon className="size-4.5" />
+                <span>Instagram</span>
+              </button>
+
+              {/* Copy Message / Link Button */}
+              <button
+                type="button"
+                onClick={handleCopyShareMessage}
+                id="card-copy-message-btn"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-bold text-xs shadow-2xs transition-all cursor-pointer"
+                title="Copy promo message and link"
+              >
+                {copiedMessage ? (
+                  <Check className="size-4 text-emerald-600 stroke-3" />
+                ) : (
+                  <Copy className="size-4 text-slate-400" />
+                )}
+                <span>{copiedMessage ? "Copied" : "Copy Message"}</span>
+              </button>
+            </div>
           </div>
-        </form>
+
+          {/* Preview of the Message that will be shared */}
+          <div className="bg-white rounded-xl border border-slate-200/90 p-3.5 text-xs text-slate-600 flex items-start gap-3">
+            <div className="size-6 rounded-lg bg-blue-50 flex items-center justify-center text-[#043570] font-bold text-[11px] shrink-0 mt-0.5">
+              💬
+            </div>
+            <div className="space-y-1 overflow-hidden">
+              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">
+                Sample message shared:
+              </span>
+              <p className="font-medium text-slate-800 break-words leading-relaxed select-all">
+                "{SHARE_PROMO_TEXT}{" "}
+                <span className="text-[#043570] font-semibold underline">{referralLink}</span>"
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* ========================================================================= */}
@@ -442,7 +306,7 @@ export function Referrals() {
               Invited Colleagues ({referrals.length})
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              {completedCount} joined • {remainingCount} more needed to reach Priority Review (14–30 Days)
+              {completedCount} joined • {remainingCount} more needed to reach Expedited Review (14–30 Days)
             </p>
           </div>
 
@@ -537,6 +401,15 @@ export function Referrals() {
           </table>
         </div>
       </div>
+
+      {/* ========================================================================= */}
+      {/* POPUP INVITE MODAL                                                        */}
+      {/* ========================================================================= */}
+      <InviteColleaguesModal
+        isOpen={isInviteModalOpen}
+        onClose={() => setIsInviteModalOpen(false)}
+        onToast={showToast}
+      />
     </div>
   );
 }

@@ -119,7 +119,7 @@ export function ReferralBoostModal({
             onClick={handleGoToReferrals}
             className="w-full sm:w-auto px-7 py-3 rounded-xl bg-[#043570] hover:bg-[#06428c] text-white font-bold text-xs sm:text-sm inline-flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer group order-1 sm:order-2"
           >
-            <span>Go to Refer &amp; Boost Screen</span>
+            <span>Go to Refer &amp; Expedite</span>
             <ArrowRight className="size-4 group-hover:translate-x-0.5 transition-transform" />
           </button>
         </div>

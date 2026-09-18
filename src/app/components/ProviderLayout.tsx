@@ -13,10 +13,10 @@ export function ProviderLayout() {
     { name: "Tasks", path: "/provider/tasks", icon: ListTodo },
     { name: "Active Insurance", path: "/provider/active-insurance", icon: Shield },
     {
-      name: "Refer & Boost",
+      name: "Refer & Expedite",
       path: "/provider/referrals",
       icon: Zap,
-      badge: isPriorityBoosted ? "Boosted ⚡" : `${completedCount}/5`,
+      badge: isPriorityBoosted ? "Expedited ⚡" : `${completedCount}/5`,
       badgeColor: isPriorityBoosted ? "bg-emerald-100 text-emerald-800 border-emerald-300" : "bg-blue-100 text-[#2196F3] border-blue-200",
     },
   ];
