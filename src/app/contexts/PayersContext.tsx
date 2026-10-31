@@ -64,16 +64,16 @@ const PayersContext = createContext<PayersContextType | undefined>(undefined);
 
 export function PayersProvider({ children }: { children: ReactNode }) {
   const [payers] = useState<Payer[]>([
-    { id: "1", name: "Aetna", type: "Commercial", states: "Multi-state", contractType: "Participating", enrollmentType: "Electronic", status: "Enrolled" },
-    { id: "2", name: "Anthem (Health Net of CA)", type: "Commercial", states: "CA", contractType: "Participating", enrollmentType: "Paper", status: "Enrolled" },
-    { id: "3", name: "Cigna", type: "Commercial", states: "Multi-state", contractType: "Non-Par", enrollmentType: "Electronic", status: "Enrolled" },
-    { id: "4", name: "Medicare", type: "Government", states: "All States", contractType: "Participating", enrollmentType: "Electronic", status: "Enrolled" },
-    { id: "5", name: "Medicaid - FL", type: "Government", states: "FL", contractType: "Participating", enrollmentType: "Paper", status: "In-Progress" },
-    { id: "6", name: "Medicaid - WY", type: "Government", states: "WY", contractType: "Participating", enrollmentType: "Paper", status: "Enrolled" },
-    { id: "7", name: "Optum", type: "Managed Care", states: "AZ, TX, FL", contractType: "Participating", enrollmentType: "Electronic", status: "Enrolled" },
-    { id: "8", name: "Humana", type: "Commercial", states: "Multi-state", contractType: "Participating", enrollmentType: "Electronic", status: "In-Progress" },
-    { id: "9", name: "UnitedHealthcare", type: "Commercial", states: "Multi-state", contractType: "Participating", enrollmentType: "Electronic", status: "Enrolled" },
-    { id: "10", name: "Magellan", type: "Managed Care", states: "Multi-state", contractType: "Non-Par", enrollmentType: "Paper", status: "Inactive" },
+    { id: "1", name: "Aetna", type: "Commercial", states: "—", contractType: "Commercial", enrollmentType: "Electronic", status: "Inactive" },
+    { id: "2", name: "AmeriHealth Caritas", type: "Commercial", states: "—", contractType: "Commercial", enrollmentType: "Electronic", status: "Inactive" },
+    { id: "3", name: "Blue Cross Blue Shield", type: "Commercial", states: "—", contractType: "Commercial", enrollmentType: "Electronic", status: "Inactive" },
+    { id: "4", name: "Blue Shield of California", type: "Commercial", states: "—", contractType: "Commercial", enrollmentType: "Electronic", status: "Inactive" },
+    { id: "5", name: "Bright Health", type: "Commercial", states: "—", contractType: "Commercial", enrollmentType: "Electronic", status: "Inactive" },
+    { id: "6", name: "Bupa", type: "Commercial", states: "—", contractType: "Commercial", enrollmentType: "Electronic", status: "Inactive" },
+    { id: "7", name: "CareFirst BlueCross BlueShield", type: "Commercial", states: "—", contractType: "Commercial", enrollmentType: "Electronic", status: "Inactive" },
+    { id: "8", name: "Carelon (Beacon Health Options)", type: "Commercial", states: "—", contractType: "Commercial", enrollmentType: "Electronic", status: "Inactive" },
+    { id: "9", name: "Centene (Ambetter)", type: "Commercial", states: "—", contractType: "Commercial", enrollmentType: "Electronic", status: "Inactive" },
+    { id: "10", name: "Cigna", type: "Commercial", states: "—", contractType: "Commercial", enrollmentType: "Electronic", status: "Inactive" },
   ]);
 
   const [providers] = useState<Provider[]>([

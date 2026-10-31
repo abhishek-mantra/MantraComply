@@ -22,7 +22,9 @@ import Licenses from "./pages/admin/Licenses";
 import Documents from "./pages/admin/Documents";
 import Credentialing from "./pages/admin/Credentialing";
 import Payers from "./pages/admin/Payers";
-import Settings from "./pages/admin/Settings";
+import Credits from "./pages/admin/Credits";
+import Webhooks from "./pages/admin/Webhooks";
+import Organizations from "./pages/admin/Organizations";
 
 export const router = createBrowserRouter([
   {
@@ -66,7 +68,10 @@ export const router = createBrowserRouter([
       { path: "documents", Component: Documents },
       { path: "credentialing", Component: Credentialing },
       { path: "payers", Component: Payers },
-      { path: "settings", Component: Settings },
+      { path: "credits", Component: Credits },
+      { path: "webhooks", Component: Webhooks },
+      { path: "organizations", Component: Organizations },
+      { path: "settings", element: <Navigate to="/admin/providers" replace /> },
     ],
   },
 ]);

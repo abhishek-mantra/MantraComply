@@ -175,6 +175,7 @@ export function GroupDetail() {
     firstName: "",
     lastName: "",
     email: "",
+    role: "Provider",
     sendInvite: true,
   });
 
@@ -1232,6 +1233,26 @@ export function GroupDetail() {
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none"
               placeholder="Enter email"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Select Role
+            </label>
+            <div className="relative">
+              <select
+                value={newProvider.role}
+                onChange={(e) => setNewProvider({ ...newProvider, role: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none bg-white appearance-none pr-8 cursor-pointer text-gray-800"
+              >
+                <option value="Provider">Provider</option>
+                <option value="Admin">Admin</option>
+                <option value="Auditor">Auditor</option>
+                <option value="Team Manager">Team Manager</option>
+                <option value="Team Viewer">Team Viewer</option>
+              </select>
+              <ChevronDown size={14} className="text-gray-400 absolute right-3.5 top-3.5 pointer-events-none" />
+            </div>
           </div>
 
           <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-lg">

@@ -146,83 +146,83 @@ export function Credentialing() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-2">Credentialing</h1>
-        <p className="text-gray-600">Manage credentialing requests and track progress</p>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Credentialing</h1>
+          <p className="text-sm text-gray-500 mt-1">Manage credentialing requests and track progress</p>
+        </div>
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="flex items-center gap-2 px-5 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-xl text-sm font-semibold shadow-sm transition-all cursor-pointer self-start sm:self-auto"
+        >
+          <Plus className="w-4 h-4" />
+          Add Credentialing Request
+        </button>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-200/80 shadow-sm overflow-hidden p-6 space-y-5">
         {/* Filters */}
-        <div className="p-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none"
-            >
-              <option>All Statuses</option>
-              <option>In Progress</option>
-              <option>Ready</option>
-              <option>Complete</option>
-              <option>Not Credential</option>
-            </select>
-            <select
-              value={requestTypeFilter}
-              onChange={(e) => setRequestTypeFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none"
-            >
-              <option>All Request Types</option>
-              <option>Initial Credentialing</option>
-              <option>Re-credentialing</option>
-              <option>CAQH Update</option>
-              <option>Provider Update</option>
-            </select>
-            <select
-              value={assigneeFilter}
-              onChange={(e) => setAssigneeFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none"
-            >
-              <option>All Assignees</option>
-              <option>Admin User</option>
-              <option>Unassigned</option>
-            </select>
-          </div>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 px-4 py-2 border border-[#2196F3] text-[#2196F3] rounded-md text-sm font-medium hover:bg-[#E3F2FD] transition-colors"
+        <div className="flex flex-wrap items-center gap-3">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 font-normal focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
           >
-            <Plus className="w-4 h-4" />
-            Add Credentialing Request
-          </button>
+            <option>All Statuses</option>
+            <option>In Progress</option>
+            <option>Ready</option>
+            <option>Complete</option>
+            <option>Not Credential</option>
+          </select>
+          <select
+            value={requestTypeFilter}
+            onChange={(e) => setRequestTypeFilter(e.target.value)}
+            className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 font-normal focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
+          >
+            <option>All Request Types</option>
+            <option>Initial Credentialing</option>
+            <option>Re-credentialing</option>
+            <option>CAQH Update</option>
+            <option>Provider Update</option>
+          </select>
+          <select
+            value={assigneeFilter}
+            onChange={(e) => setAssigneeFilter(e.target.value)}
+            className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 font-normal focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
+          >
+            <option>All Assignees</option>
+            <option>Admin User</option>
+            <option>Unassigned</option>
+          </select>
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                  Provider
+        <div className="overflow-x-auto rounded-xl border border-gray-200">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-[#0B2545] text-white">
+                <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a3a60]">
+                  PROVIDER
                 </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                    Payer
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                    State
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                    All
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                    Needs QC
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+                <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a3a60]">
+                  PAYER
+                </th>
+                <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a3a60]">
+                  STATE
+                </th>
+                <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a3a60]">
+                  STATUS
+                </th>
+                <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a3a60]">
+                  ALL
+                </th>
+                <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider">
+                  NEEDS QC
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-100">
                 {filteredItems.map((item) => (
                   <tr
                     key={item.id}

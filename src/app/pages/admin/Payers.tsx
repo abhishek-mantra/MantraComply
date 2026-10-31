@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Search, Download } from "lucide-react";
+import { Plus, Search, Download, Edit2 } from "lucide-react";
 import { usePayers } from "../../contexts/PayersContext";
 import { PayerBadge } from "../../components/payers/PayerBadge";
 import { EnrollmentStatusBadge } from "../../components/payers/EnrollmentStatusBadge";
@@ -25,7 +25,6 @@ export function Payers() {
   const [showAddPayerModal, setShowAddPayerModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [payerTypeFilter, setPayerTypeFilter] = useState("All");
-  const [editingPayerStatusId, setEditingPayerStatusId] = useState<string | null>(null);
   const { showToast } = useToast();
   
   const [newPayer, setNewPayer] = useState({
@@ -58,7 +57,7 @@ export function Payers() {
 
   const tabs = [
     { key: "list" as const, label: "Payer List" },
-    { key: "enrollments" as const, label: "Enrollments" },
+    { key: "enrollments" as const, label: "Enrollment Requests" },
   ];
 
   const handleRequestEnrollment = (data: any) => {
@@ -84,22 +83,24 @@ export function Payers() {
     });
 
     addEnrollmentRequests(requests);
+    showToast("Enrollment request submitted successfully", "success");
     setShowRequestModal(false);
     setActiveTab("enrollments");
   };
 
   const handleTerminate = (data: { terminationDate: string; reason: string; notes: string }) => {
     terminateEnrollment(terminateModalData.enrollmentId);
+    showToast("Enrollment terminated", "info");
     setTerminateModalData({ isOpen: false, enrollmentId: "", providerName: "", payerName: "" });
   };
 
   const handleAddPayer = () => {
-    if (!newPayer.name || !newPayer.type || !newPayer.states || !newPayer.contractType || !newPayer.enrollmentType) {
-      showToast("Please fill in all fields", "error");
+    if (!newPayer.name || !newPayer.type) {
+      showToast("Please fill in payer name and type", "error");
       return;
     }
 
-    showToast(`Payer "${newPayer.name}" added successfully`, "success");
+    showToast(`Payer "${newPayer.name}" requested successfully`, "success");
     setShowAddPayerModal(false);
     setNewPayer({
       name: "",
@@ -168,213 +169,237 @@ export function Payers() {
   );
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="mb-6 flex items-center justify-between">
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900 mb-2">Payers</h1>
-          <p className="text-gray-600">Manage payer enrollments and relationships</p>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Enrollments</h1>
+          <p className="text-sm text-gray-500 mt-1">Manage payer enrollments and relationships</p>
         </div>
-        <button
-          onClick={() => setShowRequestModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-[#2196F3] text-white rounded-md hover:bg-[#1976D2] transition-colors text-sm font-medium"
-        >
-          <Plus className="w-4 h-4" />
-          Request Enrollment
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowRequestModal(true)}
+            className="flex items-center gap-2 px-5 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-xl text-sm font-semibold shadow-sm transition-all cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            Request Enrollment
+          </button>
+          <button
+            onClick={() => setShowAddPayerModal(true)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-xl text-sm font-medium shadow-2xs transition-all cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            Request New Payer
+          </button>
+        </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        {/* Tabs */}
-        <div className="flex border-b border-gray-200 overflow-x-auto">
-          {tabs.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`px-6 py-3 text-sm font-medium transition-colors whitespace-nowrap ${
-                activeTab === tab.key
-                  ? "border-b-2 border-[#2196F3] text-[#2196F3]"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+      {/* Tabs */}
+      <div className="flex items-center gap-6 border-b border-gray-200">
+        {tabs.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`pb-3 text-sm font-semibold transition-all relative ${
+              activeTab === tab.key ? "text-[#2563EB]" : "text-gray-500 hover:text-gray-900"
+            }`}
+          >
+            {tab.label}
+            {activeTab === tab.key && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#2563EB] rounded-full" />
+            )}
+          </button>
+        ))}
+      </div>
 
-        {/* Content */}
-        <div className="p-6">
-          {/* TAB 1: PAYER LIST */}
-          {activeTab === "list" && (
-            <div className="space-y-4">
-              {/* Top Bar */}
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="relative flex-1 min-w-[200px]">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="text"
-                    placeholder="Search payers..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none text-sm"
-                  />
-                </div>
-
-                <button
-                  onClick={() => setShowAddPayerModal(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-[#2196F3] text-white rounded-md hover:bg-[#1976D2] transition-colors text-sm font-medium"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Payer
-                </button>
+      {/* Main Card with Filter Bar and Table */}
+      <div className="bg-white rounded-2xl border border-gray-200/80 shadow-sm overflow-hidden p-6 space-y-5">
+        {/* TAB 1: PAYER LIST */}
+        {activeTab === "list" && (
+          <div className="space-y-5">
+            {/* Filter Bar */}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="relative flex-1 min-w-[240px] max-w-sm">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Search payers..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                />
               </div>
 
-              {/* Table */}
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        Payer Name
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        Type
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        States Covered
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        Contract Type
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        Enrollment Type
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        Status
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredPayers.map((payer) => (
-                      <tr key={payer.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 text-sm font-medium text-gray-900">
+              <select
+                value={payerTypeFilter}
+                onChange={(e) => setPayerTypeFilter(e.target.value)}
+                className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 font-normal focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
+              >
+                <option value="All">All Payers</option>
+                <option value="Commercial">Commercial</option>
+                <option value="Government">Government</option>
+                <option value="Managed Care">Managed Care</option>
+              </select>
+            </div>
+
+            {/* Payers Table */}
+            <div className="overflow-x-auto rounded-xl border border-gray-200">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-[#0B2545] text-white">
+                    <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a3a60]">
+                      PAYER NAME
+                    </th>
+                    <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a3a60]">
+                      TYPE
+                    </th>
+                    <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a3a60]">
+                      STATES COVERED
+                    </th>
+                    <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a3a60]">
+                      STATUS
+                    </th>
+                    <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider">
+                      ACTIONS
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-100">
+                  {filteredPayers.length > 0 ? (
+                    filteredPayers.map((payer) => (
+                      <tr key={payer.id} className="hover:bg-gray-50/70 transition-colors">
+                        <td className="px-5 py-4 font-medium text-gray-900 text-sm">
                           {payer.name}
                         </td>
-                        <td className="px-6 py-4">
-                          <PayerBadge type={payer.type} />
+                        <td className="px-5 py-4">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 uppercase tracking-wider">
+                            {payer.type}
+                          </span>
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">{payer.states}</td>
-                        <td className="px-6 py-4 text-sm text-gray-900">{payer.contractType}</td>
-                        <td className="px-6 py-4 text-sm text-gray-900">{payer.enrollmentType}</td>
-                        <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
-                          <select
-                            value={payer.status}
-                            onChange={(e) => {
-                              showToast(`Payer status updated to ${e.target.value}`, "success");
-                            }}
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium border-0 cursor-pointer ${
-                              payer.status === "Enrolled"
-                                ? "bg-green-100 text-green-800"
-                                : payer.status === "In-Progress"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-gray-100 text-gray-800"
-                            }`}
+                        <td className="px-5 py-4 text-sm text-gray-600">
+                          {payer.states || "—"}
+                        </td>
+                        <td className="px-5 py-4">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 uppercase tracking-wider">
+                            {payer.status === "Inactive" ? "INACTIVE" : payer.status === "Enrolled" ? "ACTIVE" : "IN PROGRESS"}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4">
+                          <button
+                            onClick={() => showToast(`Edit ${payer.name} details`, "info")}
+                            className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                            title="Edit Payer"
                           >
-                            <option value="Inactive">Inactive</option>
-                            <option value="Enrolled">Enrolled</option>
-                            <option value="In-Progress">In-Progress</option>
-                          </select>
+                            <Edit2 className="w-4 h-4" />
+                          </button>
                         </td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 2: ENROLLMENTS (Combined Requests and Existing) */}
-          {activeTab === "enrollments" && (
-            <div className="space-y-4">
-              {/* Top Bar */}
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="relative flex-1 min-w-[200px]">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="text"
-                    placeholder="Search by provider or payer..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none text-sm"
-                  />
-                </div>
-
-                <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors text-sm font-medium">
-                  <Download className="w-4 h-4" />
-                  Export CSV
-                </button>
-              </div>
-
-              {/* Table */}
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-gray-200">
+                    ))
+                  ) : (
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        Provider Name
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        Specialty
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        Payer
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        Network Type
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        Practice Location
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        Date
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        Status
-                      </th>
+                      <td colSpan={5} className="py-20 text-center text-sm text-gray-400">
+                        No payers found matching your criteria.
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredEnrollments.map((enrollment) => (
-                      <tr key={enrollment.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 2: ENROLLMENT REQUESTS */}
+        {activeTab === "enrollments" && (
+          <div className="space-y-5">
+            {/* Filter Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="relative flex-1 min-w-[240px] max-w-sm">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Search by provider or payer..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                />
+              </div>
+
+              <button
+                onClick={() => showToast("Exporting enrollments CSV...", "info")}
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 text-sm font-medium transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                Export CSV
+              </button>
+            </div>
+
+            {/* Enrollments Table */}
+            <div className="overflow-x-auto rounded-xl border border-gray-200">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-[#0B2545] text-white">
+                    <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a3a60]">
+                      PROVIDER NAME
+                    </th>
+                    <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a3a60]">
+                      SPECIALTY
+                    </th>
+                    <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a3a60]">
+                      PAYER
+                    </th>
+                    <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a3a60]">
+                      NETWORK TYPE
+                    </th>
+                    <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a3a60]">
+                      PRACTICE LOCATION
+                    </th>
+                    <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a3a60]">
+                      DATE
+                    </th>
+                    <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider">
+                      STATUS
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-100">
+                  {filteredEnrollments.length > 0 ? (
+                    filteredEnrollments.map((enrollment) => (
+                      <tr key={enrollment.id} className="hover:bg-gray-50/70 transition-colors">
+                        <td className="px-5 py-4 text-sm font-semibold text-gray-900">
                           {enrollment.providerName}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">{enrollment.specialty}</td>
-                        <td className="px-6 py-4 text-sm text-gray-900">{enrollment.payerName}</td>
-                        <td className="px-6 py-4">
+                        <td className="px-5 py-4 text-sm text-gray-700">{enrollment.specialty}</td>
+                        <td className="px-5 py-4 text-sm text-gray-900 font-medium">{enrollment.payerName}</td>
+                        <td className="px-5 py-4">
                           {enrollment.networkType !== "-" ? (
                             <PayerBadge type={enrollment.networkType} />
                           ) : (
-                            <span className="text-sm text-gray-500">—</span>
+                            <span className="text-sm text-gray-400">—</span>
                           )}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">{enrollment.practiceLocation}</td>
-                        <td className="px-6 py-4 text-sm text-gray-900">{enrollment.date}</td>
-                        <td className="px-6 py-4">
+                        <td className="px-5 py-4 text-sm text-gray-700">{enrollment.practiceLocation}</td>
+                        <td className="px-5 py-4 text-sm text-gray-700">{enrollment.date}</td>
+                        <td className="px-5 py-4">
                           <EnrollmentStatusBadge status={enrollment.status} />
                         </td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="text-sm text-gray-600">
-                1–{filteredEnrollments.length} of {filteredEnrollments.length} enrollments
-              </div>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={7} className="py-20 text-center text-sm text-gray-400">
+                        No enrollment records found.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
-          )}
 
-        </div>
+            <div className="text-xs text-gray-500 font-medium pt-1">
+              Showing 1–{filteredEnrollments.length} of {filteredEnrollments.length} enrollments
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Request Enrollment Modal */}
@@ -400,20 +425,11 @@ export function Payers() {
       {/* Add Payer Modal */}
       <ModalWrapper
         isOpen={showAddPayerModal}
-        onClose={() => {
-          setShowAddPayerModal(false);
-          setNewPayer({
-            name: "",
-            type: "",
-            states: "",
-            contractType: "",
-            enrollmentType: "",
-          });
-        }}
-        title="Add New Payer"
+        onClose={() => setShowAddPayerModal(false)}
+        title="Request New Payer"
+        size="md"
       >
         <div className="space-y-4">
-          {/* Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Payer Name <span className="text-red-500">*</span>
@@ -421,108 +437,51 @@ export function Payers() {
             <input
               type="text"
               value={newPayer.name}
-              onChange={(e) => setNewPayer(prev => ({ ...prev, name: e.target.value }))}
-              placeholder="Enter payer name"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none text-sm"
+              onChange={(e) => setNewPayer({ ...newPayer, name: e.target.value })}
+              className="w-full px-3.5 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-sm"
+              placeholder="e.g., Aetna Better Health"
             />
           </div>
 
-          {/* Type */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Type <span className="text-red-500">*</span>
+              Payer Type <span className="text-red-500">*</span>
             </label>
             <select
               value={newPayer.type}
-              onChange={(e) => setNewPayer(prev => ({ ...prev, type: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none text-sm"
+              onChange={(e) => setNewPayer({ ...newPayer, type: e.target.value })}
+              className="w-full px-3.5 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-sm bg-white"
             >
               <option value="">Select type</option>
               <option value="Commercial">Commercial</option>
-              <option value="Medicare">Medicare</option>
-              <option value="Medicaid">Medicaid</option>
-              <option value="Managed Care">Managed Care</option>
               <option value="Government">Government</option>
+              <option value="Managed Care">Managed Care</option>
             </select>
           </div>
 
-          {/* States Covered */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              States Covered <span className="text-red-500">*</span>
-            </label>
-            <select
+            <label className="block text-sm font-medium text-gray-700 mb-1">States Covered</label>
+            <input
+              type="text"
               value={newPayer.states}
-              onChange={(e) => setNewPayer(prev => ({ ...prev, states: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none text-sm"
-            >
-              <option value="">Select state</option>
-              {US_STATES.map((state) => (
-                <option key={state} value={state}>
-                  {state}
-                </option>
-              ))}
-            </select>
+              onChange={(e) => setNewPayer({ ...newPayer, states: e.target.value })}
+              className="w-full px-3.5 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-sm"
+              placeholder="e.g., NY, NJ, CT or All States"
+            />
           </div>
 
-          {/* Contract Type */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Contract Type <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={newPayer.contractType}
-              onChange={(e) => setNewPayer(prev => ({ ...prev, contractType: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none text-sm"
-            >
-              <option value="">Select contract type</option>
-              <option value="Participating">Participating</option>
-              <option value="Non-Par">Non-Par</option>
-              <option value="In-Network">In-Network</option>
-              <option value="Out-of-Network">Out-of-Network</option>
-            </select>
-          </div>
-
-          {/* Enrollment Type */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Enrollment Type <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={newPayer.enrollmentType}
-              onChange={(e) => setNewPayer(prev => ({ ...prev, enrollmentType: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none text-sm"
-            >
-              <option value="">Select enrollment type</option>
-              <option value="Electronic">Electronic</option>
-              <option value="Paper">Paper</option>
-              <option value="Hybrid">Hybrid</option>
-              <option value="Portal">Portal</option>
-            </select>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
             <button
-              onClick={() => {
-                setShowAddPayerModal(false);
-                setNewPayer({
-                  name: "",
-                  type: "",
-                  states: "",
-                  contractType: "",
-                  enrollmentType: "",
-                });
-              }}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+              onClick={() => setShowAddPayerModal(false)}
+              className="px-4 py-2 border border-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={handleAddPayer}
-              className="px-4 py-2 text-sm font-medium text-white bg-[#2196F3] rounded-md hover:bg-[#1976D2] transition-colors"
+              className="px-5 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-xl text-sm font-semibold shadow-sm transition-colors"
             >
-              Add Payer
+              Submit Request
             </button>
           </div>
         </div>
