@@ -743,14 +743,13 @@ export const Providers: React.FC = () => {
                   <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[140px]">COUNTRY</th>
                   <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[160px]">SERVICE</th>
                   <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[130px]">SIGNUP DATE</th>
-                  <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[130px]">ROLE</th>
-                  <th className="py-3.5 px-4 border-b border-[#1a4a6e] whitespace-nowrap min-w-[190px]">RESPONSIBLE</th>
+                  <th className="py-3.5 px-4 border-b border-[#1a4a6e] whitespace-nowrap min-w-[130px]">ROLE</th>
                 </tr>
               </thead>
               <tbody className="text-xs">
                 {paginatedUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={11} className="text-center py-16 text-slate-400 text-sm border-b border-slate-100">
+                    <td colSpan={10} className="text-center py-16 text-slate-400 text-sm border-b border-slate-100">
                       No users found matching your filters.
                     </td>
                   </tr>
@@ -889,7 +888,7 @@ export const Providers: React.FC = () => {
                         </td>
 
                         {/* Role */}
-                        <td className="py-3 px-4 whitespace-nowrap border-r border-b border-slate-100">
+                        <td className="py-3 px-4 whitespace-nowrap border-b border-slate-100">
                           <button
                             type="button"
                             onClick={() => handleOpenEditUser(user)}
@@ -899,37 +898,6 @@ export const Providers: React.FC = () => {
                             <UserIcon size={11} className="text-blue-500" />
                             <span>{user.role}</span>
                           </button>
-                        </td>
-
-                        {/* Responsible Column */}
-                        <td className="py-3 px-4 whitespace-nowrap border-b border-slate-100">
-                          <div className="relative inline-block">
-                            <select
-                              value={user.opsResponsible || 'Unassigned'}
-                              onChange={(e) => handleUpdateResponsible(user.id, e.target.value)}
-                              className={`px-3 py-1 pr-7 rounded-full text-xs font-semibold border transition-all cursor-pointer appearance-none ${
-                                user.opsResponsible === 'MantraComply' || user.opsResponsible === 'Mantra AI'
-                                  ? 'bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 shadow-2xs'
-                                  : user.opsResponsible && user.opsResponsible !== 'Unassigned' && user.opsResponsible !== '—'
-                                  ? 'bg-white border-slate-200 text-slate-800 hover:border-slate-300 shadow-2xs'
-                                  : 'bg-slate-50 border-slate-200 text-slate-400 hover:border-slate-300'
-                              }`}
-                            >
-                              <option value="Unassigned">Unassigned</option>
-                              <option value="MantraComply">MantraComply</option>
-                              {availableSpecialists.map((spec) => (
-                                <option key={spec} value={spec}>{spec}</option>
-                              ))}
-                            </select>
-                            <ChevronDown 
-                              size={12} 
-                              className={`absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none ${
-                                user.opsResponsible === 'MantraComply' || user.opsResponsible === 'Mantra AI'
-                                  ? 'text-blue-500' 
-                                  : 'text-slate-400'
-                              }`} 
-                            />
-                          </div>
                         </td>
                       </tr>
                     );
