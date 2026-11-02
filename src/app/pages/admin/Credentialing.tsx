@@ -183,7 +183,8 @@ export const Credentialing: React.FC = () => {
               }}
               className="px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-700 cursor-pointer focus:outline-none appearance-none pr-7"
             >
-              <option value="ALL">All Ops Specialists</option>
+              <option value="ALL">All Responsible</option>
+              <option value="MantraComply">MantraComply</option>
               {availableSpecialists.map(s => (
                 <option key={s} value={s}>{s}</option>
               ))}
@@ -200,8 +201,8 @@ export const Credentialing: React.FC = () => {
             }}
             placeholder={
               activeSubTab === 'providers'
-                ? 'Search provider, email, organization, onboarded by, ops responsible...'
-                : 'Search facility, email, organization, onboarded by, ops responsible...'
+                ? 'Search provider, email, organization, responsible...'
+                : 'Search facility, email, organization, responsible...'
             }
             className="w-full text-sm text-slate-700 placeholder-slate-400 focus:outline-none bg-transparent"
           />
@@ -240,9 +241,7 @@ export const Credentialing: React.FC = () => {
                 <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[160px]">ORGANIZATION</th>
                 <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[130px]">SERVICE</th>
                 <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[140px]">COUNTRY</th>
-                <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[150px]">REFERRED BY</th>
-                <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[160px]">ONBOARDED BY</th>
-                <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[180px]">OPS RESPONSIBLE</th>
+                <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[180px]">RESPONSIBLE</th>
                 <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[160px]">CREDENTIALING START DATE</th>
                 <th className="py-3.5 px-4 border-b border-[#1a4a6e] whitespace-nowrap min-w-[140px] text-center">STATUS</th>
               </tr>
@@ -250,7 +249,7 @@ export const Credentialing: React.FC = () => {
             <tbody className="text-xs">
               {paginatedList.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="text-center py-16 text-slate-400 text-sm border-b border-slate-100">
+                  <td colSpan={9} className="text-center py-16 text-slate-400 text-sm border-b border-slate-100">
                     No applications found matching your criteria.
                   </td>
                 </tr>
@@ -369,45 +368,11 @@ export const Credentialing: React.FC = () => {
                         {item.country}
                       </td>
 
-                      {/* Referred By */}
-                      <td className="py-3 px-4 whitespace-nowrap border-r border-b border-slate-100">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium text-slate-600 bg-slate-100 border border-slate-200">
-                          {item.referredBy || 'Portal (Direct)'}
-                        </span>
-                      </td>
-
-                      {/* Onboarded by (Interactive Dropdown) */}
+                      {/* Responsible (Interactive Dropdown) */}
                       <td className="py-3 px-4 whitespace-nowrap border-r border-b border-slate-100">
                         <div className="relative inline-block text-left">
                           <select
-                            value={item.onboardedBy || 'Self (Portal)'}
-                            onChange={(e) => {
-                              if (activeSubTab === 'providers') {
-                                updateProviderOnboardedBy(item.id, e.target.value);
-                              } else {
-                                updateFacilityOnboardedBy(item.id, e.target.value);
-                              }
-                            }}
-                            className="text-xs font-semibold px-2.5 py-1 rounded-lg border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer appearance-none pr-6 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                          >
-                            {availableOnboarders.map((ob) => (
-                              <option key={ob} value={ob}>
-                                {ob}
-                              </option>
-                            ))}
-                            {!availableOnboarders.includes(item.onboardedBy || '') && item.onboardedBy && (
-                              <option value={item.onboardedBy}>{item.onboardedBy}</option>
-                            )}
-                          </select>
-                          <ChevronDown size={12} className="text-slate-400 absolute right-2 top-2 pointer-events-none" />
-                        </div>
-                      </td>
-
-                      {/* Ops Responsible (Interactive Dropdown) */}
-                      <td className="py-3 px-4 whitespace-nowrap border-r border-b border-slate-100">
-                        <div className="relative inline-block text-left">
-                          <select
-                            value={item.opsResponsible || item.assignedSpecialist || availableSpecialists[0]}
+                            value={item.opsResponsible || item.assignedSpecialist || 'MantraComply'}
                             onChange={(e) => {
                               if (activeSubTab === 'providers') {
                                 updateProviderSpecialist(item.id, e.target.value);
@@ -415,15 +380,30 @@ export const Credentialing: React.FC = () => {
                                 updateFacilitySpecialist(item.id, e.target.value);
                               }
                             }}
-                            className="text-xs font-semibold px-2.5 py-1 rounded-lg border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer appearance-none pr-6 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            className={`text-xs font-semibold px-3 py-1 rounded-full border transition-all cursor-pointer appearance-none pr-7 ${
+                              item.opsResponsible === 'MantraComply' || item.opsResponsible === 'Mantra AI'
+                                ? 'bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 shadow-2xs'
+                                : 'bg-white border-slate-200 text-slate-800 hover:border-slate-300 shadow-2xs'
+                            }`}
                           >
+                            <option value="MantraComply">MantraComply</option>
                             {availableSpecialists.map((specialist) => (
                               <option key={specialist} value={specialist}>
                                 {specialist}
                               </option>
                             ))}
+                            {!availableSpecialists.includes(item.opsResponsible || '') && item.opsResponsible && item.opsResponsible !== 'MantraComply' && (
+                              <option value={item.opsResponsible}>{item.opsResponsible}</option>
+                            )}
                           </select>
-                          <ChevronDown size={12} className="text-slate-400 absolute right-2 top-2 pointer-events-none" />
+                          <ChevronDown 
+                            size={12} 
+                            className={`absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none ${
+                              item.opsResponsible === 'MantraComply' || item.opsResponsible === 'Mantra AI'
+                                ? 'text-blue-500' 
+                                : 'text-slate-400'
+                            }`} 
+                          />
                         </div>
                       </td>
 

@@ -93,7 +93,8 @@ export const Documents: React.FC = () => {
               }}
               className="px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-700 cursor-pointer focus:outline-none appearance-none pr-7"
             >
-              <option value="ALL">All Specialists</option>
+              <option value="ALL">All Responsible</option>
+              <option value="MantraComply">MantraComply</option>
               {availableSpecialists.map(s => (
                 <option key={s} value={s}>{s}</option>
               ))}
@@ -108,7 +109,7 @@ export const Documents: React.FC = () => {
               setSearchTerm(e.target.value);
               setCurrentPage(1);
             }}
-            placeholder="Search documents, users or ops responsible..."
+            placeholder="Search documents, users or responsible..."
             className="w-full text-sm text-slate-700 placeholder-slate-400 focus:outline-none bg-transparent"
           />
         </div>
@@ -129,7 +130,7 @@ export const Documents: React.FC = () => {
                 <th className="py-4 px-5 border-r border-[#1a4a6e]">Document</th>
                 <th className="py-4 px-4 border-r border-[#1a4a6e]">Expiry Date</th>
                 <th className="py-4 px-4 border-r border-[#1a4a6e]">Document Type</th>
-                <th className="py-4 px-4 border-r border-[#1a4a6e]">Ops Responsible</th>
+                <th className="py-4 px-4 border-r border-[#1a4a6e]">Responsible</th>
                 <th className="py-4 px-4 text-center border-r border-[#1a4a6e]">Status</th>
                 <th className="py-4 px-5 text-center">Actions</th>
               </tr>
@@ -171,17 +172,32 @@ export const Documents: React.FC = () => {
                     <td className="py-4 px-4 whitespace-nowrap border-r border-slate-100">
                       <div className="relative inline-block text-left">
                         <select
-                          value={item.opsResponsible || 'Sarah Jenkins'}
+                          value={item.opsResponsible || 'MantraComply'}
                           onChange={(e) => handleOpsResponsibleChange(item.id, e.target.value)}
-                          className="text-xs font-semibold px-2.5 py-1 rounded-lg border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer appearance-none pr-6 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          className={`text-xs font-semibold px-3 py-1 rounded-full border transition-all cursor-pointer appearance-none pr-7 ${
+                            item.opsResponsible === 'MantraComply' || item.opsResponsible === 'Mantra AI'
+                              ? 'bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 shadow-2xs'
+                              : 'bg-white border-slate-200 text-slate-800 hover:border-slate-300 shadow-2xs'
+                          }`}
                         >
+                          <option value="MantraComply">MantraComply</option>
                           {availableSpecialists.map((specialist) => (
                             <option key={specialist} value={specialist}>
                               {specialist}
                             </option>
                           ))}
+                          {!availableSpecialists.includes(item.opsResponsible || '') && item.opsResponsible && item.opsResponsible !== 'MantraComply' && (
+                            <option value={item.opsResponsible}>{item.opsResponsible}</option>
+                          )}
                         </select>
-                        <ChevronDown size={12} className="text-slate-400 absolute right-2 top-2 pointer-events-none" />
+                        <ChevronDown 
+                          size={12} 
+                          className={`absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none ${
+                            item.opsResponsible === 'MantraComply' || item.opsResponsible === 'Mantra AI'
+                              ? 'text-blue-500' 
+                              : 'text-slate-400'
+                          }`} 
+                        />
                       </div>
                     </td>
                     <td className="py-4 px-4 text-center whitespace-nowrap border-r border-slate-100">

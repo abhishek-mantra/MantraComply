@@ -200,7 +200,8 @@ export const Payers: React.FC = () => {
               }}
               className="px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-700 cursor-pointer focus:outline-none appearance-none pr-7"
             >
-              <option value="ALL">All Specialists</option>
+              <option value="ALL">All Responsible</option>
+              <option value="MantraComply">MantraComply</option>
               {availableSpecialists.map(s => (
                 <option key={s} value={s}>{s}</option>
               ))}
@@ -255,7 +256,7 @@ export const Payers: React.FC = () => {
                 <th className="py-3.5 px-4 whitespace-nowrap border-r border-b border-[#1a4a6e] min-w-[150px]">DATE OF SUBMISSION</th>
                 <th className="py-3.5 px-4 whitespace-nowrap border-r border-b border-[#1a4a6e] min-w-[150px]">REFERENCE NUMBER</th>
                 <th className="py-3.5 px-4 whitespace-nowrap border-r border-b border-[#1a4a6e] min-w-[130px]">FOLLOW UP DATE</th>
-                <th className="py-3.5 px-4 whitespace-nowrap border-r border-b border-[#1a4a6e] min-w-[170px]">OPS RESPONSIBLE</th>
+                <th className="py-3.5 px-4 whitespace-nowrap border-r border-b border-[#1a4a6e] min-w-[170px]">RESPONSIBLE</th>
                 <th className="py-3.5 px-4 whitespace-nowrap border-r border-b border-[#1a4a6e] min-w-[130px]">EFFECTIVE DATE</th>
                 <th className="py-3.5 px-4 whitespace-nowrap border-r border-b border-[#1a4a6e] min-w-[150px]">RECREDENTIALING DATE</th>
                 <th className="py-3.5 px-4 whitespace-nowrap border-r border-b border-[#1a4a6e] min-w-[170px]">PROVIDER INSURANCE ID</th>
@@ -359,21 +360,36 @@ export const Payers: React.FC = () => {
                       {item.followUpDate || '—'}
                     </td>
 
-                    {/* Ops Responsible (Dropdown) */}
+                    {/* Responsible (Interactive Dropdown) */}
                     <td className="py-3 px-4 whitespace-nowrap border-r border-b border-slate-100">
                       <div className="relative inline-block text-left">
                         <select
-                          value={item.responsibleUser || item.assignedSpecialist || availableSpecialists[0]}
+                          value={item.responsibleUser || item.assignedSpecialist || 'MantraComply'}
                           onChange={(e) => handleSpecialistChange(item.id, e.target.value)}
-                          className="text-xs font-semibold px-2.5 py-1 rounded-lg border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer appearance-none pr-6 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          className={`text-xs font-semibold px-3 py-1 rounded-full border transition-all cursor-pointer appearance-none pr-7 ${
+                            item.responsibleUser === 'MantraComply' || item.responsibleUser === 'Mantra AI'
+                              ? 'bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 shadow-2xs'
+                              : 'bg-white border-slate-200 text-slate-800 hover:border-slate-300 shadow-2xs'
+                          }`}
                         >
+                          <option value="MantraComply">MantraComply</option>
                           {availableSpecialists.map((specialist) => (
                             <option key={specialist} value={specialist}>
                               {specialist}
                             </option>
                           ))}
+                          {!availableSpecialists.includes(item.responsibleUser || '') && item.responsibleUser && item.responsibleUser !== 'MantraComply' && (
+                            <option value={item.responsibleUser}>{item.responsibleUser}</option>
+                          )}
                         </select>
-                        <ChevronDown size={12} className="text-slate-400 absolute right-2 top-2 pointer-events-none" />
+                        <ChevronDown 
+                          size={12} 
+                          className={`absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none ${
+                            item.responsibleUser === 'MantraComply' || item.responsibleUser === 'Mantra AI'
+                              ? 'text-blue-500' 
+                              : 'text-slate-400'
+                          }`} 
+                        />
                       </div>
                     </td>
 
