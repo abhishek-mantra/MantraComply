@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Search, 
   Eye, 
@@ -12,31 +12,54 @@ import {
 import { 
   initialAdminDocuments, 
   availableSpecialists, 
+  getStoredDocuments,
+  saveStoredDocuments,
   DocumentRecord 
 } from '../../data/adminMockData';
 import { StatusBadge, StatusType } from '../../components/shared/StatusBadge';
 import { DocumentPreviewModal } from '../../components/shared/DocumentPreviewModal';
 
 export const Documents: React.FC = () => {
-  const [documents, setDocuments] = useState<DocumentRecord[]>(initialAdminDocuments);
+  const [documents, setDocuments] = useState<DocumentRecord[]>(() => getStoredDocuments());
   const [searchTerm, setSearchTerm] = useState('');
   const [specialistFilter, setSpecialistFilter] = useState('ALL');
   const [selectedDoc, setSelectedDoc] = useState<DocumentRecord | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+  // Synchronize state with persistent storage on tab switch or updates
+  useEffect(() => {
+    const handleSync = () => {
+      setDocuments(getStoredDocuments());
+    };
+    window.addEventListener('mantra_documents_updated', handleSync);
+    window.addEventListener('storage', handleSync);
+    return () => {
+      window.removeEventListener('mantra_documents_updated', handleSync);
+      window.removeEventListener('storage', handleSync);
+    };
+  }, []);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
   const handleStatusChange = (id: string, newStatus: StatusType) => {
-    setDocuments(prev => prev.map(d => d.id === id ? { ...d, status: newStatus as any } : d));
+    setDocuments(prev => {
+      const updated = prev.map(d => d.id === id ? { ...d, status: newStatus as any } : d);
+      saveStoredDocuments(updated);
+      return updated;
+    });
     if (selectedDoc && selectedDoc.id === id) {
       setSelectedDoc(prev => prev ? { ...prev, status: newStatus as any } : null);
     }
   };
 
   const handleOpsResponsibleChange = (id: string, specialist: string) => {
-    setDocuments(prev => prev.map(d => d.id === id ? { ...d, opsResponsible: specialist } : d));
+    setDocuments(prev => {
+      const updated = prev.map(d => d.id === id ? { ...d, opsResponsible: specialist } : d);
+      saveStoredDocuments(updated);
+      return updated;
+    });
     if (selectedDoc && selectedDoc.id === id) {
       setSelectedDoc(prev => prev ? { ...prev, opsResponsible: specialist } : null);
     }

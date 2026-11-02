@@ -25,13 +25,30 @@ export function InsuranceForm({
   const [desiredCarriers, setDesiredCarriers] = useState<string[]>([
     "Aetna",
     "Cigna",
-    "UnitedHealthcare",
+    "UnitedHealthcare / Optum",
     "Blue Cross Blue Shield",
   ]);
   const [enrollInAllStatePayors, setEnrollInAllStatePayors] = useState<boolean>(false);
   const [hasIAAccount, setHasIAAccount] = useState<string>("");
   const [hasOneHealthcareId, setHasOneHealthcareId] = useState<string>("");
   const [hasAvailityAccount, setHasAvailityAccount] = useState<string>("");
+
+  const insuranceCarriers = [
+    "Aetna",
+    "Cigna",
+    "UnitedHealthcare / Optum",
+    "Humana",
+    "Molina Healthcare",
+    "Blue Cross Blue Shield",
+    "Medicaid",
+    "Medicare",
+    "TRICARE",
+    "Health Net / Centene",
+    "Oscar Health",
+    "Kaiser Permanente",
+  ];
+
+  const currentPanelsOptions = ["None", ...insuranceCarriers];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,23 +66,6 @@ export function InsuranceForm({
       hasAvailityAccount,
     });
   };
-
-  const insuranceOptions = [
-    "None",
-    "Aetna",
-    "Cigna",
-    "UnitedHealthcare",
-    "Blue Cross Blue Shield",
-    "Humana",
-    "Oscar Health",
-    "Anthem",
-    "Medicare",
-    "Medicaid",
-    "Optum",
-    "Magellan",
-    "Tricare",
-    "Kaiser Permanente",
-  ];
 
   const renderRadioCards = (
     label: string,
@@ -116,7 +116,7 @@ export function InsuranceForm({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <MultiSelect
           label="Current Insurance Panels"
-          options={insuranceOptions}
+          options={currentPanelsOptions}
           value={currentPanels}
           onChange={setCurrentPanels}
           placeholder="Select current panels..."
@@ -127,14 +127,13 @@ export function InsuranceForm({
         <div>
           <MultiSelect
             label="Desired Insurance Carriers"
-            options={insuranceOptions.filter((opt) => opt !== "None")}
+            options={insuranceCarriers}
             value={desiredCarriers}
             onChange={(selected) => {
               setDesiredCarriers(selected);
-              const allCarriers = insuranceOptions.filter((opt) => opt !== "None");
-              if (selected.length < allCarriers.length) {
+              if (selected.length < insuranceCarriers.length) {
                 setEnrollInAllStatePayors(false);
-              } else if (selected.length === allCarriers.length) {
+              } else if (selected.length === insuranceCarriers.length) {
                 setEnrollInAllStatePayors(true);
               }
             }}
@@ -154,8 +153,7 @@ export function InsuranceForm({
                 const checked = e.target.checked;
                 setEnrollInAllStatePayors(checked);
                 if (checked) {
-                  const allCarriers = insuranceOptions.filter((opt) => opt !== "None");
-                  setDesiredCarriers(allCarriers);
+                  setDesiredCarriers([...insuranceCarriers]);
                 }
               }}
               className="mt-0.5 w-4 h-4 text-[#2196F3] border-gray-300 rounded focus:ring-[#2196F3] cursor-pointer"

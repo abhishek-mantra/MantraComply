@@ -17,11 +17,16 @@ export function InsurancePlansForm({ onNext, onPrevious, isFirstStep, isLastStep
   const insuranceCarriers = [
     "Aetna",
     "Cigna",
-    "UnitedHealthcare",
-    "Blue Cross Blue Shield",
+    "UnitedHealthcare / Optum",
     "Humana",
+    "Molina Healthcare",
+    "Blue Cross Blue Shield",
+    "Medicaid",
+    "Medicare",
+    "TRICARE",
+    "Health Net / Centene",
     "Oscar Health",
-    "Anthem"
+    "Kaiser Permanente",
   ];
 
   return (

@@ -942,3 +942,82 @@ export const initialAdminDocuments: DocumentRecord[] = [
     opsResponsible: "Alex Chen"
   }
 ];
+
+// ==========================================
+// PERSISTENT MOCK DATA STORAGE HELPERS
+// ==========================================
+export const getStoredCredentialProviders = (): ProviderApplication[] => {
+  try {
+    const raw = localStorage.getItem('mantra_credential_providers');
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return [...initialCredentialProviders];
+};
+
+export const saveStoredCredentialProviders = (data: ProviderApplication[]) => {
+  try {
+    localStorage.setItem('mantra_credential_providers', JSON.stringify(data));
+    window.dispatchEvent(new Event('mantra_credential_updated'));
+  } catch {}
+};
+
+export const getStoredCredentialFacilities = (): FacilityApplication[] => {
+  try {
+    const raw = localStorage.getItem('mantra_credential_facilities');
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return [...initialCredentialFacilities];
+};
+
+export const saveStoredCredentialFacilities = (data: FacilityApplication[]) => {
+  try {
+    localStorage.setItem('mantra_credential_facilities', JSON.stringify(data));
+    window.dispatchEvent(new Event('mantra_credential_facilities_updated'));
+  } catch {}
+};
+
+export const getStoredEnrollments = (): EnrollmentRecord[] => {
+  try {
+    const raw = localStorage.getItem('mantra_enrollments');
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return [...initialEnrollments];
+};
+
+export const saveStoredEnrollments = (data: EnrollmentRecord[]) => {
+  try {
+    localStorage.setItem('mantra_enrollments', JSON.stringify(data));
+    window.dispatchEvent(new Event('mantra_enrollments_updated'));
+  } catch {}
+};
+
+export const getStoredUsers = (): UserRecord[] => {
+  try {
+    const raw = localStorage.getItem('mantra_users');
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return [...initialUsers];
+};
+
+export const saveStoredUsers = (data: UserRecord[]) => {
+  try {
+    localStorage.setItem('mantra_users', JSON.stringify(data));
+    window.dispatchEvent(new Event('mantra_users_updated'));
+  } catch {}
+};
+
+export const getStoredDocuments = (): DocumentRecord[] => {
+  try {
+    const raw = localStorage.getItem('mantra_documents');
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return [...initialAdminDocuments];
+};
+
+export const saveStoredDocuments = (data: DocumentRecord[]) => {
+  try {
+    localStorage.setItem('mantra_documents', JSON.stringify(data));
+    window.dispatchEvent(new Event('mantra_documents_updated'));
+  } catch {}
+};
+

@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { ChevronLeft, Check } from "lucide-react";
 import { NPIForm } from "./forms/NPIForm";
 import { CAQHAuthForm } from "./forms/CAQHAuthForm";
-import { CAQHUpdatesForm } from "./forms/CAQHUpdatesForm";
 import { LicenseInfoForm } from "./forms/LicenseInfoForm";
 import { BoardCertificationForm } from "./forms/BoardCertificationForm";
 import { InsuranceForm } from "./forms/InsuranceForm";
@@ -17,36 +16,35 @@ import { EducationQualificationsForm } from "./forms/shared/EducationQualificati
 const STEPS = [
   { id: 1, name: "National Provider Identifier (NPI)", component: NPIForm },
   { id: 2, name: "CAQH Authorization", component: CAQHAuthForm },
-  { id: 3, name: "CAQH Account Updates", component: CAQHUpdatesForm },
   { 
-    id: 4, 
+    id: 3, 
     name: "Personal Information", 
     component: (props: any) => <PersonalInformationForm {...props} country="US" />
   },
-  { id: 5, name: "License Information", component: LicenseInfoForm },
-  { id: 6, name: "Board Certification", component: BoardCertificationForm },
+  { id: 4, name: "License Information", component: LicenseInfoForm },
+  { id: 5, name: "Board Certification", component: BoardCertificationForm },
   { 
-    id: 7, 
+    id: 6, 
     name: "Malpractice Information", 
     component: (props: any) => <MalpracticeInsuranceForm {...props} country="US" />
   },
   { 
-    id: 8, 
+    id: 7, 
     name: "Education", 
     component: (props: any) => <EducationQualificationsForm {...props} country="US" />
   },
   { 
-    id: 9, 
+    id: 8, 
     name: "Employment Information", 
     component: (props: any) => <EmploymentHistoryForm {...props} country="US" />
   },
   { 
-    id: 10, 
+    id: 9, 
     name: "Practice Information", 
     component: PracticeInfoForm
   },
-  { id: 11, name: "Insurance", component: InsuranceForm },
-  { id: 12, name: "Release Forms", component: ReleaseFormsForm },
+  { id: 10, name: "Insurance", component: InsuranceForm },
+  { id: 11, name: "Release Forms", component: ReleaseFormsForm },
 ];
 
 interface CredentialingWizardProps {
@@ -76,10 +74,18 @@ export function CredentialingWizard({
 
   const handleStepComplete = (data?: any) => {
     // If this is step 1 (NPI), save the specialty and specialization
-    if (currentStep === 0 && data?.specialty) {
-      setSpecialty(data.specialty);
+    if (currentStep === 0 && data) {
+      if (data.specialty) {
+        setSpecialty(data.specialty);
+      }
       if (data.selectedSpecialization) {
         setSelectedSpecialization(data.selectedSpecialization);
+      }
+      // If user chose NOT to auto-fetch from CAQH, jump directly to Personal Information (step index 2)
+      if (data.autoFetch === "no") {
+        setCompletedSteps((prev) => new Set([...prev, 0]));
+        setCurrentStep(2);
+        return;
       }
     }
 

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { FormButtons } from "../FormButtons";
-import { ContextualHelpLink } from "../../shared/ContextualHelpLink";
 
 export interface ProviderAgreementReleaseFormProps {
   country?: string;
@@ -83,9 +82,6 @@ export function ProviderAgreementReleaseForm({
   const config = REGIONAL_CONFIGS[normCountry] || REGIONAL_CONFIGS.us;
 
   // Signatures and agreement states
-  const [baaSignature, setBaaSignature] = useState("");
-  const [baaAgreed, setBaaAgreed] = useState(false);
-
   const [providerSignature, setProviderSignature] = useState("");
   const [providerAgreed, setProviderAgreed] = useState(false);
 
@@ -105,10 +101,6 @@ export function ProviderAgreementReleaseForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!baaAgreed || !baaSignature.trim()) {
-      alert("Please review, sign, and agree to the Business Associate / Data Privacy Agreement.");
-      return;
-    }
     if (!providerAgreed || !providerSignature.trim() || !ackScope || !ackNotice) {
       alert("Please review, sign, and agree to the Provider Agreement and required covenants.");
       return;
@@ -119,7 +111,6 @@ export function ProviderAgreementReleaseForm({
       includeRcmAddon: engagementModel === "model2" ? includeRcmAddon : false,
       contractingEntity: config.entityName,
       effectiveDate: todayFormatted,
-      baaSignature: baaSignature.trim(),
       providerSignature: providerSignature.trim(),
     });
   };
@@ -146,75 +137,10 @@ export function ProviderAgreementReleaseForm({
           <p className="text-sm text-yellow-800 mt-1">
             These documents are required to proceed with credentialing under MantraComply.
           </p>
-          <ContextualHelpLink
-            slug="background-checks-and-release-forms"
-            label="What background checks & release authorizations do payers run?"
-          />
         </div>
       </div>
 
-      {/* 1. Business Associate / Privacy Agreement Card matching earlier UI */}
-      <div className="border border-gray-200 rounded-md p-6 bg-white">
-        <h3 className="font-semibold text-gray-900 mb-4">{config.privacyTitle}</h3>
-        <div className="bg-gray-50 border border-gray-200 rounded-md p-4 mb-4 max-h-48 overflow-y-auto text-sm text-gray-700 leading-relaxed space-y-2.5">
-          <p className="font-medium">
-            DATA PROTECTION & CONFIDENTIALITY SAFEGUARDS ({config.privacyAct})
-          </p>
-          <p>
-            This Agreement sets forth data protection obligations between MantraComply (operating through{" "}
-            <strong>{config.entityName}</strong>) and the Provider signing below.
-          </p>
-          <p>
-            <strong>1. Purpose & Protected Information:</strong> MantraComply implements administrative, physical,
-            and technical safeguards complying with applicable healthcare data privacy legislation (including{" "}
-            {config.privacyAct}) to protect Provider credentials and Personal Health Information (PHI).
-          </p>
-          <p>
-            <strong>2. Permitted Uses:</strong> MantraComply may collect, verify, process, and disclose credentials
-            only as strictly required to submit credentialing applications, enroll in payer networks, and facilitate
-            compliance operations.
-          </p>
-          <p>
-            <strong>3. Security Safeguards:</strong> Mantra maintains encrypted transmission, role-based access controls,
-            and administrative safeguards to ensure that provider registration data and PHI remain strictly confidential
-            and secure.
-          </p>
-          <p>
-            <strong>4. Breach Notification:</strong> In the event of an unauthorized disclosure or data security incident,
-            affected parties will be notified promptly in accordance with statutory privacy requirements.
-          </p>
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-900 mb-2">
-            Digital Signature <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            value={baaSignature}
-            onChange={(e) => setBaaSignature(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none text-sm"
-            placeholder="Type your full name to sign"
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            By typing your name, you agree to the terms of the {config.privacyTitle}.
-          </p>
-        </div>
-
-        <label className="flex items-start">
-          <input
-            type="checkbox"
-            checked={baaAgreed}
-            onChange={(e) => setBaaAgreed(e.target.checked)}
-            className="mr-2 w-4 h-4 text-[#2196F3] border-gray-300 rounded focus:ring-[#2196F3] mt-0.5"
-          />
-          <span className="text-sm text-gray-700">
-            I have read and agree to the {config.privacyTitle}
-          </span>
-        </label>
-      </div>
-
-      {/* 2. Provider Credentialing & Enrollment Services Agreement Card */}
+      {/* Provider Credentialing & Enrollment Services Agreement Card */}
       <div className="border border-gray-200 rounded-md p-6 bg-white">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-4">
           <h3 className="font-semibold text-gray-900">

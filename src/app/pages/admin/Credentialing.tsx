@@ -18,6 +18,10 @@ import {
   initialCredentialFacilities, 
   availableSpecialists, 
   availableOnboarders,
+  getStoredCredentialProviders,
+  saveStoredCredentialProviders,
+  getStoredCredentialFacilities,
+  saveStoredCredentialFacilities,
   ProviderApplication,
   FacilityApplication
 } from '../../data/adminMockData';
@@ -26,8 +30,22 @@ import { ApplicationDetailModal } from '../../components/shared/ApplicationDetai
 import { StatusHistoryModal } from '../../components/shared/StatusHistoryModal';
 
 export const Credentialing: React.FC = () => {
-  const [providers, setProviders] = useState<ProviderApplication[]>(initialCredentialProviders);
-  const [facilities, setFacilities] = useState<FacilityApplication[]>(initialCredentialFacilities);
+  const [providers, setProviders] = useState<ProviderApplication[]>(() => getStoredCredentialProviders());
+  const [facilities, setFacilities] = useState<FacilityApplication[]>(() => getStoredCredentialFacilities());
+
+  // Synchronize state with persistent storage on tab switch or updates from Providers tab
+  useEffect(() => {
+    const handleSync = () => {
+      setProviders(getStoredCredentialProviders());
+      setFacilities(getStoredCredentialFacilities());
+    };
+    window.addEventListener('mantra_credential_updated', handleSync);
+    window.addEventListener('storage', handleSync);
+    return () => {
+      window.removeEventListener('mantra_credential_updated', handleSync);
+      window.removeEventListener('storage', handleSync);
+    };
+  }, []);
   
   const [activeSubTab, setActiveSubTab] = useState<'providers' | 'facilities'>('providers');
   const [searchTerm, setSearchTerm] = useState('');
@@ -54,27 +72,51 @@ export const Credentialing: React.FC = () => {
   }, []);
 
   const updateProviderStatus = (id: number, newStatus: StatusType) => {
-    setProviders(prev => prev.map(p => p.id === id ? { ...p, status: newStatus as any } : p));
+    setProviders(prev => {
+      const updated = prev.map(p => p.id === id ? { ...p, status: newStatus as any } : p);
+      saveStoredCredentialProviders(updated);
+      return updated;
+    });
   };
 
   const updateProviderSpecialist = (id: number, specialist: string) => {
-    setProviders(prev => prev.map(p => p.id === id ? { ...p, opsResponsible: specialist, assignedSpecialist: specialist } : p));
+    setProviders(prev => {
+      const updated = prev.map(p => p.id === id ? { ...p, opsResponsible: specialist, assignedSpecialist: specialist } : p);
+      saveStoredCredentialProviders(updated);
+      return updated;
+    });
   };
 
   const updateProviderOnboardedBy = (id: number, onboarder: string) => {
-    setProviders(prev => prev.map(p => p.id === id ? { ...p, onboardedBy: onboarder } : p));
+    setProviders(prev => {
+      const updated = prev.map(p => p.id === id ? { ...p, onboardedBy: onboarder } : p);
+      saveStoredCredentialProviders(updated);
+      return updated;
+    });
   };
 
   const updateFacilityStatus = (id: string, newStatus: StatusType) => {
-    setFacilities(prev => prev.map(f => f.id === id ? { ...f, status: newStatus as any } : f));
+    setFacilities(prev => {
+      const updated = prev.map(f => f.id === id ? { ...f, status: newStatus as any } : f);
+      saveStoredCredentialFacilities(updated);
+      return updated;
+    });
   };
 
   const updateFacilitySpecialist = (id: string, specialist: string) => {
-    setFacilities(prev => prev.map(f => f.id === id ? { ...f, opsResponsible: specialist, assignedSpecialist: specialist } : f));
+    setFacilities(prev => {
+      const updated = prev.map(f => f.id === id ? { ...f, opsResponsible: specialist, assignedSpecialist: specialist } : f);
+      saveStoredCredentialFacilities(updated);
+      return updated;
+    });
   };
 
   const updateFacilityOnboardedBy = (id: string, onboarder: string) => {
-    setFacilities(prev => prev.map(f => f.id === id ? { ...f, onboardedBy: onboarder } : f));
+    setFacilities(prev => {
+      const updated = prev.map(f => f.id === id ? { ...f, onboardedBy: onboarder } : f);
+      saveStoredCredentialFacilities(updated);
+      return updated;
+    });
   };
 
   // Filtered providers

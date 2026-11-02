@@ -17,6 +17,7 @@ interface Employment {
   position?: string;
   startDate: string;
   endDate: string;
+  isCurrent?: boolean;
   gapReason?: string;
 }
 
@@ -28,6 +29,7 @@ export function EmploymentInfoForm({ onNext, onPrevious, isFirstStep }: FormProp
     position: "",
     startDate: "",
     endDate: "",
+    isCurrent: false,
     gapReason: "",
   });
 
@@ -71,6 +73,7 @@ export function EmploymentInfoForm({ onNext, onPrevious, isFirstStep }: FormProp
       position: "",
       startDate: "",
       endDate: "",
+      isCurrent: false,
       gapReason: "",
     });
     setIsGap(false);
@@ -184,14 +187,31 @@ export function EmploymentInfoForm({ onNext, onPrevious, isFirstStep }: FormProp
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  End Date <span className="text-red-500">*</span>
+                  End Date {!currentEmployment.isCurrent && <span className="text-red-500">*</span>}
                 </label>
                 <input
-                  type="date"
-                  value={currentEmployment.endDate}
+                  type={currentEmployment.isCurrent ? "text" : "date"}
+                  disabled={currentEmployment.isCurrent}
+                  value={currentEmployment.isCurrent ? "Present" : currentEmployment.endDate}
                   onChange={(e) => setCurrentEmployment({ ...currentEmployment, endDate: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none text-sm"
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none text-sm ${currentEmployment.isCurrent ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""}`}
                 />
+                <label className="flex items-center gap-2 mt-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={!!currentEmployment.isCurrent}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setCurrentEmployment({
+                        ...currentEmployment,
+                        isCurrent: checked,
+                        endDate: checked ? "Present" : "",
+                      });
+                    }}
+                    className="w-4 h-4 text-[#2196F3] border-gray-300 rounded focus:ring-[#2196F3]"
+                  />
+                  <span className="text-xs sm:text-sm text-gray-700">I currently work here</span>
+                </label>
               </div>
             </div>
           </>

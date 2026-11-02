@@ -1,4 +1,4 @@
-import { Eye, Mail, Phone, MapPin, Calendar } from "lucide-react";
+import { Eye, Mail, Phone, MapPin, Calendar, FileText, Building, ShieldCheck } from "lucide-react";
 
 interface ProfileScreenProps {
   onEditCredentialing: () => void;
@@ -19,15 +19,23 @@ const PROFILE_DATA = {
       city: "San Francisco",
       state: "CA",
       zip: "94102"
+    },
+    w9Status: "Uploaded (W-9_Sarah_Johnson_Signed.pdf)",
+    bankInfo: {
+      bankName: "JPMorgan Chase Bank, N.A.",
+      accountType: "Checking",
+      accountHolder: "Dr. Sarah Johnson",
+      routingNumber: "•••••4821",
+      accountNumber: "••••••••5829"
     }
   }
 };
 
 export function ProfileScreen({ onEditCredentialing }: ProfileScreenProps) {
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">My Profile</h1>
           <p className="text-gray-600 mt-1">View and manage your personal information</p>
@@ -107,6 +115,56 @@ export function ProfileScreen({ onEditCredentialing }: ProfileScreenProps) {
               Social Security Number
             </label>
             <p className="text-base font-medium text-gray-900">{PROFILE_DATA.personalInfo.ssn}</p>
+          </div>
+
+          <div>
+            <label className="text-xs text-gray-500 uppercase tracking-wider font-medium mb-2 block">
+              Signed W-9 Form
+            </label>
+            <div className="flex items-center gap-2 text-base font-medium text-emerald-700">
+              <FileText className="w-4 h-4 text-emerald-600" />
+              <span>{PROFILE_DATA.personalInfo.w9Status}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Payment & Banking Information */}
+        <div className="mt-8 pt-8 border-t border-gray-100">
+          <div className="flex items-center gap-2.5 mb-6">
+            <Building className="w-5 h-5 text-[#2196F3]" />
+            <h3 className="text-lg font-semibold text-gray-900">Payment &amp; Direct Deposit</h3>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50/70 p-5 rounded-xl border border-gray-100">
+            <div>
+              <label className="text-xs text-gray-500 uppercase tracking-wider font-medium mb-1 block">
+                Bank Name
+              </label>
+              <p className="text-sm font-semibold text-gray-900">{PROFILE_DATA.personalInfo.bankInfo.bankName}</p>
+            </div>
+
+            <div>
+              <label className="text-xs text-gray-500 uppercase tracking-wider font-medium mb-1 block">
+                Account Type
+              </label>
+              <p className="text-sm font-semibold text-gray-900">{PROFILE_DATA.personalInfo.bankInfo.accountType}</p>
+            </div>
+
+            <div>
+              <label className="text-xs text-gray-500 uppercase tracking-wider font-medium mb-1 block">
+                Account Holder
+              </label>
+              <p className="text-sm font-semibold text-gray-900">{PROFILE_DATA.personalInfo.bankInfo.accountHolder}</p>
+            </div>
+
+            <div>
+              <label className="text-xs text-gray-500 uppercase tracking-wider font-medium mb-1 block">
+                Routing &amp; Account Number
+              </label>
+              <p className="text-sm font-semibold text-gray-900">
+                Routing: {PROFILE_DATA.personalInfo.bankInfo.routingNumber} | Acct: {PROFILE_DATA.personalInfo.bankInfo.accountNumber}
+              </p>
+            </div>
           </div>
         </div>
       </div>

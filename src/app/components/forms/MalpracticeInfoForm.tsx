@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { FormButtons } from "./FormButtons";
-import { Trash2, Eye } from "lucide-react";
+import { Trash2, Eye, ExternalLink } from "lucide-react";
 import { DateInput } from "../ui/DateInput";
 
 interface FormProps {
@@ -92,10 +92,19 @@ export function MalpracticeInfoForm({ specialty: _specialty, onNext, onPrevious,
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+      <div className="bg-blue-50 border border-blue-200 rounded-md p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <p className="text-sm text-gray-700">
           All healthcare providers must maintain professional liability (malpractice) insurance.
         </p>
+        <a
+          href="https://cphins.com/malpractice-insurance/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#2196F3] text-white text-xs font-semibold rounded hover:bg-[#1976D2] transition-colors shrink-0 w-fit"
+        >
+          <span>BUY NOW (CPH &amp; Associates)</span>
+          <ExternalLink className="w-3.5 h-3.5" />
+        </a>
       </div>
 
       <div>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Upload, AlertCircle } from "lucide-react";
+import { Upload, AlertCircle, ExternalLink } from "lucide-react";
 import { FormButtons } from "../FormButtons";
 import { UKFormButtons } from "../uk/UKFormButtons";
 import { CanadaFormButtons } from "../canada/CanadaFormButtons";
@@ -89,10 +89,23 @@ export function MalpracticeInsuranceForm({
       {/* Info Banner */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
         <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-        <div>
-          <p className="text-sm text-gray-700 font-medium mb-1">
-            {insuranceTitle} Required
-          </p>
+        <div className="flex-1">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-1">
+            <p className="text-sm text-gray-700 font-medium">
+              {insuranceTitle} Required
+            </p>
+            {country === "US" && (
+              <a
+                href="https://cphins.com/malpractice-insurance/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#2196F3] hover:text-[#1976D2] hover:underline"
+              >
+                <span>BUY NOW (CPH &amp; Associates)</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            )}
+          </div>
           <p className="text-sm text-gray-600">
             {country === "US" && "All providers must maintain malpractice insurance to be credentialed with insurance panels. Minimum coverage typically required: "}
             {country === "UK" && "Professional indemnity insurance is required for all healthcare providers in the UK. Minimum coverage typically required: "}
@@ -271,7 +284,7 @@ export function MalpracticeInsuranceForm({
       )}
 
       {hasInsurance === "no" && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-3">
           <p className="text-sm text-gray-700">
             <strong>Note:</strong> {insuranceTitle} is typically required for credentialing. 
             {country === "UK" && " You may need to obtain coverage through providers such as Medical Protection Society (MPS), Medical Defence Union (MDU), or Dental Protection."}
@@ -280,6 +293,22 @@ export function MalpracticeInsuranceForm({
             {country === "UAE" && " You must obtain coverage from an approved insurance provider in the UAE before licensure can be finalized."}
             {country === "US" && " Please contact insurance providers to obtain coverage before proceeding with credentialing."}
           </p>
+
+          <div className="pt-3 border-t border-amber-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-gray-900">Need Malpractice Insurance?</p>
+              <p className="text-xs text-gray-600">Get covered quickly online with CPH &amp; Associates.</p>
+            </div>
+            <a
+              href="https://cphins.com/malpractice-insurance/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-[#2196F3] text-white text-sm font-semibold rounded-lg hover:bg-[#1976D2] transition-colors shadow-sm shrink-0"
+            >
+              <span>BUY NOW</span>
+              <ExternalLink className="w-4 h-4" />
+            </a>
+          </div>
         </div>
       )}
 

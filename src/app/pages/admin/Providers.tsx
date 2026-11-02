@@ -26,6 +26,14 @@ import {
   initialRoles, 
   availableOrganizations, 
   availableSpecialists,
+  getStoredUsers,
+  saveStoredUsers,
+  getStoredCredentialProviders,
+  saveStoredCredentialProviders,
+  getStoredEnrollments,
+  saveStoredEnrollments,
+  ProviderApplication,
+  EnrollmentRecord,
   UserRecord, 
   RoleDefinition, 
   RoleType 
@@ -60,8 +68,21 @@ type PermissionLevel = 'none' | 'view' | 'view_edit' | 'full';
 
 export const Providers: React.FC = () => {
   const { showToast } = useToast();
-  const [users, setUsers] = useState<UserRecord[]>(initialUsers);
+  const [users, setUsers] = useState<UserRecord[]>(() => getStoredUsers());
   const [roles, setRoles] = useState<RoleDefinition[]>(initialRoles);
+
+  // Sync users with persistent storage across tabs/navigation
+  useEffect(() => {
+    const handleSync = () => {
+      setUsers(getStoredUsers());
+    };
+    window.addEventListener('mantra_users_updated', handleSync);
+    window.addEventListener('storage', handleSync);
+    return () => {
+      window.removeEventListener('mantra_users_updated', handleSync);
+      window.removeEventListener('storage', handleSync);
+    };
+  }, []);
 
   const [activeTab, setActiveTab] = useState<'users' | 'roles'>('users');
   const [searchTerm, setSearchTerm] = useState('');
@@ -191,7 +212,9 @@ export const Providers: React.FC = () => {
   // Delete Handlers
   const handleDeleteSelected = () => {
     const count = selectedUserIds.length;
-    setUsers(prev => prev.filter(u => !selectedUserIds.includes(u.id)));
+    const updated = users.filter(u => !selectedUserIds.includes(u.id));
+    setUsers(updated);
+    saveStoredUsers(updated);
     setSelectedUserIds([]);
     setIsDeleteConfirmOpen(false);
     showToast(`Successfully removed ${count} provider${count > 1 ? 's' : ''} from organization roster.`, 'success');
@@ -207,8 +230,10 @@ export const Providers: React.FC = () => {
     const responsibleAssignee = fulfillmentMethod === 'mantracomply' ? 'MantraComply' : assignedTeamMember;
     const methodLabel = fulfillmentMethod === 'mantracomply' ? 'Mantra AI' : `Manual (${assignedTeamMember})`;
 
-    // Update responsible & start dates in state to reflect the initiated request
-    setUsers(prev => prev.map(u => {
+    const selectedProviders = users.filter(u => selectedUserIds.includes(u.id));
+
+    // 1. Update Providers roster
+    const updatedUsers = users.map(u => {
       if (selectedUserIds.includes(u.id)) {
         return {
           ...u,
@@ -219,7 +244,59 @@ export const Providers: React.FC = () => {
         };
       }
       return u;
-    }));
+    });
+    setUsers(updatedUsers);
+    saveStoredUsers(updatedUsers);
+
+    // 2. If Credentialing, add newly requested applications to the Credentialing tab
+    if (requestType === 'credentialing') {
+      const currentCreds = getStoredCredentialProviders();
+      const newCredApps: ProviderApplication[] = selectedProviders.map((p, idx) => ({
+        id: Math.floor(1000 + Math.random() * 9000),
+        name: p.name,
+        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        email: p.email,
+        phone: p.phone || '—',
+        organization: p.organization || (p.organizations && p.organizations[0]) || 'MantraCare',
+        organizations: p.organizations || [p.organization || 'MantraCare'],
+        service: serviceType || p.service || 'THERAPY',
+        country: p.country || 'United States',
+        countryFlag: p.countryFlag || '🇺🇸',
+        status: 'UNDER REVIEW',
+        assignedSpecialist: responsibleAssignee,
+        opsResponsible: responsibleAssignee,
+        credentialingStartDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        notes: requestNotes || (fulfillmentMethod === 'mantracomply' ? 'Initiated via Mantra AI' : `Manual assignment: ${assignedTeamMember}`)
+      }));
+      saveStoredCredentialProviders([...newCredApps, ...currentCreds]);
+    }
+
+    // 3. If Enrollment, add newly requested enrollments to the Payers/Enrollments tab
+    if (requestType === 'enrollment') {
+      const currentEnrollments = getStoredEnrollments();
+      const newEnrollmentApps: EnrollmentRecord[] = selectedProviders.map((p, idx) => ({
+        id: Math.floor(2000 + Math.random() * 8000),
+        providerName: p.name,
+        organization: p.organization || (p.organizations && p.organizations[0]) || 'MantraCare',
+        service: serviceType || p.service || 'THERAPY',
+        state: practiceState || 'NY',
+        type: planType || 'Commercial',
+        payer: targetPayer === 'ALL' ? 'All Major Payers' : targetPayer,
+        insurance: targetPayer === 'ALL' ? 'All Major Payers' : targetPayer,
+        priority: 'High',
+        status: 'Submitted',
+        dateOfSubmission: new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }),
+        referenceNumber: `REQ-${Math.floor(100000 + Math.random() * 900000)}`,
+        followUpDate: 'In 3 business days',
+        responsibleUser: responsibleAssignee,
+        assignedSpecialist: responsibleAssignee,
+        effectiveDate: 'Pending',
+        recredentialingDate: 'Pending',
+        providerInsuranceId: 'Pending',
+        notes: requestNotes || (fulfillmentMethod === 'mantracomply' ? 'Initiated via Mantra AI' : `Manual assignment: ${assignedTeamMember}`)
+      }));
+      saveStoredEnrollments([...newEnrollmentApps, ...currentEnrollments]);
+    }
 
     showToast(`Successfully created ${typeLabel} request for ${count} provider(s) via ${methodLabel}.`, 'success');
     setSelectedUserIds([]);
@@ -229,7 +306,7 @@ export const Providers: React.FC = () => {
   };
 
   const handleUpdateResponsible = (userId: number, newResponsible: string) => {
-    setUsers(prev => prev.map(u => {
+    const updatedUsers = users.map(u => {
       if (u.id === userId) {
         return {
           ...u,
@@ -237,7 +314,22 @@ export const Providers: React.FC = () => {
         };
       }
       return u;
-    }));
+    });
+    setUsers(updatedUsers);
+    saveStoredUsers(updatedUsers);
+
+    // Also update in credentialing and enrollment stores if present
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      const creds = getStoredCredentialProviders();
+      const updatedCreds = creds.map(c => c.name.toLowerCase() === user.name.toLowerCase() ? { ...c, opsResponsible: newResponsible, assignedSpecialist: newResponsible } : c);
+      saveStoredCredentialProviders(updatedCreds);
+
+      const enrolls = getStoredEnrollments();
+      const updatedEnrolls = enrolls.map(e => e.providerName.toLowerCase() === user.name.toLowerCase() ? { ...e, responsibleUser: newResponsible, assignedSpecialist: newResponsible } : e);
+      saveStoredEnrollments(updatedEnrolls);
+    }
+
     showToast(`Updated responsible to ${newResponsible}`, 'success');
   };
 

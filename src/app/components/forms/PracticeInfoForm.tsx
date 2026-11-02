@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Info } from "lucide-react";
 import { FormButtons } from "./FormButtons";
 import { MultiSelect } from "./MultiSelect";
+import { StateDropdown } from "./StateDropdown";
 import { ContextualHelpLink } from "../shared/ContextualHelpLink";
 
 interface PracticeInfoFormProps {
@@ -21,11 +21,17 @@ export function PracticeInfoForm({
   isFirstStep = false,
   isLastStep = false,
 }: PracticeInfoFormProps) {
-  const [practiceType, setPracticeType] = useState<string>("Virtual Only");
+  const [practiceType, setPracticeType] = useState<string>("Physical/Hybrid");
   const [officePhone, setOfficePhone] = useState<string>("123");
   const [clinicalSpecialties, setClinicalSpecialties] = useState<string[]>(["Anxiety"]);
   const [therapeuticApproaches, setTherapeuticApproaches] = useState<string[]>(["CBT"]);
   const [languages, setLanguages] = useState<string[]>(["English"]);
+  const [streetAddress, setStreetAddress] = useState<string>("");
+  const [city, setCity] = useState<string>("");
+  const [state, setState] = useState<string>("");
+  const [zipCode, setZipCode] = useState<string>("");
+
+  const isPhysicalHybrid = practiceType === "Physical/Hybrid";
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,13 +41,16 @@ export function PracticeInfoForm({
       clinicalSpecialties,
       therapeuticApproaches,
       languages,
+      streetAddress: isPhysicalHybrid ? streetAddress : "",
+      city: isPhysicalHybrid ? city : "",
+      state: isPhysicalHybrid ? state : "",
+      zipCode: isPhysicalHybrid ? zipCode : "",
     });
   };
 
   const practiceTypeOptions = [
     { id: "Virtual Only", label: "Virtual Only" },
-    { id: "Physical Only", label: "Physical Only" },
-    { id: "Hybrid", label: "Hybrid" },
+    { id: "Physical/Hybrid", label: "Physical/Hybrid" },
   ];
 
   const clinicalSpecialtyOptions = [
@@ -106,8 +115,8 @@ export function PracticeInfoForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Row 1: Practice Type & Office Phone Number */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Practice Type */}
         <div>
           <label className="block text-sm font-medium text-gray-900 mb-2">
             Practice Type <span className="text-red-500">*</span>
@@ -139,6 +148,7 @@ export function PracticeInfoForm({
           </div>
         </div>
 
+        {/* Office Phone Number */}
         <div>
           <label className="block text-sm font-medium text-gray-900 mb-2">
             Office Phone Number <span className="text-red-500">*</span>
@@ -156,10 +166,8 @@ export function PracticeInfoForm({
             label="Virtual vs. physical practice settings, W-9 Tax IDs & billing rules"
           />
         </div>
-      </div>
 
-      {/* Row 2: Clinical Specialties & Therapeutic Approaches */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Clinical Specialties */}
         <MultiSelect
           label="Clinical Specialties"
           options={clinicalSpecialtyOptions}
@@ -169,6 +177,7 @@ export function PracticeInfoForm({
           required
         />
 
+        {/* Therapeutic Approaches */}
         <MultiSelect
           label="Therapeutic Approaches"
           options={therapeuticApproachOptions}
@@ -177,10 +186,8 @@ export function PracticeInfoForm({
           placeholder="Select therapeutic approaches..."
           required
         />
-      </div>
 
-      {/* Row 3: Languages Spoken Fluently */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Languages Spoken Fluently */}
         <MultiSelect
           label="Languages Spoken Fluently"
           options={languageOptions}
@@ -189,6 +196,68 @@ export function PracticeInfoForm({
           placeholder="Select languages..."
           required
         />
+
+        {/* Street Address (Physical/Hybrid only) */}
+        {isPhysicalHybrid && (
+          <div>
+            <label className="block text-sm font-medium text-gray-900 mb-2">
+              Street Address <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              required={isPhysicalHybrid}
+              value={streetAddress}
+              onChange={(e) => setStreetAddress(e.target.value)}
+              placeholder="Enter Street Address"
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#2196F3] focus:ring-2 focus:ring-[#2196F3] outline-none text-sm text-gray-900 transition-all placeholder:text-gray-400"
+            />
+          </div>
+        )}
+
+        {/* City & State (Physical/Hybrid only) */}
+        {isPhysicalHybrid && (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-gray-900 mb-2">
+                City <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                required={isPhysicalHybrid}
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                placeholder="Enter City"
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#2196F3] focus:ring-2 focus:ring-[#2196F3] outline-none text-sm text-gray-900 transition-all placeholder:text-gray-400"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-900 mb-2">
+                State <span className="text-red-500">*</span>
+              </label>
+              <StateDropdown
+                value={state}
+                onChange={setState}
+                className="w-full"
+              />
+            </div>
+
+            {/* ZIP Code (Physical/Hybrid only) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 mb-2">
+                ZIP Code <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                required={isPhysicalHybrid}
+                value={zipCode}
+                onChange={(e) => setZipCode(e.target.value)}
+                placeholder="Enter ZIP Code"
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#2196F3] focus:ring-2 focus:ring-[#2196F3] outline-none text-sm text-gray-900 transition-all placeholder:text-gray-400"
+              />
+            </div>
+          </>
+        )}
       </div>
 
       {/* Form Navigation Buttons */}

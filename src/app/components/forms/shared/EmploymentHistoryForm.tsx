@@ -20,6 +20,7 @@ interface EmploymentEntry {
   country?: string;
   startDate: string;
   endDate: string;
+  isCurrent?: boolean;
   gapReason?: string;
   wasUAE?: string;
   wasLicensed?: string;
@@ -79,6 +80,7 @@ export function EmploymentHistoryForm({
       country: "",
       startDate: "",
       endDate: "",
+      isCurrent: false,
       wasUAE: "",
       wasLicensed: "",
     },
@@ -101,6 +103,7 @@ export function EmploymentHistoryForm({
       country: "",
       startDate: "",
       endDate: "",
+      isCurrent: false,
       gapReason: "",
       wasUAE: "",
       wasLicensed: "",
@@ -114,7 +117,7 @@ export function EmploymentHistoryForm({
     }
   };
 
-  const updateEntry = (id: string, field: keyof EmploymentEntry, value: string) => {
+  const updateEntry = (id: string, field: keyof EmploymentEntry, value: any) => {
     setEntries(
       entries.map((entry) =>
         entry.id === id ? { ...entry, [field]: value } : entry
@@ -297,16 +300,35 @@ export function EmploymentHistoryForm({
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      End Date <span className="text-red-500">*</span>
+                      End Date {!entry.isCurrent && <span className="text-red-500">*</span>}
                     </label>
                     <input
                       type="text"
-                      required
-                      value={entry.endDate}
+                      required={!entry.isCurrent}
+                      disabled={entry.isCurrent}
+                      value={entry.isCurrent ? "Present" : entry.endDate}
                       onChange={(e) => updateEntry(entry.id, "endDate", e.target.value)}
-                      className={inputClassName}
-                      placeholder="MM/DD/YYYY"
+                      className={`${inputClassName} ${entry.isCurrent ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""}`}
+                      placeholder={entry.isCurrent ? "Present" : "MM/DD/YYYY"}
                     />
+                    <label className="flex items-center gap-2 mt-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={!!entry.isCurrent}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setEntries(
+                            entries.map((item) =>
+                              item.id === entry.id
+                                ? { ...item, isCurrent: checked, endDate: checked ? "Present" : "" }
+                                : item
+                            )
+                          );
+                        }}
+                        className="w-4 h-4 text-[#2196F3] border-gray-300 rounded focus:ring-[#2196F3]"
+                      />
+                      <span className="text-xs sm:text-sm text-gray-700">I currently work here</span>
+                    </label>
                   </div>
                 </div>
 

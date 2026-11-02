@@ -2,9 +2,10 @@ import { useState } from "react";
 import { FormButtons } from "./FormButtons";
 import { CountrySwitcher } from "../CountrySwitcher";
 import { ContextualHelpLink } from "../shared/ContextualHelpLink";
+import { ChevronUp, ChevronDown, ExternalLink, Phone, CheckCircle2 } from "lucide-react";
 
 interface FormProps {
-  specialty: string;
+  specialty?: string;
   onNext: (data?: any) => void;
   onPrevious: () => void;
   isFirstStep: boolean;
@@ -15,6 +16,7 @@ interface FormProps {
 }
 
 export function NPIForm({
+  specialty: initialSpecialty,
   onNext,
   onPrevious,
   isFirstStep,
@@ -22,18 +24,24 @@ export function NPIForm({
   selectedCountry,
   onCountryChange
 }: FormProps) {
-  const [specialty, setSpecialty] = useState("");
-  const [selectedService, setSelectedService] = useState("");
+  const [specialty, setSpecialty] = useState(initialSpecialty || "therapy");
+  const [selectedService, setSelectedService] = useState("Talk Therapy");
   const [doctorSpecialization, setDoctorSpecialization] = useState("");
   const [taxonomyCode, setTaxonomyCode] = useState("");
+  const [npiNumber, setNpiNumber] = useState("");
+  const [isNpiGuideOpen, setIsNpiGuideOpen] = useState(true);
+  const [autoFetch, setAutoFetch] = useState<"yes" | "no">("yes");
+  const [showConsultantModal, setShowConsultantModal] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Pass both specialty and doctor specialization
+    // Pass specialty, doctor specialization, service, and autoFetch
     onNext({
       specialty,
       selectedSpecialization: specialty === "doctor" ? doctorSpecialization : "",
-      serviceType: selectedService
+      serviceType: selectedService,
+      npiNumber,
+      autoFetch,
     });
   };
 
@@ -194,7 +202,10 @@ export function NPIForm({
             </label>
             <input
               type="text"
+              required
               maxLength={10}
+              value={npiNumber}
+              onChange={(e) => setNpiNumber(e.target.value.replace(/\D/g, ""))}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none text-sm"
               placeholder="Enter your 10-digit NPI number"
             />
@@ -205,6 +216,96 @@ export function NPIForm({
               slug="why-npi-is-needed-and-how-to-find-it"
               label="Why NPI is needed and how to verify in NPPES"
             />
+          </div>
+
+          {/* Don't remember your NPI? Dropdown Card (Matching Image 1) */}
+          <div className="border border-gray-200 rounded-2xl bg-[#FAFAFA] p-5 shadow-sm transition-all">
+            <button
+              type="button"
+              onClick={() => setIsNpiGuideOpen(!isNpiGuideOpen)}
+              className="w-full flex items-center justify-between text-left focus:outline-none group"
+            >
+              <span className="text-sm font-semibold text-gray-900 group-hover:text-[#2196F3] transition-colors">
+                Don't remember your NPI?
+              </span>
+              {isNpiGuideOpen ? (
+                <ChevronUp className="w-4 h-4 text-gray-500" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-gray-500" />
+              )}
+            </button>
+
+            {isNpiGuideOpen && (
+              <div className="mt-4 pt-1">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-xs text-gray-500 font-normal shrink-0">
+                    Guide to find your NPI number
+                  </span>
+                  <div className="flex-1 h-[1px] bg-gray-200" />
+                </div>
+
+                <ol className="space-y-3 mb-5">
+                  <li className="flex items-center gap-3 text-sm text-gray-700">
+                    <span className="w-5 h-5 rounded-full bg-black text-white text-[11px] font-bold flex items-center justify-center shrink-0">
+                      1
+                    </span>
+                    <span>Go to the NPPES NPI Registry use the button below</span>
+                  </li>
+                  <li className="flex items-center gap-3 text-sm text-gray-700">
+                    <span className="w-5 h-5 rounded-full bg-black text-white text-[11px] font-bold flex items-center justify-center shrink-0">
+                      2
+                    </span>
+                    <span>Enter your first and last name</span>
+                  </li>
+                  <li className="flex items-center gap-3 text-sm text-gray-700">
+                    <span className="w-5 h-5 rounded-full bg-black text-white text-[11px] font-bold flex items-center justify-center shrink-0">
+                      3
+                    </span>
+                    <span>Click Search</span>
+                  </li>
+                </ol>
+
+                <div className="mb-4">
+                  <a
+                    href="https://npiregistry.cms.hhs.gov/search"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-3.5 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm"
+                  >
+                    <span>Find my NPI</span>
+                    <ExternalLink className="w-3.5 h-3.5 text-gray-500" />
+                  </a>
+                </div>
+
+                <p className="text-xs text-gray-600 mb-4">
+                  If you don't have an NPI,{" "}
+                  <a
+                    href="https://nppes.cms.hhs.gov/login"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline font-medium text-gray-900 hover:text-[#2196F3]"
+                  >
+                    apply
+                  </a>{" "}
+                  for one now
+                </p>
+
+                <div className="pt-3.5 border-t border-gray-200 flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-semibold text-gray-900">Need help?</p>
+                    <p className="text-xs text-gray-500">Book with your dedicated consultant</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowConsultantModal(true)}
+                    className="p-2 border border-gray-300 rounded-xl bg-white hover:bg-gray-50 text-gray-700 transition-colors shadow-sm"
+                    title="Book with your dedicated consultant"
+                  >
+                    <Phone className="w-4 h-4 text-gray-700" />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div>
@@ -259,7 +360,106 @@ export function NPIForm({
               </a>
             </p>
           </div>
+
+          {/* Do you want to auto fetch? yes / no (if yes > then CAQH) */}
+          <div className="border border-gray-200 rounded-xl p-4 sm:p-5 bg-white space-y-3">
+            <div>
+              <label className="block text-sm font-semibold text-gray-900">
+                Do you want to auto fetch? <span className="text-red-500">*</span>
+              </label>
+              <p className="text-xs text-gray-500 mt-0.5">
+                If yes &gt; then CAQH will be used to auto-populate your provider details.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <label
+                className={`flex items-start p-3.5 border rounded-xl cursor-pointer transition-all ${
+                  autoFetch === "yes"
+                    ? "border-[#2196F3] bg-blue-50/50 shadow-sm"
+                    : "border-gray-200 hover:border-gray-300 bg-white"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="autoFetch"
+                  value="yes"
+                  checked={autoFetch === "yes"}
+                  onChange={() => setAutoFetch("yes")}
+                  className="mt-0.5 mr-3 w-4 h-4 text-[#2196F3] border-gray-300 focus:ring-[#2196F3]"
+                />
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-medium text-gray-900">Yes, auto-fetch details</span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Recommended — retrieve information from your CAQH ProView account
+                  </p>
+                </div>
+              </label>
+
+              <label
+                className={`flex items-start p-3.5 border rounded-xl cursor-pointer transition-all ${
+                  autoFetch === "no"
+                    ? "border-[#2196F3] bg-blue-50/50 shadow-sm"
+                    : "border-gray-200 hover:border-gray-300 bg-white"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="autoFetch"
+                  value="no"
+                  checked={autoFetch === "no"}
+                  onChange={() => setAutoFetch("no")}
+                  className="mt-0.5 mr-3 w-4 h-4 text-[#2196F3] border-gray-300 focus:ring-[#2196F3]"
+                />
+                <div>
+                  <span className="text-sm font-medium text-gray-900">No, enter manually</span>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Provide all provider information manually in subsequent sections
+                  </p>
+                </div>
+              </label>
+            </div>
+          </div>
         </>
+      )}
+
+      {/* Consultant Modal */}
+      {showConsultantModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-gray-100 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-blue-50 text-[#2196F3] flex items-center justify-center shrink-0">
+                <Phone className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-gray-900">Dedicated Consultant Support</h3>
+                <p className="text-xs text-gray-500">MantraComply Credentialing Team</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+              Need assistance finding your NPI or setting up your NPPES registry profile? Our dedicated credentialing team is available Monday through Friday, 8am – 6pm EST.
+            </p>
+            <div className="bg-gray-50 p-3.5 rounded-xl border border-gray-200 text-xs text-gray-700 space-y-1.5 mb-5">
+              <div className="flex justify-between">
+                <span className="font-medium text-gray-600">Direct Phone:</span>
+                <span className="font-semibold text-gray-900">+1 (800) 555-6268</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-medium text-gray-600">Email:</span>
+                <span className="font-semibold text-[#2196F3]">support@mantracomply.com</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowConsultantModal(false)}
+              className="w-full py-2.5 bg-[#2196F3] hover:bg-[#1976D2] text-white font-medium rounded-xl text-sm transition-colors shadow-sm"
+            >
+              Got it, close
+            </button>
+          </div>
+        </div>
       )}
 
       <FormButtons onPrevious={onPrevious} isFirstStep={isFirstStep} />

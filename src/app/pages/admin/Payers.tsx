@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Search, 
   Users, 
@@ -16,6 +16,8 @@ import {
   initialEnrollments, 
   availableSpecialists, 
   availableOrganizations,
+  getStoredEnrollments,
+  saveStoredEnrollments,
   EnrollmentRecord 
 } from '../../data/adminMockData';
 import { PipelineStageBar } from '../../components/shared/PipelineStageBar';
@@ -23,7 +25,20 @@ import { PriorityBadge } from '../../components/shared/PriorityBadge';
 import { ClientDetailDrawer } from '../../components/shared/ClientDetailDrawer';
 
 export const Payers: React.FC = () => {
-  const [enrollments, setEnrollments] = useState<EnrollmentRecord[]>(initialEnrollments);
+  const [enrollments, setEnrollments] = useState<EnrollmentRecord[]>(() => getStoredEnrollments());
+
+  // Synchronize state with persistent storage on tab switch or updates from Providers tab
+  useEffect(() => {
+    const handleSync = () => {
+      setEnrollments(getStoredEnrollments());
+    };
+    window.addEventListener('mantra_enrollments_updated', handleSync);
+    window.addEventListener('storage', handleSync);
+    return () => {
+      window.removeEventListener('mantra_enrollments_updated', handleSync);
+      window.removeEventListener('storage', handleSync);
+    };
+  }, []);
   const [activeToggle, setActiveToggle] = useState<'providers' | 'facilities'>('providers');
   const [searchTerm, setSearchTerm] = useState('');
   const [specialistFilter, setSpecialistFilter] = useState('ALL');
@@ -51,30 +66,46 @@ export const Payers: React.FC = () => {
   const itemsPerPage = 8;
 
   const handleStageChange = (id: number, newStage: string) => {
-    setEnrollments(prev => prev.map(item => item.id === id ? { ...item, status: newStage } : item));
+    setEnrollments(prev => {
+      const updated = prev.map(item => item.id === id ? { ...item, status: newStage } : item);
+      saveStoredEnrollments(updated);
+      return updated;
+    });
     if (selectedClientRecord && selectedClientRecord.id === id) {
       setSelectedClientRecord(prev => prev ? { ...prev, status: newStage } : null);
     }
   };
 
   const handlePriorityChange = (id: number, newPriority: 'High' | 'Medium' | 'Low') => {
-    setEnrollments(prev => prev.map(item => item.id === id ? { ...item, priority: newPriority } : item));
+    setEnrollments(prev => {
+      const updated = prev.map(item => item.id === id ? { ...item, priority: newPriority } : item);
+      saveStoredEnrollments(updated);
+      return updated;
+    });
     if (selectedClientRecord && selectedClientRecord.id === id) {
       setSelectedClientRecord(prev => prev ? { ...prev, priority: newPriority } : null);
     }
   };
 
   const handleSpecialistChange = (id: number, newSpecialist: string) => {
-    setEnrollments(prev => prev.map(item => 
-      item.id === id ? { ...item, responsibleUser: newSpecialist, assignedSpecialist: newSpecialist } : item
-    ));
+    setEnrollments(prev => {
+      const updated = prev.map(item => 
+        item.id === id ? { ...item, responsibleUser: newSpecialist, assignedSpecialist: newSpecialist } : item
+      );
+      saveStoredEnrollments(updated);
+      return updated;
+    });
     if (selectedClientRecord && selectedClientRecord.id === id) {
       setSelectedClientRecord(prev => prev ? { ...prev, responsibleUser: newSpecialist, assignedSpecialist: newSpecialist } : null);
     }
   };
 
   const handleUpdateRecord = (updated: EnrollmentRecord) => {
-    setEnrollments(prev => prev.map(item => item.id === updated.id ? updated : item));
+    setEnrollments(prev => {
+      const list = prev.map(item => item.id === updated.id ? updated : item);
+      saveStoredEnrollments(list);
+      return list;
+    });
   };
 
   const handleAddSubmit = (e: React.FormEvent) => {
@@ -103,7 +134,9 @@ export const Payers: React.FC = () => {
       notes: newNotes.trim() || 'New enrollment initiated by Org Admin.'
     };
 
-    setEnrollments([newRec, ...enrollments]);
+    const updated = [newRec, ...enrollments];
+    setEnrollments(updated);
+    saveStoredEnrollments(updated);
     setIsAddModalOpen(false);
     setNewProviderName('');
     setNewPayer('');
