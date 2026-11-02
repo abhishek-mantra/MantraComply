@@ -80,9 +80,11 @@ export const Providers: React.FC = () => {
 
   // Request Modal State
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
+  const [requestStep, setRequestStep] = useState<1 | 2>(1);
   const [requestType, setRequestType] = useState<'credentialing' | 'enrollment'>('credentialing');
   const [fulfillmentMethod, setFulfillmentMethod] = useState<'mantracomply' | 'manual'>('mantracomply');
-  const [selectedPayers, setSelectedPayers] = useState<string[]>(['Aetna', 'Blue Cross Blue Shield']);
+  const [targetPayer, setTargetPayer] = useState('ALL');
+  const [planType, setPlanType] = useState('Commercial');
   const [practiceState, setPracticeState] = useState('NY');
   const [serviceType, setServiceType] = useState('THERAPY');
   const [requestNotes, setRequestNotes] = useState('');
@@ -194,27 +196,6 @@ export const Providers: React.FC = () => {
   };
 
   // Request Handlers
-  const handleTogglePayer = (payer: string) => {
-    setSelectedPayers(prev => 
-      prev.includes(payer) ? prev.filter(p => p !== payer) : [...prev, payer]
-    );
-  };
-
-  const handlePayerSelectAll = () => {
-    if (selectedPayers.length === POPULAR_PAYERS.length) {
-      setSelectedPayers([]);
-    } else {
-      setSelectedPayers([...POPULAR_PAYERS]);
-    }
-  };
-
-  const handleRemoveSelectedFromRequest = (id: number) => {
-    setSelectedUserIds(prev => prev.filter(item => item !== id));
-    if (selectedUserIds.length <= 1) {
-      setIsRequestModalOpen(false);
-    }
-  };
-
   const handleSubmitRequest = (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedUserIds.length === 0) return;
@@ -239,6 +220,7 @@ export const Providers: React.FC = () => {
     showToast(`Successfully created ${typeLabel} request for ${count} provider(s) via ${methodLabel}.`, 'success');
     setSelectedUserIds([]);
     setIsRequestModalOpen(false);
+    setRequestStep(1);
     setRequestNotes('');
   };
 
@@ -931,7 +913,10 @@ export const Providers: React.FC = () => {
             {/* Request Button */}
             <button
               type="button"
-              onClick={() => setIsRequestModalOpen(true)}
+              onClick={() => {
+                setRequestStep(1);
+                setIsRequestModalOpen(true);
+              }}
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow-xs transition-colors cursor-pointer"
             >
               <Send size={13} />
@@ -964,282 +949,261 @@ export const Providers: React.FC = () => {
       )}
 
       {/* ======================================================== */}
-      {/* REQUEST MODAL (Credentialing & Enrollment + MantraComply / Manual) */}
+      {/* 2-STEP SERVICE REQUEST MODAL (CREDENTIALING & ENROLLMENT) */}
       {/* ======================================================== */}
       {isRequestModalOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex min-h-screen items-center justify-center p-4">
             <div 
-              className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
-              onClick={() => setIsRequestModalOpen(false)}
+              className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity"
+              onClick={() => {
+                setIsRequestModalOpen(false);
+                setRequestStep(1);
+              }}
             />
 
-            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-xl p-6 transform transition-all z-10 border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+            <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-7 border border-slate-100 z-10 animate-in fade-in zoom-in-95 duration-150">
+              {/* Header */}
+              <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                    <Send size={18} className="text-blue-600" />
-                    <span>Initiate Service Request</span>
+                  <h3 className="text-lg font-bold text-slate-800">
+                    {requestStep === 1 
+                      ? 'Update Process & Stage' 
+                      : (requestType === 'credentialing' ? 'Credentialing Details' : 'Enrollment Details')}
                   </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Configure service request for {selectedUserIds.length} selected healthcare provider{selectedUserIds.length > 1 ? 's' : ''}.
+                  <p className="text-xs text-slate-500 mt-1">
+                    {requestStep === 1
+                      ? `Move ${selectedUserIds.length} selected client${selectedUserIds.length > 1 ? 's' : ''} to a new workflow process and stage.`
+                      : `Configure ${fulfillmentMethod === 'mantracomply' ? 'MantraComply ops-managed' : 'self-service in-house'} details.`}
                   </p>
                 </div>
                 <button
-                  onClick={() => setIsRequestModalOpen(false)}
-                  className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors cursor-pointer"
+                  type="button"
+                  onClick={() => {
+                    setIsRequestModalOpen(false);
+                    setRequestStep(1);
+                  }}
+                  className="text-slate-400 hover:text-slate-600 transition-colors p-1 cursor-pointer"
                 >
-                  <X size={15} />
+                  <X size={18} />
                 </button>
               </div>
 
-              {/* Selected Providers Chips */}
-              <div className="mb-4 p-3 bg-slate-50 rounded-xl border border-slate-200/80">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-2">
-                  Target Providers ({selectedUserIds.length}):
-                </span>
-                <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
-                  {users.filter(u => selectedUserIds.includes(u.id)).map(u => (
-                    <span 
-                      key={u.id}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-800 text-xs font-semibold shadow-2xs"
-                    >
-                      <UserIcon size={12} className="text-blue-600" />
-                      <span>{u.name}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveSelectedFromRequest(u.id)}
-                        className="text-slate-400 hover:text-slate-600 cursor-pointer ml-0.5"
-                        title="Remove from this request"
-                      >
-                        <X size={11} />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <form onSubmit={handleSubmitRequest} className="space-y-4 text-xs">
-                {/* 1. Request Type Selector: Credentialing vs Enrollment */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">
-                    1. Select Request Type
-                  </label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setRequestType('credentialing')}
-                      className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
-                        requestType === 'credentialing'
-                          ? 'border-blue-600 bg-blue-50/50 text-blue-900 ring-2 ring-blue-600/20'
-                          : 'border-slate-200 hover:border-slate-300 text-slate-700 bg-white'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 font-bold text-sm mb-1">
-                        <ShieldCheck size={16} className={requestType === 'credentialing' ? 'text-blue-600' : 'text-slate-400'} />
-                        <span>Credentialing</span>
-                      </div>
-                      <p className="text-[11px] text-slate-500 leading-normal">
-                        Primary source verification, medical licensing, board certs & CAQH.
-                      </p>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setRequestType('enrollment')}
-                      className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
-                        requestType === 'enrollment'
-                          ? 'border-blue-600 bg-blue-50/50 text-blue-900 ring-2 ring-blue-600/20'
-                          : 'border-slate-200 hover:border-slate-300 text-slate-700 bg-white'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 font-bold text-sm mb-1">
-                        <CreditCard size={16} className={requestType === 'enrollment' ? 'text-blue-600' : 'text-slate-400'} />
-                        <span>Payer Enrollment</span>
-                      </div>
-                      <p className="text-[11px] text-slate-500 leading-normal">
-                        Commercial insurance paneling, Medicaid/Medicare & contract execution.
-                      </p>
-                    </button>
-                  </div>
-                </div>
-
-                {/* 2. Execution Method: Through MantraComply vs Manual */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">
-                    2. Choose Execution Mode
-                  </label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setFulfillmentMethod('mantracomply')}
-                      className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
-                        fulfillmentMethod === 'mantracomply'
-                          ? 'border-blue-600 bg-blue-50/50 text-blue-900 ring-2 ring-blue-600/20'
-                          : 'border-slate-200 hover:border-slate-300 text-slate-700 bg-white'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between font-bold text-sm mb-1">
-                        <span>Through MantraComply</span>
-                        <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold">
-                          Ops Managed
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-slate-500 leading-normal">
-                        MantraComply specialists prepare, file, and follow up directly until approved.
-                      </p>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setFulfillmentMethod('manual')}
-                      className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
-                        fulfillmentMethod === 'manual'
-                          ? 'border-blue-600 bg-blue-50/50 text-blue-900 ring-2 ring-blue-600/20'
-                          : 'border-slate-200 hover:border-slate-300 text-slate-700 bg-white'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between font-bold text-sm mb-1">
-                        <span>Manual (Self-Service)</span>
-                        <span className="text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full font-bold">
-                          In-House
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-slate-500 leading-normal">
-                        Submit filings directly yourself with generated dossier packets & checklists.
-                      </p>
-                    </button>
-                  </div>
-                </div>
-
-                {/* 3. Conditional Parameters */}
-                {requestType === 'credentialing' ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 p-3.5 bg-slate-50 rounded-xl border border-slate-200">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                        Service Category
-                      </label>
-                      <input
-                        type="text"
-                        value={serviceType}
-                        onChange={(e) => setServiceType(e.target.value)}
-                        placeholder="e.g. THERAPY, OCCUPATIONAL THERAPY"
-                        className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-500 uppercase font-semibold text-blue-700 bg-white"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                        Primary Practice State
-                      </label>
+              {/* Step 1: Process and Execution Mode Selection */}
+              {requestStep === 1 ? (
+                <div className="space-y-4 mt-6">
+                  {/* Field 1: Target Process */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      Target Process
+                    </label>
+                    <div className="relative">
                       <select
-                        value={practiceState}
-                        onChange={(e) => setPracticeState(e.target.value)}
-                        className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-500 bg-white cursor-pointer font-semibold text-slate-800"
+                        value={requestType}
+                        onChange={(e) => setRequestType(e.target.value as 'credentialing' | 'enrollment')}
+                        className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 hover:border-slate-300 focus:outline-none focus:border-slate-400 appearance-none pr-9 transition-colors cursor-pointer"
                       >
-                        {US_STATES.map(st => (
-                          <option key={st} value={st}>{st}</option>
-                        ))}
+                        <option value="credentialing">Credentialing</option>
+                        <option value="enrollment">Payer Enrollment</option>
                       </select>
+                      <ChevronDown size={14} className="text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                     </div>
                   </div>
-                ) : (
-                  <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                        Target Payers
-                      </label>
-                      <button
-                        type="button"
-                        onClick={handlePayerSelectAll}
-                        className="text-[11px] text-blue-600 hover:underline font-semibold cursor-pointer"
-                      >
-                        {selectedPayers.length === POPULAR_PAYERS.length ? 'Deselect All' : 'Select All'}
-                      </button>
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {POPULAR_PAYERS.map(payer => {
-                        const isSelected = selectedPayers.includes(payer);
-                        return (
-                          <button
-                            key={payer}
-                            type="button"
-                            onClick={() => handleTogglePayer(payer)}
-                            className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1.5 ${
-                              isSelected
-                                ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
-                                : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
-                            }`}
-                          >
-                            <span>{payer}</span>
-                            {isSelected && <Check size={12} />}
-                          </button>
-                        );
-                      })}
-                    </div>
 
-                    <div className="grid grid-cols-2 gap-3 pt-1">
+                  {/* Field 2: Execution Mode */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      Execution Mode
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={fulfillmentMethod}
+                        onChange={(e) => setFulfillmentMethod(e.target.value as 'mantracomply' | 'manual')}
+                        className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 hover:border-slate-300 focus:outline-none focus:border-slate-400 appearance-none pr-9 transition-colors cursor-pointer"
+                      >
+                        <option value="mantracomply">Through MantraComply (Ops Managed)</option>
+                        <option value="manual">Manual (Self-Service / In-House)</option>
+                      </select>
+                      <ChevronDown size={14} className="text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
+                  </div>
+
+                  {/* Step 1 Footer */}
+                  <div className="flex items-center justify-between pt-6 mt-6">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsRequestModalOpen(false);
+                        setRequestStep(1);
+                      }}
+                      className="text-xs font-semibold text-slate-500 hover:text-slate-800 px-2 py-1.5 transition-colors cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRequestStep(2)}
+                      className="px-8 py-2.5 rounded-full bg-slate-600 hover:bg-slate-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                    >
+                      Continue
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* Step 2: Specific Request Details */
+                <form onSubmit={handleSubmitRequest} className="space-y-4 mt-6">
+                  {requestType === 'credentialing' ? (
+                    <>
+                      {/* Credentialing Field 1: Service Category */}
                       <div>
-                        <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                          Service Category
+                        </label>
+                        <div className="relative">
+                          <select
+                            value={serviceType}
+                            onChange={(e) => setServiceType(e.target.value)}
+                            className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 hover:border-slate-300 focus:outline-none focus:border-slate-400 appearance-none pr-9 transition-colors cursor-pointer"
+                          >
+                            <option value="THERAPY">Therapy</option>
+                            <option value="OCCUPATIONAL THERAPY">Occupational Therapy</option>
+                            <option value="SPEECH THERAPY">Speech Therapy</option>
+                            <option value="BEHAVIORAL HEALTH">Behavioral Health</option>
+                            <option value="PHYSICIAN">Physician / MD</option>
+                            <option value="NURSE PRACTITIONER">Nurse Practitioner (NP)</option>
+                            <option value="OTHER">Other Specialty</option>
+                          </select>
+                          <ChevronDown size={14} className="text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        </div>
+                      </div>
+
+                      {/* Credentialing Field 2: Practice State */}
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                           Practice State
                         </label>
-                        <select
-                          value={practiceState}
-                          onChange={(e) => setPracticeState(e.target.value)}
-                          className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-500 bg-white cursor-pointer font-semibold text-slate-800"
-                        >
-                          {US_STATES.map(st => (
-                            <option key={st} value={st}>{st}</option>
-                          ))}
-                        </select>
+                        <div className="relative">
+                          <select
+                            value={practiceState}
+                            onChange={(e) => setPracticeState(e.target.value)}
+                            className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 hover:border-slate-300 focus:outline-none focus:border-slate-400 appearance-none pr-9 transition-colors cursor-pointer"
+                          >
+                            {US_STATES.map(st => (
+                              <option key={st} value={st}>{st}</option>
+                            ))}
+                          </select>
+                          <ChevronDown size={14} className="text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        </div>
                       </div>
+
+                      {/* Credentialing Field 3: Special Instructions */}
                       <div>
-                        <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                          Special Instructions (Optional)
+                        </label>
+                        <input
+                          type="text"
+                          value={requestNotes}
+                          onChange={(e) => setRequestNotes(e.target.value)}
+                          placeholder="e.g. Expedited CAQH verification..."
+                          className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder:text-slate-400 hover:border-slate-300 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors"
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {/* Enrollment Field 1: Target Payer */}
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                          Target Payer
+                        </label>
+                        <div className="relative">
+                          <select
+                            value={targetPayer}
+                            onChange={(e) => setTargetPayer(e.target.value)}
+                            className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 hover:border-slate-300 focus:outline-none focus:border-slate-400 appearance-none pr-9 transition-colors cursor-pointer"
+                          >
+                            <option value="ALL">All Major Payers (Aetna, BCBS, Cigna, UHC)</option>
+                            {POPULAR_PAYERS.map(p => (
+                              <option key={p} value={p}>{p}</option>
+                            ))}
+                          </select>
+                          <ChevronDown size={14} className="text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        </div>
+                      </div>
+
+                      {/* Enrollment Field 2: Practice State */}
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                          Practice State
+                        </label>
+                        <div className="relative">
+                          <select
+                            value={practiceState}
+                            onChange={(e) => setPracticeState(e.target.value)}
+                            className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 hover:border-slate-300 focus:outline-none focus:border-slate-400 appearance-none pr-9 transition-colors cursor-pointer"
+                          >
+                            {US_STATES.map(st => (
+                              <option key={st} value={st}>{st}</option>
+                            ))}
+                          </select>
+                          <ChevronDown size={14} className="text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        </div>
+                      </div>
+
+                      {/* Enrollment Field 3: Plan Type */}
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                           Plan Type
                         </label>
-                        <select className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-500 bg-white cursor-pointer font-semibold text-slate-800">
-                          <option value="Commercial">Commercial</option>
-                          <option value="Medicare">Medicare</option>
-                          <option value="Medicaid">Medicaid</option>
-                        </select>
+                        <div className="relative">
+                          <select
+                            value={planType}
+                            onChange={(e) => setPlanType(e.target.value)}
+                            className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 hover:border-slate-300 focus:outline-none focus:border-slate-400 appearance-none pr-9 transition-colors cursor-pointer"
+                          >
+                            <option value="Commercial">Commercial</option>
+                            <option value="Medicare">Medicare</option>
+                            <option value="Medicaid">Medicaid</option>
+                          </select>
+                          <ChevronDown size={14} className="text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        </div>
                       </div>
-                    </div>
+
+                      {/* Enrollment Field 4: Special Instructions */}
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                          Special Instructions (Optional)
+                        </label>
+                        <input
+                          type="text"
+                          value={requestNotes}
+                          onChange={(e) => setRequestNotes(e.target.value)}
+                          placeholder="e.g. Include group NPI..."
+                          className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder:text-slate-400 hover:border-slate-300 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors"
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {/* Step 2 Footer */}
+                  <div className="flex items-center justify-between pt-6 mt-6">
+                    <button
+                      type="button"
+                      onClick={() => setRequestStep(1)}
+                      className="text-xs font-semibold text-slate-500 hover:text-slate-800 px-2 py-1.5 transition-colors cursor-pointer"
+                    >
+                      Back
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-8 py-2.5 rounded-full bg-slate-600 hover:bg-slate-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                    >
+                      Submit Request
+                    </button>
                   </div>
-                )}
-
-                {/* Additional Instructions */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    Special Instructions (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={requestNotes}
-                    onChange={(e) => setRequestNotes(e.target.value)}
-                    placeholder="e.g. Expedite submission, existing CAQH ID available..."
-                    className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs outline-none focus:border-blue-500"
-                  />
-                </div>
-
-                {/* Footer Buttons */}
-                <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-                  <button
-                    type="button"
-                    onClick={() => setIsRequestModalOpen(false)}
-                    className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-50 cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs cursor-pointer flex items-center gap-1.5"
-                  >
-                    <Send size={13} />
-                    <span>
-                      Submit {requestType === 'credentialing' ? 'Credentialing' : 'Enrollment'} Request
-                    </span>
-                  </button>
-                </div>
-              </form>
+                </form>
+              )}
             </div>
           </div>
         </div>
