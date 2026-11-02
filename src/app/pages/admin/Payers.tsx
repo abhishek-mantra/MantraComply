@@ -284,7 +284,6 @@ export const Payers: React.FC = () => {
                 <th className="py-3.5 px-4 whitespace-nowrap border-r border-b border-[#1a4a6e] min-w-[100px]">STATE</th>
                 <th className="py-3.5 px-4 whitespace-nowrap border-r border-b border-[#1a4a6e] min-w-[120px]">TYPE</th>
                 <th className="py-3.5 px-4 whitespace-nowrap border-r border-b border-[#1a4a6e] min-w-[140px]">PAYER</th>
-                <th className="py-3.5 px-4 whitespace-nowrap border-r border-b border-[#1a4a6e] min-w-[110px] text-center">PRIORITY</th>
                 <th className="py-3.5 px-4 whitespace-nowrap border-r border-b border-[#1a4a6e] min-w-[240px]">STAGE</th>
                 <th className="py-3.5 px-4 whitespace-nowrap border-r border-b border-[#1a4a6e] min-w-[150px]">DATE OF SUBMISSION</th>
                 <th className="py-3.5 px-4 whitespace-nowrap border-r border-b border-[#1a4a6e] min-w-[150px]">REFERENCE NUMBER</th>
@@ -299,7 +298,7 @@ export const Payers: React.FC = () => {
             <tbody className="text-xs">
               {paginatedList.length === 0 ? (
                 <tr>
-                  <td colSpan={17} className="text-center py-16 text-slate-400 text-sm border-b border-slate-100">
+                  <td colSpan={16} className="text-center py-16 text-slate-400 text-sm border-b border-slate-100">
                     No enrollment requests found matching your filters.
                   </td>
                 </tr>
@@ -360,14 +359,6 @@ export const Payers: React.FC = () => {
                     {/* Payer */}
                     <td className="py-3 px-4 font-bold text-slate-900 whitespace-nowrap border-r border-b border-slate-100">
                       {item.payer || item.insurance}
-                    </td>
-
-                    {/* Priority (Interactive PriorityBadge) */}
-                    <td className="py-3 px-4 text-center whitespace-nowrap border-r border-b border-slate-100">
-                      <PriorityBadge
-                        priority={item.priority}
-                        onChange={(p) => handlePriorityChange(item.id, p)}
-                      />
                     </td>
 
                     {/* Stage (Interactive 12-stage PipelineStageBar) */}
