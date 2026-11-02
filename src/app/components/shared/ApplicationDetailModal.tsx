@@ -189,3 +189,4 @@ export const ApplicationDetailModal: React.FC<ApplicationDetailModalProps> = ({
     </div>
   );
 };
+

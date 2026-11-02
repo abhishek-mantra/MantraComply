@@ -463,3 +463,4 @@ export const ClientDetailDrawer: React.FC<ClientDetailDrawerProps> = ({
     </div>
   );
 };
+

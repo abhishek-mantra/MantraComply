@@ -13,18 +13,23 @@ import {
   User as UserIcon, 
   Shield, 
   Edit3,
-  Check
+  Check,
+  CheckSquare,
+  Trash2,
+  Send,
+  ShieldCheck,
+  CreditCard,
+  AlertTriangle
 } from 'lucide-react';
 import { 
   initialUsers, 
   initialRoles, 
-  availableSpecialists, 
   availableOrganizations, 
-  availableOnboarders, 
   UserRecord, 
   RoleDefinition, 
   RoleType 
 } from '../../data/adminMockData';
+import { useToast } from '../../components/shared/Toast';
 
 const complianceModules = [
   "Credential Applications",
@@ -36,9 +41,24 @@ const complianceModules = [
   "Subscriptions & Orders"
 ];
 
+const POPULAR_PAYERS = [
+  "Aetna",
+  "Blue Cross Blue Shield",
+  "Cigna",
+  "UnitedHealthcare",
+  "Humana",
+  "Medicare",
+  "Medicaid"
+];
+
+const US_STATES = [
+  "NY", "CA", "TX", "FL", "IL", "PA", "OH", "GA", "NC", "MI", "NJ", "VA", "WA", "AZ", "MA", "TN", "CO"
+];
+
 type PermissionLevel = 'none' | 'view' | 'view_edit' | 'full';
 
 export const Providers: React.FC = () => {
+  const { showToast } = useToast();
   const [users, setUsers] = useState<UserRecord[]>(initialUsers);
   const [roles, setRoles] = useState<RoleDefinition[]>(initialRoles);
 
@@ -49,11 +69,26 @@ export const Providers: React.FC = () => {
   // Org Multi-Select filter
   const [selectedOrgs, setSelectedOrgs] = useState<string[]>([]);
   const [isOrgFilterOpen, setIsOrgFilterOpen] = useState(false);
-  const [orgFilterSearch, setOrgFilterSearch] = useState('');
   const orgFilterRef = useRef<HTMLDivElement>(null);
+
+  // Checkbox Multi-Select state
+  const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
+  const masterCheckboxRef = useRef<HTMLInputElement>(null);
 
   // Hamburger Action Menu state
   const [openMenuUserId, setOpenMenuUserId] = useState<number | null>(null);
+
+  // Request Modal State
+  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
+  const [requestType, setRequestType] = useState<'credentialing' | 'enrollment'>('credentialing');
+  const [fulfillmentMethod, setFulfillmentMethod] = useState<'mantracomply' | 'manual'>('mantracomply');
+  const [selectedPayers, setSelectedPayers] = useState<string[]>(['Aetna', 'Blue Cross Blue Shield']);
+  const [practiceState, setPracticeState] = useState('NY');
+  const [serviceType, setServiceType] = useState('THERAPY');
+  const [requestNotes, setRequestNotes] = useState('');
+
+  // Delete Confirmation Dialog State
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
   // Edit User Modal State
   const [isEditUserModalOpen, setIsEditUserModalOpen] = useState(false);
@@ -64,9 +99,6 @@ export const Providers: React.FC = () => {
   const [editRole, setEditRole] = useState<RoleType>('PROVIDER');
   const [editCountry, setEditCountry] = useState('United States');
   const [editService, setEditService] = useState('THERAPY');
-  const [editReferredBy, setEditReferredBy] = useState('');
-  const [editOnboardedBy, setEditOnboardedBy] = useState('Sarah Jenkins');
-  const [editOpsResponsible, setEditOpsResponsible] = useState(availableSpecialists[0]);
   const [editCredStartDate, setEditCredStartDate] = useState('Oct 28, 2026');
   const [editEnrollStartDate, setEditEnrollStartDate] = useState('Nov 15, 2026');
 
@@ -78,9 +110,6 @@ export const Providers: React.FC = () => {
   const [newUserRole, setNewUserRole] = useState<RoleType>('PROVIDER');
   const [newUserCountry, setNewUserCountry] = useState('United States');
   const [newUserService, setNewUserService] = useState('THERAPY');
-  const [newUserReferredBy, setNewUserReferredBy] = useState('Portal (Direct)');
-  const [newUserOnboardedBy, setNewUserOnboardedBy] = useState('Sarah Jenkins');
-  const [newUserOpsResponsible, setNewUserOpsResponsible] = useState(availableSpecialists[0]);
 
   // Create/Edit Role Modal State
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
@@ -110,6 +139,110 @@ export const Providers: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, []);
 
+  // Filtered Users
+  const filteredUsers = useMemo(() => {
+    return users.filter((u) => {
+      const userOrgs = u.organizations && u.organizations.length > 0 ? u.organizations : [u.organization];
+      const matchesSearch = 
+        u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (u.phone && u.phone.includes(searchTerm)) ||
+        (u.service && u.service.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        userOrgs.some(o => o.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchesRole = roleFilter === 'ALL' || u.role === roleFilter;
+      const matchesOrg = selectedOrgs.length === 0 || selectedOrgs.some(so => userOrgs.includes(so));
+      return matchesSearch && matchesRole && matchesOrg;
+    });
+  }, [users, searchTerm, roleFilter, selectedOrgs]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / itemsPerPage));
+  const paginatedUsers = filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  // Master Checkbox indeterminate state
+  const isAllCurrentPageSelected = paginatedUsers.length > 0 && paginatedUsers.every(u => selectedUserIds.includes(u.id));
+  const isSomeCurrentPageSelected = paginatedUsers.some(u => selectedUserIds.includes(u.id)) && !isAllCurrentPageSelected;
+
+  useEffect(() => {
+    if (masterCheckboxRef.current) {
+      masterCheckboxRef.current.indeterminate = isSomeCurrentPageSelected;
+    }
+  }, [isSomeCurrentPageSelected]);
+
+  const handleToggleMasterCheckbox = () => {
+    if (isAllCurrentPageSelected) {
+      const currentPageIds = paginatedUsers.map(u => u.id);
+      setSelectedUserIds(prev => prev.filter(id => !currentPageIds.includes(id)));
+    } else {
+      const currentPageIds = paginatedUsers.map(u => u.id);
+      setSelectedUserIds(prev => Array.from(new Set([...prev, ...currentPageIds])));
+    }
+  };
+
+  const handleToggleRowCheckbox = (id: number) => {
+    setSelectedUserIds(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
+  // Delete Handlers
+  const handleDeleteSelected = () => {
+    const count = selectedUserIds.length;
+    setUsers(prev => prev.filter(u => !selectedUserIds.includes(u.id)));
+    setSelectedUserIds([]);
+    setIsDeleteConfirmOpen(false);
+    showToast(`Successfully removed ${count} provider${count > 1 ? 's' : ''} from organization roster.`, 'success');
+  };
+
+  // Request Handlers
+  const handleTogglePayer = (payer: string) => {
+    setSelectedPayers(prev => 
+      prev.includes(payer) ? prev.filter(p => p !== payer) : [...prev, payer]
+    );
+  };
+
+  const handlePayerSelectAll = () => {
+    if (selectedPayers.length === POPULAR_PAYERS.length) {
+      setSelectedPayers([]);
+    } else {
+      setSelectedPayers([...POPULAR_PAYERS]);
+    }
+  };
+
+  const handleRemoveSelectedFromRequest = (id: number) => {
+    setSelectedUserIds(prev => prev.filter(item => item !== id));
+    if (selectedUserIds.length <= 1) {
+      setIsRequestModalOpen(false);
+    }
+  };
+
+  const handleSubmitRequest = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedUserIds.length === 0) return;
+
+    const count = selectedUserIds.length;
+    const typeLabel = requestType === 'credentialing' ? 'Credentialing' : 'Payer Enrollment';
+    const methodLabel = fulfillmentMethod === 'mantracomply' ? 'MantraComply Ops Managed' : 'Self-Service (In-House)';
+
+    // Update start dates in state to reflect the initiated request
+    setUsers(prev => prev.map(u => {
+      if (selectedUserIds.includes(u.id)) {
+        return {
+          ...u,
+          ...(requestType === 'credentialing' 
+            ? { credentialingStartDate: 'Initiated' } 
+            : { enrollmentStartDate: 'Initiated' })
+        };
+      }
+      return u;
+    }));
+
+    showToast(`Successfully created ${typeLabel} request for ${count} provider(s) via ${methodLabel}.`, 'success');
+    setSelectedUserIds([]);
+    setIsRequestModalOpen(false);
+    setRequestNotes('');
+  };
+
+  // Edit User Handlers
   const handleOpenEditUser = (user: UserRecord) => {
     setEditingUser(user);
     setEditName(user.name);
@@ -118,9 +251,6 @@ export const Providers: React.FC = () => {
     setEditRole(user.role);
     setEditCountry(user.country || 'United States');
     setEditService(user.service || 'THERAPY');
-    setEditReferredBy(user.referredBy || 'Portal (Direct)');
-    setEditOnboardedBy(user.onboardedBy || 'Sarah Jenkins');
-    setEditOpsResponsible(user.opsResponsible || availableSpecialists[0]);
     setEditCredStartDate(user.credentialingStartDate || 'Oct 28, 2026');
     setEditEnrollStartDate(user.enrollmentStartDate || 'Nov 15, 2026');
     setOpenMenuUserId(null);
@@ -141,9 +271,6 @@ export const Providers: React.FC = () => {
           role: editRole,
           country: editCountry,
           service: editService.trim(),
-          referredBy: editReferredBy.trim(),
-          onboardedBy: editOnboardedBy,
-          opsResponsible: editOpsResponsible,
           credentialingStartDate: editCredStartDate,
           enrollmentStartDate: editEnrollStartDate
         };
@@ -151,6 +278,7 @@ export const Providers: React.FC = () => {
       return u;
     }));
 
+    showToast(`Updated profile for ${editName.trim()}`, 'success');
     setIsEditUserModalOpen(false);
     setEditingUser(null);
   };
@@ -172,28 +300,19 @@ export const Providers: React.FC = () => {
       signupDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
       role: newUserRole,
       status: 'Active',
-      referredBy: newUserReferredBy.trim(),
-      onboardedBy: newUserOnboardedBy,
-      opsResponsible: newUserOpsResponsible,
       credentialingStartDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
       enrollmentStartDate: 'Pending'
     };
 
     setUsers([newUser, ...users]);
+    showToast(`Added ${newUserName.trim()} to provider roster`, 'success');
     setIsAddUserModalOpen(false);
     setNewUserName('');
     setNewUserEmail('');
     setNewUserPhone('');
   };
 
-  const updateOnboardedBy = (userId: number, onboarder: string) => {
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, onboardedBy: onboarder } : u));
-  };
-
-  const updateOpsResponsible = (userId: number, specialist: string) => {
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, opsResponsible: specialist } : u));
-  };
-
+  // Roles Tab Handlers
   const handleOpenCreateRole = () => {
     setEditingRoleId(null);
     setRoleName('');
@@ -274,23 +393,6 @@ export const Providers: React.FC = () => {
     );
   };
 
-  const filteredUsers = useMemo(() => {
-    return users.filter((u) => {
-      const userOrgs = u.organizations && u.organizations.length > 0 ? u.organizations : [u.organization];
-      const matchesSearch = 
-        u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (u.phone && u.phone.includes(searchTerm)) ||
-        (u.service && u.service.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (u.onboardedBy && u.onboardedBy.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (u.opsResponsible && u.opsResponsible.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        userOrgs.some(o => o.toLowerCase().includes(searchTerm.toLowerCase()));
-      const matchesRole = roleFilter === 'ALL' || u.role === roleFilter;
-      const matchesOrg = selectedOrgs.length === 0 || selectedOrgs.some(so => userOrgs.includes(so));
-      return matchesSearch && matchesRole && matchesOrg;
-    });
-  }, [users, searchTerm, roleFilter, selectedOrgs]);
-
   const filteredRoles = useMemo(() => {
     return roles.filter((r) => {
       const matchesSearch = 
@@ -300,9 +402,6 @@ export const Providers: React.FC = () => {
       return matchesSearch && matchesRole;
     });
   }, [roles, searchTerm, roleFilter]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / itemsPerPage));
-  const paginatedUsers = filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div className="space-y-6">
@@ -513,36 +612,47 @@ export const Providers: React.FC = () => {
       )}
 
       {/* ======================================================== */}
-      {/* TAB 1: USERS TABLE (MATCHING SCREENSHOT + FULL COLUMNS) */}
+      {/* TAB 1: USERS TABLE (CHECKBOXES + REFERRED/ONBOARDED/OPS REMOVED) */}
       {/* ======================================================== */}
       {activeTab === 'users' && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden relative">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-separate border-spacing-0 min-w-[1900px]">
+            <table className="w-full text-left border-separate border-spacing-0 min-w-[1400px]">
               <thead>
                 <tr className="bg-[#002B49] text-white text-[11px] font-bold uppercase tracking-wider">
-                  {/* Col 1: Action Menu Icon (sticky left-0) */}
+                  {/* Col 0: Master Checkbox (sticky left-0) */}
                   <th className="py-3.5 px-0 w-[44px] min-w-[44px] max-w-[44px] text-center border-r border-b border-[#1a4a6e] box-border sticky left-0 bg-[#002B49] z-30">
+                    <div className="w-[44px] flex items-center justify-center">
+                      <input
+                        ref={masterCheckboxRef}
+                        type="checkbox"
+                        checked={isAllCurrentPageSelected}
+                        onChange={handleToggleMasterCheckbox}
+                        className="w-4 h-4 rounded text-blue-600 bg-white border-slate-300 focus:ring-blue-500 cursor-pointer transition-colors"
+                        title={isAllCurrentPageSelected ? "Deselect all on this page" : "Select all on this page"}
+                      />
+                    </div>
+                  </th>
+
+                  {/* Col 1: Action Menu Icon (sticky left-44px) */}
+                  <th className="py-3.5 px-0 w-[44px] min-w-[44px] max-w-[44px] text-center border-r border-b border-[#1a4a6e] box-border sticky left-[44px] bg-[#002B49] z-30">
                     <div className="w-[44px] flex items-center justify-center">
                       <span className="text-slate-300">≡</span>
                     </div>
                   </th>
 
-                  {/* Col 2: USER (Avatar + Name + ID) (sticky left-44px) */}
-                  <th className="py-3.5 px-5 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[220px] sticky left-[44px] bg-[#002B49] z-30 shadow-[4px_0_6px_-1px_rgba(0,0,0,0.25)]">
+                  {/* Col 2: USER (Avatar + Name + ID) (sticky left-88px with subtle drop shadow) */}
+                  <th className="py-3.5 px-5 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[220px] sticky left-[88px] bg-[#002B49] z-30 shadow-[4px_0_6px_-1px_rgba(0,0,0,0.25)]">
                     USER
                   </th>
 
-                  <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[220px]">EMAIL</th>
+                  <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[200px]">EMAIL</th>
                   <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[150px]">PHONE</th>
-                  <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[200px]">ORGANIZATION</th>
-                  <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[150px]">COUNTRY</th>
+                  <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[180px]">ORGANIZATION</th>
+                  <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[140px]">COUNTRY</th>
                   <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[160px]">SERVICE</th>
                   <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[130px]">SIGNUP DATE</th>
-                  <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[140px]">ROLE</th>
-                  <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[160px]">REFERRED BY</th>
-                  <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[160px]">ONBOARDED BY</th>
-                  <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[190px]">OPS RESPONSIBLE</th>
+                  <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[130px]">ROLE</th>
                   <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[170px]">CREDENTIALING START DATE</th>
                   <th className="py-3.5 px-4 border-b border-[#1a4a6e] whitespace-nowrap min-w-[170px]">ENROLLMENT START DATE</th>
                 </tr>
@@ -550,23 +660,43 @@ export const Providers: React.FC = () => {
               <tbody className="text-xs">
                 {paginatedUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={14} className="text-center py-16 text-slate-400 text-sm border-b border-slate-100">
+                    <td colSpan={12} className="text-center py-16 text-slate-400 text-sm border-b border-slate-100">
                       No users found matching your filters.
                     </td>
                   </tr>
                 ) : (
                   paginatedUsers.map((user, idx) => {
                     const isNearBottom = idx >= paginatedUsers.length - 2 && paginatedUsers.length > 2;
+                    const isSelected = selectedUserIds.includes(user.id);
                     const userOrgs = user.organizations && user.organizations.length > 0 
                       ? user.organizations 
                       : [user.organization];
 
                     return (
-                      <tr key={user.id} className={`hover:bg-slate-50/80 transition-colors group ${openMenuUserId === user.id ? 'relative z-50' : ''}`}>
-                        {/* Col 1: Action Hamburger (≡) with Edit Option */}
-                        <td className={`py-3 px-0 w-[44px] min-w-[44px] max-w-[44px] text-center border-r border-b border-slate-100 box-border sticky left-0 bg-white group-hover:bg-slate-50 transition-colors relative ${
-                          openMenuUserId === user.id ? 'z-50' : 'z-20'
+                      <tr 
+                        key={user.id} 
+                        className={`transition-colors group ${
+                          isSelected ? 'bg-blue-50/50 hover:bg-blue-50/70' : 'hover:bg-slate-50/80'
+                        } ${openMenuUserId === user.id ? 'relative z-50' : ''}`}
+                      >
+                        {/* Col 0: Row Checkbox */}
+                        <td className={`py-3 px-0 w-[44px] min-w-[44px] max-w-[44px] text-center border-r border-b border-slate-100 box-border sticky left-0 transition-colors z-20 ${
+                          isSelected ? 'bg-blue-50/80' : 'bg-white group-hover:bg-slate-50'
                         }`}>
+                          <div className="w-[44px] flex items-center justify-center">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleToggleRowCheckbox(user.id)}
+                              className="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer transition-colors"
+                            />
+                          </div>
+                        </td>
+
+                        {/* Col 1: Action Hamburger (≡) with Edit Option */}
+                        <td className={`py-3 px-0 w-[44px] min-w-[44px] max-w-[44px] text-center border-r border-b border-slate-100 box-border sticky left-[44px] transition-colors relative ${
+                          isSelected ? 'bg-blue-50/80' : 'bg-white group-hover:bg-slate-50'
+                        } ${openMenuUserId === user.id ? 'z-50' : 'z-20'}`}>
                           <div className={`relative inline-block text-center user-action-menu-container ${openMenuUserId === user.id ? 'z-50' : ''}`}>
                             <button
                               type="button"
@@ -609,7 +739,9 @@ export const Providers: React.FC = () => {
                         </td>
 
                         {/* Col 2: USER (Avatar Circle + Name + ID) */}
-                        <td className="py-3 px-5 border-r border-b border-slate-100 whitespace-nowrap sticky left-[44px] bg-white group-hover:bg-slate-50 transition-colors z-10 shadow-[4px_0_6px_-1px_rgba(0,0,0,0.06)]">
+                        <td className={`py-3 px-5 border-r border-b border-slate-100 whitespace-nowrap sticky left-[88px] transition-colors z-10 shadow-[4px_0_6px_-1px_rgba(0,0,0,0.06)] ${
+                          isSelected ? 'bg-blue-50/80' : 'bg-white group-hover:bg-slate-50'
+                        }`}>
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 shrink-0">
                               <UserIcon size={14} />
@@ -679,53 +811,24 @@ export const Providers: React.FC = () => {
                           </button>
                         </td>
 
-                        {/* Referred by */}
-                        <td className="py-3 px-4 whitespace-nowrap border-r border-b border-slate-100">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium text-slate-600 bg-slate-100 border border-slate-200">
-                            {user.referredBy || 'Portal (Direct)'}
-                          </span>
-                        </td>
-
-                        {/* Onboarded by (Dropdown) */}
-                        <td className="py-3 px-4 whitespace-nowrap border-r border-b border-slate-100">
-                          <div className="relative inline-block text-left">
-                            <select
-                              value={user.onboardedBy || 'Sarah Jenkins'}
-                              onChange={(e) => updateOnboardedBy(user.id, e.target.value)}
-                              className="text-xs font-semibold px-2.5 py-1 rounded-lg border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer appearance-none pr-6 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            >
-                              {availableOnboarders.map((ob) => (
-                                <option key={ob} value={ob}>{ob}</option>
-                              ))}
-                            </select>
-                            <ChevronDown size={12} className="text-slate-400 absolute right-2 top-2 pointer-events-none" />
-                          </div>
-                        </td>
-
-                        {/* Ops Responsible (Dropdown) */}
-                        <td className="py-3 px-4 whitespace-nowrap border-r border-b border-slate-100">
-                          <div className="relative inline-block text-left">
-                            <select
-                              value={user.opsResponsible || availableSpecialists[0]}
-                              onChange={(e) => updateOpsResponsible(user.id, e.target.value)}
-                              className="text-xs font-semibold px-2.5 py-1 rounded-lg border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer appearance-none pr-6 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            >
-                              {availableSpecialists.map((s) => (
-                                <option key={s} value={s}>{s}</option>
-                              ))}
-                            </select>
-                            <ChevronDown size={12} className="text-slate-400 absolute right-2 top-2 pointer-events-none" />
-                          </div>
-                        </td>
-
                         {/* Credentialing Start Date */}
                         <td className="py-3 px-4 text-slate-600 font-medium whitespace-nowrap border-r border-b border-slate-100">
-                          {user.credentialingStartDate || 'Oct 28, 2026'}
+                          {user.credentialingStartDate === 'Initiated' ? (
+                            <span className="font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 text-xs">
+                              Initiated
+                            </span>
+                          ) : (
+                            user.credentialingStartDate || 'Oct 28, 2026'
+                          )}
                         </td>
 
                         {/* Enrollment Start Date */}
                         <td className="py-3 px-4 whitespace-nowrap border-b border-slate-100">
-                          {user.enrollmentStartDate && user.enrollmentStartDate !== 'Pending' && user.enrollmentStartDate !== '—' ? (
+                          {user.enrollmentStartDate === 'Initiated' ? (
+                            <span className="font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 text-xs">
+                              Initiated
+                            </span>
+                          ) : user.enrollmentStartDate && user.enrollmentStartDate !== 'Pending' && user.enrollmentStartDate !== '—' ? (
                             <span className="font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 text-xs">
                               {user.enrollmentStartDate}
                             </span>
@@ -812,62 +915,377 @@ export const Providers: React.FC = () => {
       )}
 
       {/* ======================================================== */}
-      {/* TAB 2: ROLES TABLE (PERMISSIONS MATRIX) */}
+      {/* FLOATING ACTION PILL (EXACT DESIGN MATCHING USER IMAGE) */}
       {/* ======================================================== */}
-      {activeTab === 'roles' && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-[#002B49] text-white text-[11px] font-bold uppercase tracking-wider">
-                  <th className="py-3.5 px-3 w-10 text-center border-r border-[#1a4a6e]">
-                    <Settings size={14} className="text-slate-300 mx-auto" />
-                  </th>
-                  <th className="py-3.5 px-6 border-r border-[#1a4a6e]">Role Name</th>
-                  <th className="py-3.5 px-6 border-r border-[#1a4a6e]">Description</th>
-                  <th className="py-3.5 px-6 border-r border-[#1a4a6e]">Data Scope</th>
-                  <th className="py-3.5 px-6">Users Assigned</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-xs">
-                {filteredRoles.map((role) => (
-                  <tr key={role.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-3.5 px-3 text-center text-slate-400 border-r border-slate-100">
+      {selectedUserIds.length > 0 && activeTab === 'users' && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-5 duration-200">
+          <div className="bg-[#0B1527] text-white px-5 py-2.5 rounded-2xl shadow-2xl border border-slate-700/80 flex items-center gap-3.5 backdrop-blur-md">
+            {/* Selection Counter */}
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-200">
+              <CheckSquare size={16} className="text-blue-400" />
+              <span>{selectedUserIds.length} {selectedUserIds.length === 1 ? 'client' : 'clients'} selected</span>
+            </div>
+
+            <div className="h-4 w-px bg-slate-700/80" />
+
+            {/* Request Button */}
+            <button
+              type="button"
+              onClick={() => setIsRequestModalOpen(true)}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow-xs transition-colors cursor-pointer"
+            >
+              <Send size={13} />
+              <span>Request</span>
+            </button>
+
+            {/* Delete Button */}
+            <button
+              type="button"
+              onClick={() => setIsDeleteConfirmOpen(true)}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#3f1618] hover:bg-[#501c20] text-[#fca5a5] border border-red-500/30 font-semibold text-xs transition-colors cursor-pointer"
+            >
+              <Trash2 size={13} />
+              <span>Delete</span>
+            </button>
+
+            <div className="h-4 w-px bg-slate-700/80" />
+
+            {/* Cancel/Deselect Button */}
+            <button
+              type="button"
+              onClick={() => setSelectedUserIds([])}
+              className="text-slate-400 hover:text-white p-1 rounded-full cursor-pointer transition-colors"
+              title="Clear selection"
+            >
+              <X size={15} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* REQUEST MODAL (Credentialing & Enrollment + MantraComply / Manual) */}
+      {/* ======================================================== */}
+      {isRequestModalOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-screen items-center justify-center p-4">
+            <div 
+              className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
+              onClick={() => setIsRequestModalOpen(false)}
+            />
+
+            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-xl p-6 transform transition-all z-10 border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <Send size={18} className="text-blue-600" />
+                    <span>Initiate Service Request</span>
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Configure service request for {selectedUserIds.length} selected healthcare provider{selectedUserIds.length > 1 ? 's' : ''}.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsRequestModalOpen(false)}
+                  className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors cursor-pointer"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+
+              {/* Selected Providers Chips */}
+              <div className="mb-4 p-3 bg-slate-50 rounded-xl border border-slate-200/80">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-2">
+                  Target Providers ({selectedUserIds.length}):
+                </span>
+                <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+                  {users.filter(u => selectedUserIds.includes(u.id)).map(u => (
+                    <span 
+                      key={u.id}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-800 text-xs font-semibold shadow-2xs"
+                    >
+                      <UserIcon size={12} className="text-blue-600" />
+                      <span>{u.name}</span>
                       <button
-                        onClick={() => handleOpenEditRole(role)}
-                        className="hover:text-blue-600 transition-colors cursor-pointer"
-                        title="Edit Role Permissions"
+                        type="button"
+                        onClick={() => handleRemoveSelectedFromRequest(u.id)}
+                        className="text-slate-400 hover:text-slate-600 cursor-pointer ml-0.5"
+                        title="Remove from this request"
                       >
-                        <Edit3 size={14} />
+                        <X size={11} />
                       </button>
-                    </td>
-                    <td className="py-3.5 px-6 font-bold text-slate-900 border-r border-slate-100">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 text-[11px]">
-                          {role.name}
-                        </span>
-                        {role.isSystem && (
-                          <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-                            (System)
-                          </span>
-                        )}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <form onSubmit={handleSubmitRequest} className="space-y-4 text-xs">
+                {/* 1. Request Type Selector: Credentialing vs Enrollment */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">
+                    1. Select Request Type
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setRequestType('credentialing')}
+                      className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                        requestType === 'credentialing'
+                          ? 'border-blue-600 bg-blue-50/50 text-blue-900 ring-2 ring-blue-600/20'
+                          : 'border-slate-200 hover:border-slate-300 text-slate-700 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 font-bold text-sm mb-1">
+                        <ShieldCheck size={16} className={requestType === 'credentialing' ? 'text-blue-600' : 'text-slate-400'} />
+                        <span>Credentialing</span>
                       </div>
-                    </td>
-                    <td className="py-3.5 px-6 text-slate-600 border-r border-slate-100 max-w-md">
-                      {role.description}
-                    </td>
-                    <td className="py-3.5 px-6 border-r border-slate-100">
-                      <span className="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 text-[11px]">
-                        {role.dataScope}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-6 font-semibold text-slate-700">
-                      {role.userCount} users
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      <p className="text-[11px] text-slate-500 leading-normal">
+                        Primary source verification, medical licensing, board certs & CAQH.
+                      </p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setRequestType('enrollment')}
+                      className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                        requestType === 'enrollment'
+                          ? 'border-blue-600 bg-blue-50/50 text-blue-900 ring-2 ring-blue-600/20'
+                          : 'border-slate-200 hover:border-slate-300 text-slate-700 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 font-bold text-sm mb-1">
+                        <CreditCard size={16} className={requestType === 'enrollment' ? 'text-blue-600' : 'text-slate-400'} />
+                        <span>Payer Enrollment</span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 leading-normal">
+                        Commercial insurance paneling, Medicaid/Medicare & contract execution.
+                      </p>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 2. Execution Method: Through MantraComply vs Manual */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">
+                    2. Choose Execution Mode
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setFulfillmentMethod('mantracomply')}
+                      className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                        fulfillmentMethod === 'mantracomply'
+                          ? 'border-blue-600 bg-blue-50/50 text-blue-900 ring-2 ring-blue-600/20'
+                          : 'border-slate-200 hover:border-slate-300 text-slate-700 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between font-bold text-sm mb-1">
+                        <span>Through MantraComply</span>
+                        <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold">
+                          Ops Managed
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 leading-normal">
+                        MantraComply specialists prepare, file, and follow up directly until approved.
+                      </p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setFulfillmentMethod('manual')}
+                      className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                        fulfillmentMethod === 'manual'
+                          ? 'border-blue-600 bg-blue-50/50 text-blue-900 ring-2 ring-blue-600/20'
+                          : 'border-slate-200 hover:border-slate-300 text-slate-700 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between font-bold text-sm mb-1">
+                        <span>Manual (Self-Service)</span>
+                        <span className="text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full font-bold">
+                          In-House
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 leading-normal">
+                        Submit filings directly yourself with generated dossier packets & checklists.
+                      </p>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 3. Conditional Parameters */}
+                {requestType === 'credentialing' ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Service Category
+                      </label>
+                      <input
+                        type="text"
+                        value={serviceType}
+                        onChange={(e) => setServiceType(e.target.value)}
+                        placeholder="e.g. THERAPY, OCCUPATIONAL THERAPY"
+                        className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-500 uppercase font-semibold text-blue-700 bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Primary Practice State
+                      </label>
+                      <select
+                        value={practiceState}
+                        onChange={(e) => setPracticeState(e.target.value)}
+                        className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-500 bg-white cursor-pointer font-semibold text-slate-800"
+                      >
+                        {US_STATES.map(st => (
+                          <option key={st} value={st}>{st}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        Target Payers
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handlePayerSelectAll}
+                        className="text-[11px] text-blue-600 hover:underline font-semibold cursor-pointer"
+                      >
+                        {selectedPayers.length === POPULAR_PAYERS.length ? 'Deselect All' : 'Select All'}
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {POPULAR_PAYERS.map(payer => {
+                        const isSelected = selectedPayers.includes(payer);
+                        return (
+                          <button
+                            key={payer}
+                            type="button"
+                            onClick={() => handleTogglePayer(payer)}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1.5 ${
+                              isSelected
+                                ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
+                                : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
+                            }`}
+                          >
+                            <span>{payer}</span>
+                            {isSelected && <Check size={12} />}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 pt-1">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                          Practice State
+                        </label>
+                        <select
+                          value={practiceState}
+                          onChange={(e) => setPracticeState(e.target.value)}
+                          className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-500 bg-white cursor-pointer font-semibold text-slate-800"
+                        >
+                          {US_STATES.map(st => (
+                            <option key={st} value={st}>{st}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                          Plan Type
+                        </label>
+                        <select className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-500 bg-white cursor-pointer font-semibold text-slate-800">
+                          <option value="Commercial">Commercial</option>
+                          <option value="Medicare">Medicare</option>
+                          <option value="Medicaid">Medicaid</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Additional Instructions */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Special Instructions (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={requestNotes}
+                    onChange={(e) => setRequestNotes(e.target.value)}
+                    placeholder="e.g. Expedite submission, existing CAQH ID available..."
+                    className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                {/* Footer Buttons */}
+                <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setIsRequestModalOpen(false)}
+                    className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-50 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Send size={13} />
+                    <span>
+                      Submit {requestType === 'credentialing' ? 'Credentialing' : 'Enrollment'} Request
+                    </span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* DELETE CONFIRMATION DIALOG */}
+      {/* ======================================================== */}
+      {isDeleteConfirmOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-screen items-center justify-center p-4">
+            <div 
+              className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
+              onClick={() => setIsDeleteConfirmOpen(false)}
+            />
+
+            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 transform transition-all z-10 border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
+              <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mb-4">
+                <Trash2 size={24} />
+              </div>
+
+              <h3 className="text-base font-bold text-slate-900 mb-1">
+                Delete {selectedUserIds.length} Selected Provider{selectedUserIds.length > 1 ? 's' : ''}?
+              </h3>
+              <p className="text-xs text-slate-500 leading-relaxed mb-5">
+                This will remove the selected provider records from your organization roster. Any active credentialing or enrollment applications associated with these providers will be archived.
+              </p>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsDeleteConfirmOpen(false)}
+                  className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteSelected}
+                  className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-xs cursor-pointer flex items-center gap-1.5"
+                >
+                  <Trash2 size={13} />
+                  <span>Delete Providers</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -891,7 +1309,7 @@ export const Providers: React.FC = () => {
                     <span>Edit User Details</span>
                   </h3>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Modify profile information, role assignment, and ops ownership.
+                    Modify profile information and system role assignment.
                   </p>
                 </div>
                 <button
@@ -998,56 +1416,8 @@ export const Providers: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Referred by & Onboarded by */}
+                {/* Start Dates */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      Referred by
-                    </label>
-                    <input
-                      type="text"
-                      value={editReferredBy}
-                      onChange={(e) => setEditReferredBy(e.target.value)}
-                      className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs outline-none focus:border-blue-500 text-slate-800"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      Onboarded by
-                    </label>
-                    <div className="relative">
-                      <select
-                        value={editOnboardedBy}
-                        onChange={(e) => setEditOnboardedBy(e.target.value)}
-                        className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs outline-none focus:border-blue-500 bg-white cursor-pointer font-semibold text-slate-800 appearance-none pr-8"
-                      >
-                        {availableOnboarders.map((ob) => (
-                          <option key={ob} value={ob}>{ob}</option>
-                        ))}
-                      </select>
-                      <ChevronDown size={14} className="text-slate-400 absolute right-3 top-3 pointer-events-none" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Ops Responsible & Start Dates */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      Ops Responsible
-                    </label>
-                    <select
-                      value={editOpsResponsible}
-                      onChange={(e) => setEditOpsResponsible(e.target.value)}
-                      className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs outline-none focus:border-blue-500 bg-white cursor-pointer font-semibold text-slate-800"
-                    >
-                      {availableSpecialists.map((s) => (
-                        <option key={s} value={s}>{s}</option>
-                      ))}
-                    </select>
-                  </div>
-
                   <div>
                     <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                       Credentialing Start Date
@@ -1073,7 +1443,7 @@ export const Providers: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Footer Buttons - Button just says "Edit" as requested */}
+                {/* Footer Buttons - Button says "Edit" */}
                 <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
                   <button
                     type="button"
@@ -1238,8 +1608,67 @@ export const Providers: React.FC = () => {
       )}
 
       {/* ======================================================== */}
-      {/* CREATE / EDIT ROLE MODAL */}
+      {/* TAB 2: ROLES TABLE (PERMISSIONS MATRIX) */}
       {/* ======================================================== */}
+      {activeTab === 'roles' && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-[#002B49] text-white text-[11px] font-bold uppercase tracking-wider">
+                  <th className="py-3.5 px-3 w-10 text-center border-r border-[#1a4a6e]">
+                    <Settings size={14} className="text-slate-300 mx-auto" />
+                  </th>
+                  <th className="py-3.5 px-6 border-r border-[#1a4a6e]">Role Name</th>
+                  <th className="py-3.5 px-6 border-r border-[#1a4a6e]">Description</th>
+                  <th className="py-3.5 px-6 border-r border-[#1a4a6e]">Data Scope</th>
+                  <th className="py-3.5 px-6">Users Assigned</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-xs">
+                {filteredRoles.map((role) => (
+                  <tr key={role.id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="py-3.5 px-3 text-center text-slate-400 border-r border-slate-100">
+                      <button
+                        onClick={() => handleOpenEditRole(role)}
+                        className="hover:text-blue-600 transition-colors cursor-pointer"
+                        title="Edit Role Permissions"
+                      >
+                        <Edit3 size={14} />
+                      </button>
+                    </td>
+                    <td className="py-3.5 px-6 font-bold text-slate-900 border-r border-slate-100">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 text-[11px]">
+                          {role.name}
+                        </span>
+                        {role.isSystem && (
+                          <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                            (System)
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-3.5 px-6 text-slate-600 border-r border-slate-100 max-w-md">
+                      {role.description}
+                    </td>
+                    <td className="py-3.5 px-6 border-r border-slate-100">
+                      <span className="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 text-[11px]">
+                        {role.dataScope}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-6 font-semibold text-slate-700">
+                      {role.userCount} users
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* CREATE / EDIT ROLE MODAL */}
       {isRoleModalOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex min-h-screen items-center justify-center p-4">
@@ -1384,4 +1813,3 @@ export const Providers: React.FC = () => {
 };
 
 export default Providers;
-

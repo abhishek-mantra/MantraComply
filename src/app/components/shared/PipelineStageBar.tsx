@@ -129,3 +129,4 @@ export const PipelineStageBar: React.FC<PipelineStageBarProps> = ({
     </div>
   );
 };
+
