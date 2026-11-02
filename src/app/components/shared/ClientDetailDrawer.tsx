@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   X, 
   Trash2, 
@@ -12,6 +13,7 @@ import {
   ShieldCheck,
   FileCheck,
   MessageSquare, 
+  Info, 
   User, 
   Search 
 } from 'lucide-react';
@@ -33,434 +35,1276 @@ export const ClientDetailDrawer: React.FC<ClientDetailDrawerProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'general' | 'enrollments' | 'documents'>('general');
 
-  // Form states
+  // Form states for General tab (Left column)
   const [name, setName] = useState(client.providerName);
+  const [category, setCategory] = useState(client.category || 'Providers');
   const [email, setEmail] = useState(client.email || `${client.providerName.toLowerCase().replace(/\s+/g, '.')}@mantra.care`);
   const [phone, setPhone] = useState(client.phone || '+1 6402869150');
+  const [timezone, setTimezone] = useState(client.timezone || 'America/New_York (EST)');
+  const [source, setSource] = useState('Credential Applications');
+  const [inquiryType, setInquiryType] = useState(client.service || 'THERAPY');
   const [organization, setOrganization] = useState(client.organization || 'MantraCare');
   const [stateName, setStateName] = useState(client.state || 'New York (NY)');
   const [referenceNumber, setReferenceNumber] = useState(client.referenceNumber || 'REF-AET-99214');
 
   // Payer Details
   const [payer, setPayer] = useState(client.payer || client.insurance || 'Aetna');
+  const [payerNetwork, setPayerNetwork] = useState(client.payerNetwork || `${client.payer || 'Aetna'} Medicare Advantage`);
   const [planType, setPlanType] = useState(client.type || 'Commercial');
+  const [applicationType, setApplicationType] = useState(client.applicationType || 'Online Roster');
+  const [medicalGroup, setMedicalGroup] = useState(client.medicalGroup || `${client.organization || 'MantraCare'} Medical Group`);
 
   // Dates
+  const [startDate, setStartDate] = useState(client.startDate || '09/15/2026');
   const [submissionDate, setSubmissionDate] = useState(client.dateOfSubmission || client.date || '10/22/2026');
+  const [approvalDate, setApprovalDate] = useState(client.approvalDate || '10/30/2026');
+  const [resubmittedDate, setResubmittedDate] = useState(client.resubmittedDate || '—');
   const [revalidationDate, setRevalidationDate] = useState(client.recredentialingDate || '09/28/2028');
   const [effectiveDate, setEffectiveDate] = useState(client.effectiveDate || '09/29/2026');
   const [followUpDate, setFollowUpDate] = useState(client.followUpDate || '11/14/2026');
 
-  // Collapsible sections
+  // Collapsible sections state
   const [payerDetailsOpen, setPayerDetailsOpen] = useState(true);
   const [datesOpen, setDatesOpen] = useState(true);
+  const [analyticsOpen, setAnalyticsOpen] = useState(true);
+  const [systemInfoOpen, setSystemInfoOpen] = useState(true);
 
   // Status & Responsible
   const [currentStatus, setCurrentStatus] = useState<string>(client.status);
-  const [responsibleUser, setResponsibleUser] = useState(client.responsibleUser || client.assignedSpecialist || availableSpecialists[0]);
+  const [responsibleUser, setResponsibleUser] = useState(client.responsibleUser || client.assignedSpecialist || 'MantraComply');
 
-  // Activity & Notes
+  // Activity & Notes state (Right column)
   const [noteText, setNoteText] = useState('');
-  const [activities, setActivities] = useState<ClientActivity[]>(client.activities || [
-    {
-      id: 'act-1',
-      type: 'STAGE_UPDATED',
-      title: 'Stage Updated',
-      subtitle: `${client.status} via Payer Credentialing & Enrollment Pipeline`,
-      badgeText: client.status,
-      timestamp: 'Oct 31, 2026, 2:58 PM'
-    },
-    {
-      id: 'act-2',
-      type: 'VERIFICATION_COMPLETED',
-      title: 'Primary Source Verification (PSV) Completed',
-      subtitle: 'State Medical License & Board Certification verified with active standing.',
-      badgeText: 'VERIFIED',
-      timestamp: 'Oct 31, 2026, 11:30 AM'
-    },
-    {
-      id: 'act-3',
-      type: 'NOTE_ADDED',
-      title: 'Credentialing Compliance Note Added',
-      subtitle: `Note by ${client.responsibleUser || client.assignedSpecialist || 'Sarah Jenkins'}: ${client.notes || 'Enrollment dossier verified and submitted.'}`,
-      timestamp: 'Oct 28, 2026, 2:10 PM'
-    }
-  ]);
+  const [noteType, setNoteType] = useState<'ACTIVITY' | 'NOTE'>('NOTE');
+  const [activityFilter, setActivityFilter] = useState<'ALL' | 'STAGE_UPDATED' | 'VERIFICATION_COMPLETED' | 'NOTE_ADDED'>('ALL');
+  const [activities, setActivities] = useState<ClientActivity[]>(
+    client.activities && client.activities.length > 0 
+      ? client.activities 
+      : [
+          {
+            id: 'act-1',
+            type: 'STAGE_UPDATED',
+            title: 'Stage Updated',
+            subtitle: `${client.status} via Payer Credentialing & Enrollment Pipeline`,
+            badgeText: client.status,
+            timestamp: 'Oct 31, 2026, 2:58 PM'
+          },
+          {
+            id: 'act-2',
+            type: 'VERIFICATION_COMPLETED',
+            title: 'Primary Source Verification (PSV) Completed',
+            subtitle: 'State Medical License & Board Certification verified with active standing and zero disciplinary actions.',
+            badgeText: 'VERIFIED',
+            timestamp: 'Oct 31, 2026, 11:30 AM'
+          },
+          {
+            id: 'act-3',
+            type: 'SANCTION_CHECK',
+            title: 'OIG & SAM Exclusion Screening Cleared',
+            subtitle: 'Automated exclusion check confirmed provider is in good standing with zero federal or state sanctions.',
+            badgeText: 'CLEARED',
+            timestamp: 'Oct 30, 2026, 3:15 PM'
+          },
+          {
+            id: 'act-4',
+            type: 'CAQH_ATTESTED',
+            title: 'CAQH ProView Profile Attestation Verified',
+            subtitle: 'CAQH credentialing data attested by provider; dossier synchronized for payer contracting review.',
+            badgeText: 'CAQH ATTESTED',
+            timestamp: 'Oct 29, 2026, 9:45 AM'
+          },
+          {
+            id: 'act-5',
+            type: 'NOTE_ADDED',
+            title: 'Credentialing Compliance Note Added',
+            subtitle: `Note by ${client.responsibleUser || client.assignedSpecialist || 'Sarah Jenkins'}: ${client.notes || 'Enrollment dossier verified. Submitted to payer contracting committee for panel review.'}`,
+            timestamp: 'Oct 28, 2026, 2:10 PM'
+          }
+        ]
+  );
 
-  const [documents, setDocuments] = useState<ClientDocument[]>(client.documents || [
-    { 
-      id: 'doc-1', 
-      name: 'Signed_W9_Tax_Form.pdf', 
-      documentNumber: 'DOC-892147',
-      uploadedBy: 'Sarah Jenkins',
-      uploadDate: 'Oct 28, 2026', 
-      size: '1.4 MB', 
-      type: 'DOCUMENT/PDF', 
-      status: 'VERIFIED' 
-    },
-    { 
-      id: 'doc-2', 
-      name: 'State_Medical_License.pdf', 
-      documentNumber: 'DOC-892148',
-      uploadedBy: 'David Miller',
-      uploadDate: 'Oct 28, 2026', 
-      size: '2.8 MB', 
-      type: 'LICENSE/PDF', 
-      status: 'VERIFIED' 
-    }
-  ]);
+  // Documents state (Tab 3)
+  const [documents, setDocuments] = useState<ClientDocument[]>(
+    client.documents && client.documents.length > 0 
+      ? client.documents 
+      : [
+          { 
+            id: 'doc-1', 
+            name: 'Signed_W9_Tax_Form.pdf', 
+            documentNumber: 'DOC-892147',
+            uploadedBy: 'Sarah Jenkins',
+            uploadDate: 'Oct 28, 2026', 
+            size: '1.4 MB', 
+            type: 'DOCUMENT/PDF', 
+            status: 'VERIFIED' 
+          },
+          { 
+            id: 'doc-2', 
+            name: 'State_Medical_License.pdf', 
+            documentNumber: 'DOC-892148',
+            uploadedBy: 'David Miller',
+            uploadDate: 'Oct 28, 2026', 
+            size: '2.8 MB', 
+            type: 'LICENSE/PDF', 
+            status: 'VERIFIED' 
+          },
+          { 
+            id: 'doc-3', 
+            name: 'Malpractice_COI_Certificate.pdf', 
+            documentNumber: 'DOC-892149',
+            uploadedBy: 'Sarah Jenkins',
+            uploadDate: 'Oct 28, 2026', 
+            size: '950 KB', 
+            type: 'MALPRACTICE/PDF', 
+            status: 'VERIFIED' 
+          }
+        ]
+  );
+  const [docSearch, setDocSearch] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [saveSuccessMessage, setSaveSuccessMessage] = useState(false);
 
-  const handleSave = () => {
-    onUpdate({
+  // Sync state whenever client prop updates
+  useEffect(() => {
+    setName(client.providerName);
+    setCategory(client.category || 'Providers');
+    setEmail(client.email || `${client.providerName.toLowerCase().replace(/\s+/g, '.')}@mantra.care`);
+    setPhone(client.phone || '+1 6402869150');
+    setTimezone(client.timezone || 'America/New_York (EST)');
+    setInquiryType(client.service);
+    setOrganization(client.organization);
+    setStateName(client.state || 'FL');
+    setPayer(client.payer || client.insurance || 'Aetna');
+    setPayerNetwork(client.payerNetwork || `${client.payer || 'Aetna'} Medicare Advantage`);
+    setReferenceNumber(client.referenceNumber || 'REF-AET-99214');
+    setPlanType(client.type || 'Commercial');
+    setApplicationType(client.applicationType || 'Online Roster');
+    setMedicalGroup(client.medicalGroup || `${client.organization} Medical Group`);
+    setStartDate(client.startDate || '09/15/2026');
+    setSubmissionDate(client.dateOfSubmission || client.date || '10/22/2026');
+    setApprovalDate(client.approvalDate || '10/30/2026');
+    setResubmittedDate(client.resubmittedDate || '—');
+    setRevalidationDate(client.recredentialingDate || '09/28/2028');
+    setEffectiveDate(client.effectiveDate || '09/29/2026');
+    setFollowUpDate(client.followUpDate || '11/14/2026');
+    setCurrentStatus(client.status);
+    setResponsibleUser(client.responsibleUser || client.assignedSpecialist || 'MantraComply');
+    if (client.activities && client.activities.length > 0) {
+      setActivities(client.activities);
+    }
+    if (client.documents && client.documents.length > 0) {
+      setDocuments(client.documents);
+    }
+  }, [client]);
+
+  // Save changes handler
+  const handleSaveGeneral = () => {
+    const updated: EnrollmentRecord = {
       ...client,
       providerName: name,
+      category,
       email,
       phone,
+      timezone,
+      service: inquiryType,
       organization,
       state: stateName,
       referenceNumber,
       payer,
+      insurance: payer,
+      payerNetwork,
       type: planType,
+      applicationType,
+      medicalGroup,
+      startDate,
       dateOfSubmission: submissionDate,
-      effectiveDate,
+      date: submissionDate,
+      approvalDate,
+      resubmittedDate,
       recredentialingDate: revalidationDate,
+      effectiveDate,
       followUpDate,
-      status: currentStatus,
+      status: currentStatus as any,
       responsibleUser,
       assignedSpecialist: responsibleUser,
       activities,
       documents
-    });
-    onClose();
-  };
-
-  const handleAddNote = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!noteText.trim()) return;
-
-    const newActivity: ClientActivity = {
-      id: `act-${Date.now()}`,
-      type: 'NOTE_ADDED',
-      title: 'Compliance Note Added',
-      subtitle: `Note by ${responsibleUser}: ${noteText.trim()}`,
-      timestamp: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })
     };
 
-    setActivities([newActivity, ...activities]);
-    setNoteText('');
+    onUpdate(updated);
+    setSaveSuccessMessage(true);
+    setTimeout(() => setSaveSuccessMessage(false), 3000);
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="w-full max-w-4xl bg-white h-full shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-right duration-300">
+  // Add new activity / note
+  const handlePostActivity = () => {
+    if (!noteText.trim()) return;
+
+    const newAct: ClientActivity = {
+      id: `act-${Date.now()}`,
+      type: noteType === 'NOTE' ? 'NOTE_ADDED' : 'STAGE_UPDATED',
+      title: noteType === 'NOTE' ? 'Credentialing Note Added' : 'Compliance Activity Recorded',
+      subtitle: `Logged by ${responsibleUser || 'Compliance Specialist'}: ${noteText.trim()}`,
+      timestamp: new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true })
+    };
+
+    const updatedActs = [newAct, ...activities];
+    setActivities(updatedActs);
+    setNoteText('');
+
+    onUpdate({
+      ...client,
+      activities: updatedActs,
+      notes: noteText.trim()
+    });
+  };
+
+  // Handle stage change from PipelineStageBar
+  const handleStageChange = (newStage: string) => {
+    setCurrentStatus(newStage);
+
+    const stageAct: ClientActivity = {
+      id: `act-${Date.now()}`,
+      type: 'STAGE_UPDATED',
+      title: 'Stage Updated',
+      subtitle: `${newStage} via Payer Credentialing & Enrollment Pipeline`,
+      badgeText: newStage,
+      timestamp: new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true })
+    };
+
+    const updatedActs = [stageAct, ...activities];
+    setActivities(updatedActs);
+
+    onUpdate({
+      ...client,
+      status: newStage as any,
+      activities: updatedActs
+    });
+  };
+
+  // Direct File Upload handler
+  const handleDirectFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const files = Array.from(e.target.files);
+    const newDocs: ClientDocument[] = files.map((f, i) => {
+      const sizeStr = f.size > 1024 * 1024 
+        ? `${(f.size / (1024 * 1024)).toFixed(1)} MB` 
+        : `${Math.max(1, Math.round(f.size / 1024))} KB`;
+      return {
+        id: `doc-${Date.now()}-${i}`,
+        name: f.name,
+        type: f.name.endsWith('.pdf') ? 'DOCUMENT/PDF' : (f.type || 'DOCUMENT/PDF'),
+        uploadDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        documentNumber: `DOC-${Math.floor(100000 + Math.random() * 900000)}`,
+        uploadedBy: responsibleUser || 'Sarah Jenkins',
+        size: sizeStr,
+        status: 'VERIFIED'
+      };
+    });
+
+    const updatedDocs = [...newDocs, ...documents];
+    setDocuments(updatedDocs);
+
+    const newAct: ClientActivity = {
+      id: `act-${Date.now()}`,
+      type: 'NOTE_ADDED',
+      title: 'Document Uploaded',
+      subtitle: `Uploaded ${files.length} document(s): ${files.map(f => f.name).join(', ')}`,
+      timestamp: new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true })
+    };
+    const updatedActs = [newAct, ...activities];
+    setActivities(updatedActs);
+
+    onUpdate({
+      ...client,
+      documents: updatedDocs,
+      activities: updatedActs
+    });
+
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  // Filtered documents matching search query
+  const filteredDocs = React.useMemo(() => {
+    if (!docSearch.trim()) return documents;
+    const q = docSearch.toLowerCase();
+    return documents.filter(d => 
+      d.name.toLowerCase().includes(q) || 
+      (d.documentNumber || '').toLowerCase().includes(q) ||
+      (d.uploadedBy || '').toLowerCase().includes(q)
+    );
+  }, [documents, docSearch]);
+
+  return createPortal(
+    <div className="fixed inset-0 z-[100] pointer-events-auto">
+      {/* Backdrop */}
+      <div 
+        className="fixed inset-0 bg-black/40 backdrop-blur-xs z-[90] transition-opacity cursor-pointer"
+        onClick={onClose}
+      />
+
+      {/* Slide-in Drawer Container: Starts exactly from the sidebar right edge to the screen edge */}
+      <div 
+        className="fixed inset-y-0 right-0 z-[100] bg-[#f8fafc] shadow-2xl flex flex-col border-l border-slate-200 animate-in slide-in-from-right duration-200 overflow-hidden left-0 md:left-64"
+      >
         
-        {/* Top Header Bar */}
-        <div className="bg-[#002B49] text-white p-4 flex items-center justify-between border-b border-[#1a4a6e]">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-white font-bold text-sm">
-              {name.charAt(0) || 'P'}
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-white leading-tight">{name}</h2>
-              <div className="flex items-center gap-2 text-xs text-blue-200 mt-0.5">
-                <span>ID: #{client.id}</span>
-                <span>•</span>
-                <span>{organization}</span>
-                <span>•</span>
-                <span>{payer}</span>
+        {/* TOP HEADER */}
+        <div className="bg-white border-b border-slate-200 px-6 pt-5 pb-0 shadow-2xs">
+          <div className="flex items-center justify-between pb-4">
+            {/* Provider Avatar & Identity */}
+            <div className="flex items-center gap-3.5">
+              <div className="w-11 h-11 rounded-full bg-blue-600 text-white font-bold text-lg flex items-center justify-center shadow-xs">
+                {name.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl font-bold text-slate-900 tracking-tight">{name}</h2>
+                  <span className="text-xs px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 font-semibold border border-blue-100 uppercase">
+                    {inquiryType}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5 font-medium">
+                  {phone} • {organization} • Ref #{referenceNumber}
+                </p>
               </div>
             </div>
+
+            {/* Action Buttons: Delete & Red Close Button */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className="w-8 h-8 rounded-full border border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 flex items-center justify-center transition-colors cursor-pointer"
+                title="Delete Record"
+                onClick={() => {
+                  if (confirm(`Are you sure you want to delete ${name}'s enrollment record?`)) {
+                    onClose();
+                  }
+                }}
+              >
+                <Trash2 size={15} />
+              </button>
+
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-8 h-8 rounded-full bg-rose-500 hover:bg-rose-600 text-white flex items-center justify-center shadow-xs transition-colors cursor-pointer"
+                title="Close Drawer"
+              >
+                <X size={16} />
+              </button>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* 3 Drawer Tabs: General, Enrollments, Documents */}
+          <div className="flex items-center gap-8 -mb-px">
             <button
-              onClick={handleSave}
-              className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+              onClick={() => setActiveTab('general')}
+              className={`pb-3 text-sm font-semibold transition-all relative cursor-pointer ${
+                activeTab === 'general'
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
             >
-              Save Changes
+              General
             </button>
             <button
-              onClick={onClose}
-              className="w-8 h-8 rounded-full hover:bg-white/10 text-white flex items-center justify-center transition-colors cursor-pointer"
+              onClick={() => setActiveTab('enrollments')}
+              className={`pb-3 text-sm font-semibold transition-all relative cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'enrollments'
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
             >
-              <X size={18} />
+              <span>Enrollments</span>
+              <span className="text-[11px] px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-600 font-bold">1</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('documents')}
+              className={`pb-3 text-sm font-semibold transition-all relative cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'documents'
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <span>Documents</span>
+              <span className="text-[11px] px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-600 font-bold">{documents.length}</span>
             </button>
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="border-b border-slate-200 bg-slate-50/80 px-6 pt-3 flex items-center gap-6 text-xs font-semibold">
-          <button
-            onClick={() => setActiveTab('general')}
-            className={`pb-3 border-b-2 cursor-pointer transition-colors ${
-              activeTab === 'general'
-                ? 'border-blue-600 text-blue-600 font-bold'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            General & Process Details
-          </button>
-          <button
-            onClick={() => setActiveTab('enrollments')}
-            className={`pb-3 border-b-2 cursor-pointer transition-colors ${
-              activeTab === 'enrollments'
-                ? 'border-blue-600 text-blue-600 font-bold'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            Milestone Pipeline
-          </button>
-          <button
-            onClick={() => setActiveTab('documents')}
-            className={`pb-3 border-b-2 cursor-pointer transition-colors ${
-              activeTab === 'documents'
-                ? 'border-blue-600 text-blue-600 font-bold'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            Documents ({documents.length})
-          </button>
-        </div>
+        {/* TAB CONTENTS (Scrollable area) */}
+        <div className="flex-1 overflow-y-auto">
 
-        {/* Main Body */}
-        <div className="flex-1 overflow-y-auto p-6">
+          {/* ======================================================== */}
+          {/* TAB 1: GENERAL */}
+          {/* ======================================================== */}
           {activeTab === 'general' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Left Column: Form Info */}
-              <div className="space-y-4">
-                {/* Pipeline Status Summary Card */}
-                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                  <div className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                    Current Milestone Stage
-                  </div>
-                  <PipelineStageBar
-                    status={currentStatus}
-                    onChange={(st) => setCurrentStatus(st)}
-                  />
-                  
-                  <div className="mt-4 pt-3 border-t border-slate-200 flex items-center justify-between text-xs">
-                    <span className="text-slate-500 font-medium">Ops Responsible:</span>
-                    <select
-                      value={responsibleUser}
-                      onChange={(e) => setResponsibleUser(e.target.value)}
-                      className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
-                    >
-                      {availableSpecialists.map((s) => (
-                        <option key={s} value={s}>{s}</option>
-                      ))}
-                    </select>
-                  </div>
+            <div className="p-6">
+              {saveSuccessMessage && (
+                <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold rounded-xl flex items-center gap-2 animate-in fade-in">
+                  <CheckCircle2 size={16} className="text-emerald-600" />
+                  <span>Changes saved successfully to provider profile and active enrollment!</span>
                 </div>
+              )}
 
-                {/* Collapsible: Payer Details */}
-                <div className="border border-slate-200 rounded-xl overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => setPayerDetailsOpen(!payerDetailsOpen)}
-                    className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 flex items-center justify-between text-left text-xs font-bold text-slate-800 cursor-pointer transition-colors"
-                  >
-                    <span>Payer & Network Details</span>
-                    {payerDetailsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                  </button>
-                  {payerDetailsOpen && (
-                    <div className="p-4 space-y-3 bg-white text-xs">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                
+                {/* LEFT COLUMN: Editable Info (lg:col-span-7) */}
+                <div className="lg:col-span-7 space-y-5">
+                  
+                  {/* Card: CURRENT MILESTONE STAGE */}
+                  <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">Current Milestone Stage</h3>
+                      <span className="text-[10px] text-slate-400 font-semibold">12-Stage Progression</span>
+                    </div>
+                    <PipelineStageBar
+                      status={currentStatus}
+                      onChange={handleStageChange}
+                    />
+                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Responsible:</span>
+                      {responsibleUser === 'MantraComply' ? (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                          MantraComply
+                        </span>
+                      ) : (
+                        <select
+                          value={responsibleUser}
+                          onChange={(e) => {
+                            setResponsibleUser(e.target.value);
+                            onUpdate({ ...client, responsibleUser: e.target.value, assignedSpecialist: e.target.value });
+                          }}
+                          className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 cursor-pointer focus:outline-none"
+                        >
+                          <option value="MantraComply">MantraComply</option>
+                          {availableSpecialists.map((s) => (
+                            <option key={s} value={s}>{s}</option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Card: ABOUT */}
+                  <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">About</h3>
+                      <span className="text-[10px] text-slate-400 font-semibold">Editable Fields</span>
+                    </div>
+
+                    <div className="space-y-3 text-xs">
+                      {/* Name */}
                       <div>
-                        <label className="text-[11px] font-semibold text-slate-500 block mb-1">Payer</label>
+                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                          Name
+                        </label>
                         <input
                           type="text"
-                          value={payer}
-                          onChange={(e) => setPayer(e.target.value)}
-                          className="w-full px-3 py-1.5 rounded-lg border border-slate-200 text-slate-800 font-semibold focus:outline-none focus:border-blue-500"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs text-slate-800 font-medium focus:outline-none focus:border-blue-500 bg-white"
                         />
                       </div>
-                      <div className="grid grid-cols-2 gap-3">
+
+                      {/* Category */}
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                          Category
+                        </label>
+                        <input
+                          type="text"
+                          value={category}
+                          onChange={(e) => setCategory(e.target.value)}
+                          className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 bg-white"
+                        />
+                      </div>
+
+                      {/* Email */}
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                          Email
+                        </label>
+                        <input
+                          type="email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 bg-white"
+                        />
+                      </div>
+
+                      {/* Phone */}
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                          Phone
+                        </label>
+                        <input
+                          type="text"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 bg-white"
+                        />
+                      </div>
+
+                      {/* Organization */}
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                          Organization
+                        </label>
+                        <input
+                          type="text"
+                          value={organization}
+                          onChange={(e) => setOrganization(e.target.value)}
+                          className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 bg-white font-medium"
+                        />
+                      </div>
+
+                      {/* State / Jurisdiction */}
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                          State / Jurisdiction
+                        </label>
+                        <input
+                          type="text"
+                          value={stateName}
+                          onChange={(e) => setStateName(e.target.value)}
+                          className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 bg-white"
+                        />
+                      </div>
+
+                      {/* Timezone */}
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                          Timezone
+                        </label>
+                        <select
+                          value={timezone}
+                          onChange={(e) => setTimezone(e.target.value)}
+                          className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 bg-white cursor-pointer"
+                        >
+                          <option value="America/New_York (EST)">America/New_York (EST)</option>
+                          <option value="America/Chicago (CST)">America/Chicago (CST)</option>
+                          <option value="America/Denver (MST)">America/Denver (MST)</option>
+                          <option value="America/Los_Angeles (PST)">America/Los_Angeles (PST)</option>
+                          <option value="Europe/London (GMT)">Europe/London (GMT)</option>
+                        </select>
+                      </div>
+
+                      {/* Source */}
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                          Source
+                        </label>
+                        <input
+                          type="text"
+                          value={source}
+                          onChange={(e) => setSource(e.target.value)}
+                          className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 bg-white"
+                        />
+                      </div>
+
+                      {/* Inquiry Type / Service */}
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                          Inquiry Type / Service
+                        </label>
+                        <input
+                          type="text"
+                          value={inquiryType}
+                          onChange={(e) => setInquiryType(e.target.value)}
+                          className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 bg-white uppercase font-semibold text-blue-700"
+                        />
+                      </div>
+
+                      {/* Created At */}
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                          Created At
+                        </label>
+                        <input
+                          type="text"
+                          disabled
+                          value="October 31, 2026"
+                          className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs text-slate-500 bg-slate-50 cursor-not-allowed"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card: PAYER DETAILS */}
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => setPayerDetailsOpen(!payerDetailsOpen)}
+                      className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50 transition-colors cursor-pointer border-b border-slate-100"
+                    >
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-2">
+                        {payerDetailsOpen ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+                        Payer Details
+                      </span>
+                      <span className="text-[10px] text-blue-600 font-semibold">{payer}</span>
+                    </button>
+
+                    {payerDetailsOpen && (
+                      <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                         <div>
-                          <label className="text-[11px] font-semibold text-slate-500 block mb-1">State</label>
+                          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                            Payer
+                          </label>
                           <input
                             type="text"
-                            value={stateName}
-                            onChange={(e) => setStateName(e.target.value)}
-                            className="w-full px-3 py-1.5 rounded-lg border border-slate-200 text-slate-800 focus:outline-none focus:border-blue-500"
+                            value={payer}
+                            onChange={(e) => setPayer(e.target.value)}
+                            className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 font-semibold"
                           />
                         </div>
+
                         <div>
-                          <label className="text-[11px] font-semibold text-slate-500 block mb-1">Plan Type</label>
+                          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                            Payer Network
+                          </label>
                           <input
                             type="text"
+                            value={payerNetwork}
+                            onChange={(e) => setPayerNetwork(e.target.value)}
+                            className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                            Plan Type
+                          </label>
+                          <select
                             value={planType}
                             onChange={(e) => setPlanType(e.target.value)}
-                            className="w-full px-3 py-1.5 rounded-lg border border-slate-200 text-slate-800 focus:outline-none focus:border-blue-500"
+                            className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 cursor-pointer bg-white"
+                          >
+                            <option value="Commercial">Commercial</option>
+                            <option value="Medicare">Medicare</option>
+                            <option value="Medicaid">Medicaid</option>
+                            <option value="Managed Care">Managed Care</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                            Application Type
+                          </label>
+                          <input
+                            type="text"
+                            value={applicationType}
+                            onChange={(e) => setApplicationType(e.target.value)}
+                            className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                            Reference Number
+                          </label>
+                          <input
+                            type="text"
+                            value={referenceNumber}
+                            onChange={(e) => setReferenceNumber(e.target.value)}
+                            className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 font-mono"
+                          />
+                        </div>
+
+                        <div className="md:col-span-2">
+                          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                            Medical Group
+                          </label>
+                          <input
+                            type="text"
+                            value={medicalGroup}
+                            onChange={(e) => setMedicalGroup(e.target.value)}
+                            className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500"
                           />
                         </div>
                       </div>
-                      <div>
-                        <label className="text-[11px] font-semibold text-slate-500 block mb-1">Reference Number</label>
-                        <input
-                          type="text"
-                          value={referenceNumber}
-                          onChange={(e) => setReferenceNumber(e.target.value)}
-                          className="w-full px-3 py-1.5 rounded-lg border border-slate-200 text-slate-800 font-mono focus:outline-none focus:border-blue-500"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Collapsible: Dates */}
-                <div className="border border-slate-200 rounded-xl overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => setDatesOpen(!datesOpen)}
-                    className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 flex items-center justify-between text-left text-xs font-bold text-slate-800 cursor-pointer transition-colors"
-                  >
-                    <span>Key Milestone Dates</span>
-                    {datesOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                  </button>
-                  {datesOpen && (
-                    <div className="p-4 grid grid-cols-2 gap-3 bg-white text-xs">
-                      <div>
-                        <label className="text-[11px] font-semibold text-slate-500 block mb-1">Date of Submission</label>
-                        <input
-                          type="text"
-                          value={submissionDate}
-                          onChange={(e) => setSubmissionDate(e.target.value)}
-                          className="w-full px-3 py-1.5 rounded-lg border border-slate-200 text-slate-800 focus:outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[11px] font-semibold text-slate-500 block mb-1">Follow-Up Date</label>
-                        <input
-                          type="text"
-                          value={followUpDate}
-                          onChange={(e) => setFollowUpDate(e.target.value)}
-                          className="w-full px-3 py-1.5 rounded-lg border border-slate-200 text-slate-800 focus:outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[11px] font-semibold text-slate-500 block mb-1">Effective Date</label>
-                        <input
-                          type="text"
-                          value={effectiveDate}
-                          onChange={(e) => setEffectiveDate(e.target.value)}
-                          className="w-full px-3 py-1.5 rounded-lg border border-slate-200 text-slate-800 focus:outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[11px] font-semibold text-slate-500 block mb-1">Recredentialing Date</label>
-                        <input
-                          type="text"
-                          value={revalidationDate}
-                          onChange={(e) => setRevalidationDate(e.target.value)}
-                          className="w-full px-3 py-1.5 rounded-lg border border-slate-200 text-slate-800 focus:outline-none"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Right Column: Activity Timeline & Notes */}
-              <div className="space-y-4">
-                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                  <div className="text-xs font-bold text-slate-800 mb-3 flex items-center gap-2">
-                    <MessageSquare size={14} className="text-blue-600" />
-                    <span>Add Ops / Compliance Note</span>
+                    )}
                   </div>
-                  <form onSubmit={handleAddNote} className="space-y-2">
+
+                  {/* Card: DATES */}
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => setDatesOpen(!datesOpen)}
+                      className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50 transition-colors cursor-pointer border-b border-slate-100"
+                    >
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-2">
+                        {datesOpen ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+                        Dates
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-medium">Timeline Milestones</span>
+                    </button>
+
+                    {datesOpen && (
+                      <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                            Start Date
+                          </label>
+                          <input
+                            type="text"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                            Resubmitted Date
+                          </label>
+                          <input
+                            type="text"
+                            value={resubmittedDate}
+                            onChange={(e) => setResubmittedDate(e.target.value)}
+                            className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                            Submission Date
+                          </label>
+                          <input
+                            type="text"
+                            value={submissionDate}
+                            onChange={(e) => setSubmissionDate(e.target.value)}
+                            className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 font-semibold"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                            Revalidation Date
+                          </label>
+                          <input
+                            type="text"
+                            value={revalidationDate}
+                            onChange={(e) => setRevalidationDate(e.target.value)}
+                            className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                            Approval Date
+                          </label>
+                          <input
+                            type="text"
+                            value={approvalDate}
+                            onChange={(e) => setApprovalDate(e.target.value)}
+                            className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 text-emerald-700 font-semibold"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                            Effective Date
+                          </label>
+                          <input
+                            type="text"
+                            value={effectiveDate}
+                            onChange={(e) => setEffectiveDate(e.target.value)}
+                            className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 text-blue-700 font-semibold"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                            Follow Up Date
+                          </label>
+                          <input
+                            type="text"
+                            value={followUpDate}
+                            onChange={(e) => setFollowUpDate(e.target.value)}
+                            className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Card: ANALYTICS */}
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => setAnalyticsOpen(!analyticsOpen)}
+                      className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50 transition-colors cursor-pointer border-b border-slate-100"
+                    >
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-2">
+                        {analyticsOpen ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+                        Analytics
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-medium">Turnaround Metrics</span>
+                    </button>
+
+                    {analyticsOpen && (
+                      <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                        <div>
+                          <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                            <span>Submission Time</span>
+                            <Info size={12} className="text-slate-400" />
+                          </div>
+                          <div className="text-xl font-bold text-slate-900">37 <span className="text-xs font-normal text-slate-400">days</span></div>
+                        </div>
+
+                        <div>
+                          <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                            <span>Time to Revalidation</span>
+                            <Info size={12} className="text-slate-400" />
+                          </div>
+                          <div className="text-xl font-bold text-slate-900">702 <span className="text-xs font-normal text-slate-400">days</span></div>
+                        </div>
+
+                        <div className="md:col-span-2 pt-2 border-t border-slate-100">
+                          <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                            <span>Payer Approval Time</span>
+                            <Info size={12} className="text-slate-400" />
+                          </div>
+                          <div className="text-xl font-bold text-blue-600">8 <span className="text-xs font-normal text-slate-400">days turnaround</span></div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Card: SYSTEM INFORMATION */}
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => setSystemInfoOpen(!systemInfoOpen)}
+                      className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50 transition-colors cursor-pointer border-b border-slate-100"
+                    >
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-2">
+                        {systemInfoOpen ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+                        System Information
+                      </span>
+                    </button>
+
+                    {systemInfoOpen && (
+                      <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-600">
+                        <div>
+                          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Created By</div>
+                          <div className="flex items-center gap-2 font-medium text-slate-800">
+                            <User size={13} className="text-slate-400" />
+                            <span>Sarah Jenkins, 9/10/2026, 8:44 AM</span>
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Last Modified By</div>
+                          <div className="flex items-center gap-2 font-medium text-slate-800">
+                            <User size={13} className="text-slate-400" />
+                            <span>David Miller, 10/23/2026, 10:10 AM</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Save Changes Button */}
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={handleSaveGeneral}
+                      className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-2"
+                    >
+                      <CheckCircle2 size={15} />
+                      Save Client Information
+                    </button>
+                  </div>
+                </div>
+
+                {/* RIGHT COLUMN: Activity & Notes Module (lg:col-span-5) */}
+                <div className="lg:col-span-5 space-y-4">
+                  {/* Top Textbox: Record New Client Activity or Note */}
+                  <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs space-y-3">
                     <textarea
+                      rows={3}
                       value={noteText}
                       onChange={(e) => setNoteText(e.target.value)}
-                      placeholder="Type note or update regarding payer status..."
-                      rows={3}
-                      className="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      placeholder="Record compliance activity, PSV verification update, or note..."
+                      className="w-full p-3 border border-slate-200 rounded-xl text-xs placeholder:text-slate-400 focus:outline-none focus:border-blue-500 resize-none bg-slate-50/50"
                     />
-                    <div className="flex justify-end">
+
+                    <div className="flex items-center justify-between pt-1">
+                      {/* Pill toggle: ACTIVITY vs NOTE */}
+                      <div className="inline-flex items-center p-0.5 bg-slate-100 rounded-lg text-[10px] font-bold">
+                        <button
+                          type="button"
+                          onClick={() => setNoteType('ACTIVITY')}
+                          className={`px-3 py-1 rounded-md transition-colors cursor-pointer ${
+                            noteType === 'ACTIVITY' ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-500'
+                          }`}
+                        >
+                          ACTIVITY
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setNoteType('NOTE')}
+                          className={`px-3 py-1 rounded-md transition-colors cursor-pointer ${
+                            noteType === 'NOTE' ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-500'
+                          }`}
+                        >
+                          NOTE
+                        </button>
+                      </div>
+
+                      {/* Post Button */}
                       <button
-                        type="submit"
-                        className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                        type="button"
+                        onClick={handlePostActivity}
+                        disabled={!noteText.trim()}
+                        className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white text-xs font-semibold shadow-2xs transition-all cursor-pointer"
                       >
-                        <Send size={12} /> Post Note
+                        <Send size={12} />
+                        Post
                       </button>
                     </div>
-                  </form>
-                </div>
-
-                <div className="border border-slate-200 rounded-xl p-4 bg-white">
-                  <div className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <Clock size={14} className="text-slate-500" />
-                    <span>Activity History</span>
                   </div>
-                  <div className="space-y-3">
-                    {activities.map((act) => (
-                      <div key={act.id} className="p-3 bg-slate-50 rounded-lg border border-slate-100 text-xs">
-                        <div className="flex items-center justify-between font-semibold text-slate-800">
-                          <span>{act.title}</span>
-                          <span className="text-[10px] text-slate-400 font-normal">{act.timestamp}</span>
-                        </div>
-                        {act.subtitle && (
-                          <p className="text-slate-600 text-[11px] mt-1">{act.subtitle}</p>
-                        )}
+
+                  {/* Activity Timeline List */}
+                  <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <div className="text-xs font-bold uppercase tracking-wider text-slate-800">
+                        Activity Timeline ({activities.length})
                       </div>
-                    ))}
+                      <div className="relative">
+                        <select
+                          value={activityFilter}
+                          onChange={(e) => setActivityFilter(e.target.value as any)}
+                          className="text-[11px] font-semibold text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 hover:bg-slate-100 cursor-pointer focus:outline-none appearance-none pr-6"
+                        >
+                          <option value="ALL">All Events</option>
+                          <option value="STAGE_UPDATED">Stage Updates</option>
+                          <option value="VERIFICATION_COMPLETED">Compliance & Verifications</option>
+                          <option value="NOTE_ADDED">Notes</option>
+                        </select>
+                        <ChevronDown size={11} className="text-slate-400 absolute right-2 top-2 pointer-events-none" />
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      {activities
+                        .filter((act) => {
+                          if (activityFilter === 'ALL') return true;
+                          if (activityFilter === 'STAGE_UPDATED') return act.type === 'STAGE_UPDATED';
+                          if (activityFilter === 'VERIFICATION_COMPLETED') return act.type === 'VERIFICATION_COMPLETED' || act.type === 'SANCTION_CHECK' || act.type === 'CAQH_ATTESTED';
+                          if (activityFilter === 'NOTE_ADDED') return act.type === 'NOTE_ADDED';
+                          return true;
+                        })
+                        .map((act) => {
+                          let iconColor = 'bg-blue-600 text-white';
+                          let IconComponent = Clock;
+                          let badgeColor = 'bg-blue-50 text-blue-700 border-blue-200';
+
+                          if (act.type === 'VERIFICATION_COMPLETED') {
+                            iconColor = 'bg-emerald-600 text-white';
+                            IconComponent = ShieldCheck;
+                            badgeColor = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                          } else if (act.type === 'SANCTION_CHECK') {
+                            iconColor = 'bg-teal-600 text-white';
+                            IconComponent = FileCheck;
+                            badgeColor = 'bg-teal-50 text-teal-700 border-teal-200';
+                          } else if (act.type === 'CAQH_ATTESTED') {
+                            iconColor = 'bg-indigo-600 text-white';
+                            IconComponent = FileText;
+                            badgeColor = 'bg-indigo-50 text-indigo-700 border-indigo-200';
+                          } else if (act.type === 'NOTE_ADDED') {
+                            iconColor = 'bg-purple-600 text-white';
+                            IconComponent = MessageSquare;
+                            badgeColor = 'bg-purple-50 text-purple-700 border-purple-200';
+                          } else if (act.type === 'STAGE_UPDATED') {
+                            iconColor = 'bg-blue-600 text-white';
+                            IconComponent = Clock;
+                            badgeColor = 'bg-blue-50 text-blue-700 border-blue-200';
+                          }
+
+                          return (
+                            <div key={act.id} className="flex items-start gap-3 text-xs">
+                              <div className={`w-7 h-7 rounded-full shrink-0 flex items-center justify-center ${iconColor} shadow-2xs mt-0.5`}>
+                                <IconComponent size={13} />
+                              </div>
+
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="font-bold text-slate-900 truncate">{act.title}</span>
+                                  <span className="text-[10px] text-slate-400 shrink-0 font-medium">{act.timestamp}</span>
+                                </div>
+                                <p className="text-slate-600 text-[11px] mt-0.5 leading-relaxed break-words">
+                                  {act.subtitle}
+                                </p>
+                                {act.badgeText && (
+                                  <span className={`inline-block mt-1 px-2 py-0.5 font-semibold text-[10px] rounded border uppercase tracking-wider ${badgeColor}`}>
+                                    {act.badgeText}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
                   </div>
                 </div>
+
               </div>
             </div>
           )}
 
+          {/* ======================================================== */}
+          {/* TAB 2: ENROLLMENTS (PROCESSES) */}
+          {/* ======================================================== */}
           {activeTab === 'enrollments' && (
-            <div className="space-y-6">
-              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                <h3 className="text-sm font-bold text-slate-900 mb-2">12-Stage Enrollment Progression</h3>
-                <p className="text-xs text-slate-500 mb-4">
-                  Advance through the contracting milestones by clicking any segment below.
-                </p>
-                <PipelineStageBar
-                  status={currentStatus}
-                  onChange={(st) => setCurrentStatus(st)}
-                />
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'documents' && (
-            <div className="space-y-4">
+            <div className="p-6 space-y-4">
+              {/* Top Header Row */}
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-slate-900">Attached Provider Documents</h3>
+                <div>
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800">
+                    Assigned Processes (1)
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Active payer enrollment workflows and stage pipeline.
+                  </p>
+                </div>
+
                 <button
                   type="button"
-                  onClick={() => alert('Document upload modal')}
-                  className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+                  onClick={() => {
+                    onClose();
+                    if (onOpenNewEnrollment) {
+                      onOpenNewEnrollment();
+                    }
+                  }}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
                 >
-                  <Plus size={13} /> Upload Document
+                  <Plus size={14} />
+                  <span>New Enrollment</span>
                 </button>
               </div>
 
-              <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden bg-white">
-                {documents.map((doc) => (
-                  <div key={doc.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-                        <FileText size={18} />
-                      </div>
-                      <div>
-                        <div className="text-xs font-semibold text-slate-900">{doc.name}</div>
-                        <div className="text-[10px] text-slate-400 mt-0.5">
-                          {doc.type} • {doc.size} • Uploaded {doc.uploadDate} by {doc.uploadedBy || 'Ops'}
-                        </div>
-                      </div>
-                    </div>
-                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      {doc.status}
-                    </span>
-                  </div>
-                ))}
+              {/* Table with dark navy header */}
+              <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-[#002B49] text-white text-[10px] font-bold uppercase tracking-wider">
+                      <th className="py-3 px-3 w-8 text-center border-r border-[#1a4a6e]">
+                        ⚙
+                      </th>
+                      <th className="py-3 px-4 border-r border-[#1a4a6e]">
+                        Process
+                      </th>
+                      <th className="py-3 px-4 min-w-[230px] border-r border-[#1a4a6e]">
+                        Stage
+                      </th>
+                      <th className="py-3 px-4 border-r border-[#1a4a6e]">
+                        Created At
+                      </th>
+                      <th className="py-3 px-4 border-r border-[#1a4a6e]">
+                        Activity
+                      </th>
+                      <th className="py-3 px-4">
+                        Responsible
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-xs">
+                    <tr className="hover:bg-slate-50/80 transition-colors">
+                      <td className="py-3 px-3 text-center text-slate-400">
+                        ≡
+                      </td>
+                      <td className="py-3 px-4 font-semibold text-blue-600 hover:underline cursor-pointer">
+                        {payer} {planType} Enrollment - {referenceNumber}
+                      </td>
+                      <td className="py-3 px-4">
+                        {/* Segmented Pipeline Progress Bar of 12 stages */}
+                        <PipelineStageBar
+                          status={currentStatus}
+                          onChange={handleStageChange}
+                        />
+                      </td>
+                      <td className="py-3 px-4 text-slate-600 whitespace-nowrap">
+                        {submissionDate}
+                      </td>
+                      <td className="py-3 px-4 text-slate-500 text-[11px]">
+                        Last update - Oct 31 • System Activity
+                      </td>
+                      <td className="py-3 px-4">
+                        {responsibleUser === 'MantraComply' ? (
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                            MantraComply
+                          </span>
+                        ) : (
+                          <select
+                            value={responsibleUser}
+                            onChange={(e) => {
+                              setResponsibleUser(e.target.value);
+                              onUpdate({ ...client, responsibleUser: e.target.value, assignedSpecialist: e.target.value });
+                            }}
+                            className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 cursor-pointer focus:outline-none"
+                          >
+                            <option value="MantraComply">MantraComply</option>
+                            {availableSpecialists.map((s) => (
+                              <option key={s} value={s}>{s}</option>
+                            ))}
+                          </select>
+                        )}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
+
+          {/* ======================================================== */}
+          {/* TAB 3: DOCUMENTS */}
+          {/* ======================================================== */}
+          {activeTab === 'documents' && (
+            <div className="p-6 space-y-4">
+              {/* Header Row: CLIENT DOCUMENTS (N) & Right Controls */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="text-xs font-bold uppercase tracking-wider text-slate-800">
+                  CLIENT DOCUMENTS ({filteredDocs.length})
+                </div>
+
+                <div className="flex items-center gap-3">
+                  {/* Search bar */}
+                  <div className="relative">
+                    <Search size={14} className="text-slate-400 absolute left-3 top-2.5" />
+                    <input
+                      type="text"
+                      value={docSearch}
+                      onChange={(e) => setDocSearch(e.target.value)}
+                      placeholder="Search documents..."
+                      className="pl-9 pr-3 py-1.5 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none focus:border-blue-500 w-52 text-slate-700"
+                    />
+                  </div>
+
+                  {/* Hidden File Input for direct upload */}
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleDirectFileUpload}
+                    multiple
+                    className="hidden"
+                  />
+
+                  {/* Dark "Upload" button */}
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center gap-2 px-4 py-2 bg-[#001f35] hover:bg-[#002b49] text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                  >
+                    <Plus size={14} />
+                    <span>Upload</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Table with Dark Navy Header */}
+              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-[#002B49] text-white text-[10px] font-bold uppercase tracking-wider">
+                      <th className="py-3 px-3 w-10 text-center border-r border-[#1a4a6e]">
+                        <input type="checkbox" className="rounded" />
+                      </th>
+                      <th className="py-3 px-3 w-10 text-center border-r border-[#1a4a6e]">
+                        ⚙
+                      </th>
+                      <th className="py-3 px-4 border-r border-[#1a4a6e]">
+                        DOCUMENT NUMBER
+                      </th>
+                      <th className="py-3 px-4 border-r border-[#1a4a6e]">
+                        DOCUMENT NAME
+                      </th>
+                      <th className="py-3 px-4 border-r border-[#1a4a6e]">
+                        UPLOADED BY
+                      </th>
+                      <th className="py-3 px-4 border-r border-[#1a4a6e]">
+                        DATE
+                      </th>
+                      <th className="py-3 px-4 border-r border-[#1a4a6e]">
+                        SIZE
+                      </th>
+                      <th className="py-3 px-4 text-center">
+                        ACTION
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-xs">
+                    {filteredDocs.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="py-16 text-center text-slate-400">
+                          <div className="flex flex-col items-center justify-center gap-2">
+                            <p className="text-xs text-slate-500 font-medium">
+                              No documents found. Upload a file or generate one from a template.
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => fileInputRef.current?.click()}
+                              className="mt-1 text-xs text-blue-600 font-semibold hover:underline cursor-pointer"
+                            >
+                              Click to select file and upload directly
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredDocs.map((doc) => (
+                        <tr key={doc.id} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="py-3 px-3 text-center">
+                            <input type="checkbox" className="rounded text-blue-600" />
+                          </td>
+                          <td className="py-3 px-3 text-center text-slate-400">
+                            <FileText size={14} />
+                          </td>
+                          <td className="py-3 px-4 font-mono font-semibold text-slate-700">
+                            {doc.documentNumber || `DOC-${doc.id}`}
+                          </td>
+                          <td className="py-3 px-4 font-semibold text-blue-600 hover:underline cursor-pointer">
+                            {doc.name}
+                          </td>
+                          <td className="py-3 px-4 text-slate-700">
+                            {doc.uploadedBy || responsibleUser}
+                          </td>
+                          <td className="py-3 px-4 text-slate-600 whitespace-nowrap">
+                            {doc.uploadDate}
+                          </td>
+                          <td className="py-3 px-4 text-slate-500 font-mono text-[11px]">
+                            {doc.size || '1.4 MB'}
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = documents.filter(d => d.id !== doc.id);
+                                setDocuments(updated);
+                                onUpdate({ ...client, documents: updated });
+                              }}
+                              className="p-1 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                              title="Delete document"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
         </div>
+
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
-

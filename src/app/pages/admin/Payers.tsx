@@ -106,6 +106,7 @@ export const Payers: React.FC = () => {
       saveStoredEnrollments(list);
       return list;
     });
+    setSelectedClientRecord(updated);
   };
 
   const handleAddSubmit = (e: React.FormEvent) => {
@@ -513,6 +514,7 @@ export const Payers: React.FC = () => {
           client={selectedClientRecord}
           onClose={() => setSelectedClientRecord(null)}
           onUpdate={handleUpdateRecord}
+          onOpenNewEnrollment={() => setIsAddModalOpen(true)}
         />
       )}
 
