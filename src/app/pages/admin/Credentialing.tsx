@@ -410,43 +410,40 @@ export const Credentialing: React.FC = () => {
                         {item.country}
                       </td>
 
-                      {/* Responsible (Interactive Dropdown) */}
+                      {/* Responsible (Static Pill for MantraComply, Interactive Dropdown for Manual) */}
                       <td className="py-3 px-4 whitespace-nowrap border-r border-b border-slate-100">
-                        <div className="relative inline-block text-left">
-                          <select
-                            value={item.opsResponsible || item.assignedSpecialist || 'MantraComply'}
-                            onChange={(e) => {
-                              if (activeSubTab === 'providers') {
-                                updateProviderSpecialist(item.id, e.target.value);
-                              } else {
-                                updateFacilitySpecialist(item.id, e.target.value);
-                              }
-                            }}
-                            className={`text-xs font-semibold px-3 py-1 rounded-full border transition-all cursor-pointer appearance-none pr-7 ${
-                              item.opsResponsible === 'MantraComply' || item.opsResponsible === 'Mantra AI'
-                                ? 'bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 shadow-2xs'
-                                : 'bg-white border-slate-200 text-slate-800 hover:border-slate-300 shadow-2xs'
-                            }`}
-                          >
-                            <option value="MantraComply">MantraComply</option>
-                            {availableSpecialists.map((specialist) => (
-                              <option key={specialist} value={specialist}>
-                                {specialist}
-                              </option>
-                            ))}
-                            {!availableSpecialists.includes(item.opsResponsible || '') && item.opsResponsible && item.opsResponsible !== 'MantraComply' && (
-                              <option value={item.opsResponsible}>{item.opsResponsible}</option>
-                            )}
-                          </select>
-                          <ChevronDown 
-                            size={12} 
-                            className={`absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none ${
-                              item.opsResponsible === 'MantraComply' || item.opsResponsible === 'Mantra AI'
-                                ? 'text-blue-500' 
-                                : 'text-slate-400'
-                            }`} 
-                          />
-                        </div>
+                        {item.opsResponsible === 'MantraComply' || item.opsResponsible === 'Mantra AI' ? (
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 border border-blue-200 text-blue-700 shadow-2xs select-none">
+                            MantraComply
+                          </span>
+                        ) : (
+                          <div className="relative inline-block text-left">
+                            <select
+                              value={item.opsResponsible || item.assignedSpecialist || availableSpecialists[0]}
+                              onChange={(e) => {
+                                if (activeSubTab === 'providers') {
+                                  updateProviderSpecialist(item.id, e.target.value);
+                                } else {
+                                  updateFacilitySpecialist(item.id, e.target.value);
+                                }
+                              }}
+                              className="text-xs font-semibold px-3 py-1 rounded-full border border-slate-200 bg-white text-slate-800 hover:border-slate-300 shadow-2xs transition-all cursor-pointer appearance-none pr-7"
+                            >
+                              {availableSpecialists.map((specialist) => (
+                                <option key={specialist} value={specialist}>
+                                  {specialist}
+                                </option>
+                              ))}
+                              {!availableSpecialists.includes(item.opsResponsible || '') && item.opsResponsible && (
+                                <option value={item.opsResponsible}>{item.opsResponsible}</option>
+                              )}
+                            </select>
+                            <ChevronDown 
+                              size={12} 
+                              className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" 
+                            />
+                          </div>
+                        )}
                       </td>
 
                       {/* Credentialing Start Date */}
