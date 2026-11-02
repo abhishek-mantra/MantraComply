@@ -333,23 +333,23 @@ export function Tasks() {
         <div className="overflow-x-auto rounded-xl border border-gray-200">
           <table className="w-full border-collapse">
             <thead>
-              <tr className="bg-[#0B2545] text-white">
-                <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a3a60]">
+              <tr className="bg-[#002B49] text-white">
+                <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a4a6e]">
                   TASK TITLE
                 </th>
-                <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a3a60]">
+                <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a4a6e]">
                   ASSIGNED TO
                 </th>
-                <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a3a60]">
+                <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a4a6e]">
                   CATEGORY
                 </th>
-                <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a3a60]">
+                <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a4a6e]">
                   PRIORITY
                 </th>
-                <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a3a60]">
+                <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a4a6e]">
                   STATUS
                 </th>
-                <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a3a60]">
+                <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a4a6e]">
                   DUE DATE
                 </th>
                 <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider">

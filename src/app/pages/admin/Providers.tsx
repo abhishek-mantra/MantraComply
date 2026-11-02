@@ -1,1286 +1,1387 @@
-import { useState, useMemo } from "react";
-import {
-  Search,
-  Plus,
-  Mail,
-  ChevronDown,
-  Eye,
-  Settings as SettingsIcon,
-  Menu,
-  X,
-  Users as UsersIcon,
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-} from "lucide-react";
-import { useNavigate } from "react-router";
-import { StatusBadge } from "../../components/shared/StatusBadge";
-import { ModalWrapper } from "../../components/shared/ModalWrapper";
-import { useToast } from "../../components/shared/Toast";
-import { usePayers } from "../../contexts/PayersContext";
-import { RequestEnrollmentModal } from "../../components/payers/RequestEnrollmentModal";
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { 
+  Search, 
+  Settings, 
+  ChevronDown, 
+  ChevronLeft, 
+  ChevronRight, 
+  ChevronsLeft, 
+  ChevronsRight, 
+  Plus, 
+  X, 
+  Building2, 
+  User as UserIcon, 
+  Shield, 
+  Edit3,
+  Check
+} from 'lucide-react';
+import { 
+  initialUsers, 
+  initialRoles, 
+  availableSpecialists, 
+  availableOrganizations, 
+  availableOnboarders, 
+  UserRecord, 
+  RoleDefinition, 
+  RoleType 
+} from '../../data/adminMockData';
 
-// --- Types ---
-interface Provider {
-  id: number;
-  name: string;
-  specialty: string;
-  credentialingStatus: string;
-  healthStatus: string;
-  email: string;
-  phone: string;
-  npi?: string;
-  primaryState?: string;
-  role?: string;
-}
-
-interface OrgRoleItem {
-  id: string;
-  name: string;
-  description: string;
-  createdAt: string;
-  usersAssigned: number;
-  dataScope: "ALL" | "ASSIGNED_ONLY";
-  permissions: Record<string, { permission: "none" | "view" | "view_edit" | "full"; level: "ALL" | "ASSIGNED_ONLY" }>;
-}
-
-interface OrgUserItem {
-  id: number;
-  name: string;
-  role: string;
-  email: string;
-  createdAt: string;
-  status: "Active" | "Invited";
-}
-
-// Actual Org Admin modules
-const ROLE_MODULES = [
-  "Overview",
-  "Providers",
-  "Tasks",
-  "Groups & Facilities",
-  "Documents",
-  "Credentialing",
-  "Enrollments",
-  "Credits Ledger",
-  "Webhooks",
-  "Organizations",
-  "Billing",
+const complianceModules = [
+  "Credential Applications",
+  "Document Verification",
+  "Enrollment Applications",
+  "User Management",
+  "Plans & Pricing",
+  "Credits Management",
+  "Subscriptions & Orders"
 ];
 
-const INITIAL_PROVIDERS: Provider[] = [
-  {
-    id: 1,
-    name: "Dr. Sarah Johnson",
-    specialty: "Psychiatry",
-    credentialingStatus: "Done",
-    healthStatus: "Ok",
-    email: "sarah.j@example.com",
-    phone: "555-0101",
-    npi: "1234567890",
-    primaryState: "NY",
-    role: "Provider",
-  },
-  {
-    id: 2,
-    name: "Dr. Michael Chen",
-    specialty: "Psychology",
-    credentialingStatus: "In process",
-    healthStatus: "Expirations",
-    email: "michael.c@example.com",
-    phone: "555-0102",
-    npi: "2345678901",
-    primaryState: "CA",
-    role: "Provider",
-  },
-  {
-    id: 3,
-    name: "Dr. Emily Rodriguez",
-    specialty: "Therapy",
-    credentialingStatus: "Re-credential",
-    healthStatus: "Issues",
-    email: "emily.r@example.com",
-    phone: "555-0103",
-    npi: "3456789012",
-    primaryState: "TX",
-    role: "Provider",
-  },
-  {
-    id: 4,
-    name: "Dr. James Williams",
-    specialty: "Dietitian",
-    credentialingStatus: "Not started",
-    healthStatus: "Ok",
-    email: "james.w@example.com",
-    phone: "555-0104",
-    npi: "4567890123",
-    primaryState: "FL",
-    role: "Provider",
-  },
-  {
-    id: 5,
-    name: "Dr. Lisa Anderson",
-    specialty: "Physiotherapy",
-    credentialingStatus: "Done",
-    healthStatus: "Ok",
-    email: "lisa.a@example.com",
-    phone: "555-0105",
-    npi: "5678901234",
-    primaryState: "WA",
-    role: "Provider",
-  },
-  {
-    id: 6,
-    name: "Dr. Robert Taylor",
-    specialty: "Psychiatry",
-    credentialingStatus: "In process",
-    healthStatus: "Expirations",
-    email: "robert.t@example.com",
-    phone: "555-0106",
-    npi: "6789012345",
-    primaryState: "OR",
-    role: "Provider",
-  },
-];
+type PermissionLevel = 'none' | 'view' | 'view_edit' | 'full';
 
-const INITIAL_ROLES: OrgRoleItem[] = [
-  {
-    id: "admin_new",
-    name: "Admin New",
-    description: "Full administrative access across all organization modules.",
-    createdAt: "Oct 28, 2026",
-    usersAssigned: 2,
-    dataScope: "ALL",
-    permissions: ROLE_MODULES.reduce((acc, mod) => {
-      acc[mod] = { permission: "full", level: "ALL" };
-      return acc;
-    }, {} as OrgRoleItem["permissions"]),
-  },
-  {
-    id: "admin",
-    name: "Admin",
-    description: "Standard organization administrator with full records access.",
-    createdAt: "Sep 21, 2026",
-    usersAssigned: 1,
-    dataScope: "ALL",
-    permissions: ROLE_MODULES.reduce((acc, mod) => {
-      acc[mod] = { permission: "full", level: "ALL" };
-      return acc;
-    }, {} as OrgRoleItem["permissions"]),
-  },
-  {
-    id: "executive",
-    name: "Executive",
-    description: "Executive leadership role with read-only view across all modules.",
-    createdAt: "Aug 20, 2026",
-    usersAssigned: 7,
-    dataScope: "ALL",
-    permissions: ROLE_MODULES.reduce((acc, mod) => {
-      acc[mod] = { permission: "view", level: "ALL" };
-      return acc;
-    }, {} as OrgRoleItem["permissions"]),
-  },
-  {
-    id: "provider",
-    name: "Provider",
-    description: "Healthcare provider with access to their own credentialing profile, documents, and tasks.",
-    createdAt: "Aug 15, 2026",
-    usersAssigned: 6,
-    dataScope: "ASSIGNED_ONLY",
-    permissions: ROLE_MODULES.reduce((acc, mod) => {
-      const isProviderAccess = mod === "Overview" || mod === "Credentialing" || mod === "Documents" || mod === "Tasks";
-      acc[mod] = { permission: isProviderAccess ? "view_edit" : "none", level: "ASSIGNED_ONLY" };
-      return acc;
-    }, {} as OrgRoleItem["permissions"]),
-  },
-  {
-    id: "team_manager",
-    name: "Team Manager",
-    description: "Clinic operations coordinator overseeing provider onboarding, tasks, and enrollments.",
-    createdAt: "Sep 01, 2026",
-    usersAssigned: 2,
-    dataScope: "ASSIGNED_ONLY",
-    permissions: ROLE_MODULES.reduce((acc, mod) => {
-      const isOps = mod !== "Billing" && mod !== "Webhooks" && mod !== "Credits Ledger";
-      acc[mod] = { permission: isOps ? "view_edit" : "view", level: "ASSIGNED_ONLY" };
-      return acc;
-    }, {} as OrgRoleItem["permissions"]),
-  },
-];
+export const Providers: React.FC = () => {
+  const [users, setUsers] = useState<UserRecord[]>(initialUsers);
+  const [roles, setRoles] = useState<RoleDefinition[]>(initialRoles);
 
-const INITIAL_USERS: OrgUserItem[] = [
-  { id: 1, name: "Dr. Alex Rivera", role: "Admin", email: "alex.rivera@physiomantra.com", createdAt: "Sep 21, 2026", status: "Active" },
-  { id: 2, name: "Jessica Morales", role: "Admin New", email: "jessica.m@physiomantra.com", createdAt: "Oct 28, 2026", status: "Active" },
-  { id: 3, name: "Dr. Sarah Johnson", role: "Provider", email: "sarah.j@example.com", createdAt: "Aug 15, 2026", status: "Active" },
-  { id: 4, name: "Dr. Michael Chen", role: "Provider", email: "michael.c@example.com", createdAt: "Aug 15, 2026", status: "Active" },
-  { id: 5, name: "Dr. Lisa Anderson", role: "Provider", email: "lisa.a@example.com", createdAt: "Aug 18, 2026", status: "Active" },
-  { id: 6, name: "Marcus Vance", role: "Team Manager", email: "marcus.v@physiomantra.com", createdAt: "Sep 01, 2026", status: "Active" },
-  { id: 7, name: "Elena Rostova", role: "Executive", email: "elena.r@physiomantra.com", createdAt: "Aug 20, 2026", status: "Active" },
-];
+  const [activeTab, setActiveTab] = useState<'users' | 'roles'>('users');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState<string>('ALL');
 
-export function Providers() {
-  const navigate = useNavigate();
-  const { showToast } = useToast();
-  const { payers, providers: payerProviders, addEnrollmentRequests } = usePayers();
+  // Org Multi-Select filter
+  const [selectedOrgs, setSelectedOrgs] = useState<string[]>([]);
+  const [isOrgFilterOpen, setIsOrgFilterOpen] = useState(false);
+  const [orgFilterSearch, setOrgFilterSearch] = useState('');
+  const orgFilterRef = useRef<HTMLDivElement>(null);
 
-  // Top level Tab: Providers vs Roles & Permissions
-  const [activeMainTab, setActiveMainTab] = useState<"providers" | "roles">("providers");
+  // Hamburger Action Menu state
+  const [openMenuUserId, setOpenMenuUserId] = useState<number | null>(null);
 
-  // --- Providers Tab State ---
-  const [providers, setProviders] = useState<Provider[]>(INITIAL_PROVIDERS);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [credentialingStatusFilter, setCredentialingStatusFilter] = useState("all");
-  const [healthStatusFilter, setHealthStatusFilter] = useState("all");
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEnrollmentModal, setShowEnrollmentModal] = useState(false);
-  const [selectedProviderForEnrollment, setSelectedProviderForEnrollment] = useState<Provider | null>(null);
-  const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
+  // Edit User Modal State
+  const [isEditUserModalOpen, setIsEditUserModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<UserRecord | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editRole, setEditRole] = useState<RoleType>('PROVIDER');
+  const [editCountry, setEditCountry] = useState('United States');
+  const [editService, setEditService] = useState('THERAPY');
+  const [editReferredBy, setEditReferredBy] = useState('');
+  const [editOnboardedBy, setEditOnboardedBy] = useState('Sarah Jenkins');
+  const [editOpsResponsible, setEditOpsResponsible] = useState(availableSpecialists[0]);
+  const [editCredStartDate, setEditCredStartDate] = useState('Oct 28, 2026');
+  const [editEnrollStartDate, setEditEnrollStartDate] = useState('Nov 15, 2026');
 
-  const [newProvider, setNewProvider] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    specialty: "Psychiatry",
-    role: "Provider",
-    sendInvite: true,
-  });
+  // Add User Modal State
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  const [newUserName, setNewUserName] = useState('');
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserPhone, setNewUserPhone] = useState('');
+  const [newUserRole, setNewUserRole] = useState<RoleType>('PROVIDER');
+  const [newUserCountry, setNewUserCountry] = useState('United States');
+  const [newUserService, setNewUserService] = useState('THERAPY');
+  const [newUserReferredBy, setNewUserReferredBy] = useState('Portal (Direct)');
+  const [newUserOnboardedBy, setNewUserOnboardedBy] = useState('Sarah Jenkins');
+  const [newUserOpsResponsible, setNewUserOpsResponsible] = useState(availableSpecialists[0]);
 
-  // --- Roles & Permissions Tab State ---
-  const [umTab, setUmTab] = useState<"users" | "roles">("roles");
-  const [roleSearchTerm, setRoleSearchTerm] = useState("");
-  const [roleFilter, setRoleFilter] = useState<string>("ALL");
-  const [selectedRoleItems, setSelectedRoleItems] = useState<string[]>([]);
-  const [roles, setRoles] = useState<OrgRoleItem[]>(INITIAL_ROLES);
-  const [users, setUsers] = useState<OrgUserItem[]>(INITIAL_USERS);
-
-  // Role Create / Edit Modal State
+  // Create/Edit Role Modal State
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const [editingRoleId, setEditingRoleId] = useState<string | null>(null);
-  const [roleNameInput, setRoleNameInput] = useState("");
-  const [roleDescInput, setRoleDescInput] = useState("");
-  const [modalPermissions, setModalPermissions] = useState<OrgRoleItem["permissions"]>(() => {
-    return ROLE_MODULES.reduce((acc, mod) => {
-      acc[mod] = { permission: "none", level: "ALL" };
-      return acc;
-    }, {} as OrgRoleItem["permissions"]);
-  });
+  const [roleName, setRoleName] = useState('');
+  const [roleDescription, setRoleDescription] = useState('');
+  const [modulePermissions, setModulePermissions] = useState<Record<string, { permission: PermissionLevel; level: 'ALL' | 'ASSIGNED_ONLY' }>>({});
 
-  // Add User in Role View
-  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
-  const [newUserName, setNewUserName] = useState("");
-  const [newUserEmail, setNewUserEmail] = useState("");
-  const [newUserRole, setNewUserRole] = useState("Provider");
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
 
-  // --- Handlers: Providers ---
-  const handleAddProvider = () => {
-    if (!newProvider.firstName || !newProvider.lastName || !newProvider.email) {
-      showToast("Please fill in first name, last name, and email", "error");
-      return;
-    }
+  // Close menus on outside click
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
 
-    const providerObj: Provider = {
-      id: providers.length + 1,
-      name: `Dr. ${newProvider.firstName} ${newProvider.lastName}`,
-      specialty: newProvider.specialty,
-      credentialingStatus: "Not started",
-      healthStatus: "Ok",
-      email: newProvider.email,
-      phone: "555-0199",
-      role: newProvider.role,
+      if (orgFilterRef.current && !orgFilterRef.current.contains(target)) {
+        setIsOrgFilterOpen(false);
+      }
+      if (!target.closest('.user-action-menu-container')) {
+        setOpenMenuUserId(null);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
+  const handleOpenEditUser = (user: UserRecord) => {
+    setEditingUser(user);
+    setEditName(user.name);
+    setEditEmail(user.email);
+    setEditPhone(user.phone || '');
+    setEditRole(user.role);
+    setEditCountry(user.country || 'United States');
+    setEditService(user.service || 'THERAPY');
+    setEditReferredBy(user.referredBy || 'Portal (Direct)');
+    setEditOnboardedBy(user.onboardedBy || 'Sarah Jenkins');
+    setEditOpsResponsible(user.opsResponsible || availableSpecialists[0]);
+    setEditCredStartDate(user.credentialingStartDate || 'Oct 28, 2026');
+    setEditEnrollStartDate(user.enrollmentStartDate || 'Nov 15, 2026');
+    setOpenMenuUserId(null);
+    setIsEditUserModalOpen(true);
+  };
+
+  const handleSaveEditUser = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+
+    setUsers(prev => prev.map(u => {
+      if (u.id === editingUser.id) {
+        return {
+          ...u,
+          name: editName.trim(),
+          email: editEmail.trim(),
+          phone: editPhone.trim(),
+          role: editRole,
+          country: editCountry,
+          service: editService.trim(),
+          referredBy: editReferredBy.trim(),
+          onboardedBy: editOnboardedBy,
+          opsResponsible: editOpsResponsible,
+          credentialingStartDate: editCredStartDate,
+          enrollmentStartDate: editEnrollStartDate
+        };
+      }
+      return u;
+    }));
+
+    setIsEditUserModalOpen(false);
+    setEditingUser(null);
+  };
+
+  const handleAddUserSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newUserName.trim() || !newUserEmail.trim()) return;
+
+    const newUser: UserRecord = {
+      id: Math.floor(1000 + Math.random() * 9000),
+      name: newUserName.trim(),
+      email: newUserEmail.trim(),
+      phone: newUserPhone.trim(),
+      organization: 'MantraCare',
+      organizations: ['MantraCare'],
+      country: newUserCountry,
+      countryFlag: newUserCountry === 'Canada' ? '🇨🇦' : newUserCountry === 'United Kingdom' ? '🇬🇧' : '🇺🇸',
+      service: newUserService.trim(),
+      signupDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      role: newUserRole,
+      status: 'Active',
+      referredBy: newUserReferredBy.trim(),
+      onboardedBy: newUserOnboardedBy,
+      opsResponsible: newUserOpsResponsible,
+      credentialingStartDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      enrollmentStartDate: 'Pending'
     };
 
-    setProviders([providerObj, ...providers]);
-
-    // Also add to User Management roster
-    const newUser: OrgUserItem = {
-      id: Date.now(),
-      name: `${newProvider.firstName} ${newProvider.lastName}`,
-      email: newProvider.email,
-      role: newProvider.role,
-      createdAt: "Today",
-      status: newProvider.sendInvite ? "Invited" : "Active",
-    };
     setUsers([newUser, ...users]);
-
-    // Update users assigned count for role
-    setRoles(
-      roles.map((r) =>
-        r.name === newProvider.role ? { ...r, usersAssigned: r.usersAssigned + 1 } : r
-      )
-    );
-
-    showToast(`Provider "${providerObj.name}" added successfully`, "success");
-    setShowAddModal(false);
-    setNewProvider({
-      firstName: "",
-      lastName: "",
-      email: "",
-      specialty: "Psychiatry",
-      role: "Provider",
-      sendInvite: true,
-    });
+    setIsAddUserModalOpen(false);
+    setNewUserName('');
+    setNewUserEmail('');
+    setNewUserPhone('');
   };
 
-  const handleSendEmail = (provider: Provider) => {
-    showToast(`Invitation sent to ${provider.email}`, "success");
+  const updateOnboardedBy = (userId: number, onboarder: string) => {
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, onboardedBy: onboarder } : u));
   };
 
-  const handleRequestCredentialing = (provider: Provider) => {
-    setOpenDropdownId(null);
-    navigate(`/admin/credentialing?providerId=${provider.id}`);
+  const updateOpsResponsible = (userId: number, specialist: string) => {
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, opsResponsible: specialist } : u));
   };
 
-  const handleRequestEnrollment = (provider: Provider) => {
-    setOpenDropdownId(null);
-    setSelectedProviderForEnrollment(provider);
-    setShowEnrollmentModal(true);
-  };
-
-  const filteredProviders = providers.filter((p) => {
-    const matchesSearch =
-      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.specialty.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCred = credentialingStatusFilter === "all" || p.credentialingStatus === credentialingStatusFilter;
-    const matchesHealth = healthStatusFilter === "all" || p.healthStatus === healthStatusFilter;
-    return matchesSearch && matchesCred && matchesHealth;
-  });
-
-  // --- Handlers: Roles ---
-  const handleOpenCreateModal = () => {
+  const handleOpenCreateRole = () => {
     setEditingRoleId(null);
-    setRoleNameInput("");
-    setRoleDescInput("");
-    setModalPermissions(
-      ROLE_MODULES.reduce((acc, mod) => {
-        acc[mod] = { permission: "none", level: "ALL" };
-        return acc;
-      }, {} as OrgRoleItem["permissions"])
-    );
+    setRoleName('');
+    setRoleDescription('');
+    const defaults: Record<string, { permission: PermissionLevel; level: 'ALL' | 'ASSIGNED_ONLY' }> = {};
+    complianceModules.forEach(mod => {
+      defaults[mod] = { permission: 'view', level: 'ALL' };
+    });
+    setModulePermissions(defaults);
     setIsRoleModalOpen(true);
   };
 
-  const handleOpenEditModal = (role: OrgRoleItem) => {
+  const handleOpenEditRole = (role: RoleDefinition) => {
     setEditingRoleId(role.id);
-    setRoleNameInput(role.name);
-    setRoleDescInput(role.description === "—" ? "" : role.description);
-    setModalPermissions({ ...role.permissions });
+    setRoleName(role.name);
+    setRoleDescription(role.description);
+    const loadedPerms: Record<string, { permission: PermissionLevel; level: 'ALL' | 'ASSIGNED_ONLY' }> = {};
+    complianceModules.forEach(mod => {
+      const existing = role.permissions.find(p => p.module === mod);
+      let perm: PermissionLevel = 'none';
+      if (existing) {
+        if (existing.edit && existing.approve) perm = 'full';
+        else if (existing.edit) perm = 'view_edit';
+        else if (existing.view) perm = 'view';
+      } else {
+        perm = 'view';
+      }
+      loadedPerms[mod] = {
+        permission: perm,
+        level: role.dataScope || 'ALL'
+      };
+    });
+    setModulePermissions(loadedPerms);
     setIsRoleModalOpen(true);
   };
 
   const handleSaveRole = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!roleNameInput.trim()) {
-      showToast("Please enter a role name", "error");
-      return;
-    }
+    if (!roleName.trim()) return;
+
+    const convertedPermissions = Object.entries(modulePermissions).map(([mod, state]) => ({
+      module: mod,
+      view: state.permission !== 'none',
+      edit: state.permission === 'view_edit' || state.permission === 'full',
+      approve: state.permission === 'full',
+      assign: state.permission === 'full'
+    }));
+
+    const firstScope = Object.values(modulePermissions)[0]?.level || 'ALL';
 
     if (editingRoleId) {
-      setRoles(
-        roles.map((r) =>
-          r.id === editingRoleId
-            ? {
-                ...r,
-                name: roleNameInput.trim(),
-                description: roleDescInput.trim() || "—",
-                permissions: { ...modalPermissions },
-              }
-            : r
-        )
-      );
-      showToast(`Role "${roleNameInput.trim()}" updated successfully`, "success");
+      setRoles(prev => prev.map(r => r.id === editingRoleId ? {
+        ...r,
+        name: roleName.trim(),
+        description: roleDescription.trim(),
+        dataScope: firstScope,
+        permissions: convertedPermissions
+      } : r));
     } else {
-      const newRole: OrgRoleItem = {
-        id: `role_${Date.now()}`,
-        name: roleNameInput.trim(),
-        description: roleDescInput.trim() || "—",
-        createdAt: "Oct 30, 2026",
-        usersAssigned: 0,
-        dataScope: Object.values(modalPermissions)[0]?.level || "ALL",
-        permissions: { ...modalPermissions },
+      const newRole: RoleDefinition = {
+        id: roleName.toLowerCase().replace(/\s+/g, '_'),
+        name: roleName.trim(),
+        description: roleDescription.trim(),
+        isSystem: false,
+        userCount: 0,
+        dataScope: firstScope,
+        permissions: convertedPermissions
       };
-      setRoles([newRole, ...roles]);
-      showToast(`Role "${roleNameInput.trim()}" created successfully`, "success");
+      setRoles([...roles, newRole]);
     }
 
     setIsRoleModalOpen(false);
   };
 
-  const filteredRoles = useMemo(() => {
-    return roles.filter((r) => {
-      const matchesSearch =
-        r.name.toLowerCase().includes(roleSearchTerm.toLowerCase()) ||
-        r.description.toLowerCase().includes(roleSearchTerm.toLowerCase());
-      const matchesRole = roleFilter === "ALL" || r.name === roleFilter;
-      return matchesSearch && matchesRole;
-    });
-  }, [roles, roleSearchTerm, roleFilter]);
+  const toggleOrgSelection = (org: string) => {
+    setSelectedOrgs(prev => 
+      prev.includes(org) ? prev.filter(o => o !== org) : [...prev, org]
+    );
+  };
 
   const filteredUsers = useMemo(() => {
     return users.filter((u) => {
-      const matchesSearch =
-        u.name.toLowerCase().includes(roleSearchTerm.toLowerCase()) ||
-        u.email.toLowerCase().includes(roleSearchTerm.toLowerCase());
-      const matchesRole = roleFilter === "ALL" || u.role === roleFilter;
+      const userOrgs = u.organizations && u.organizations.length > 0 ? u.organizations : [u.organization];
+      const matchesSearch = 
+        u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (u.phone && u.phone.includes(searchTerm)) ||
+        (u.service && u.service.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (u.onboardedBy && u.onboardedBy.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (u.opsResponsible && u.opsResponsible.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        userOrgs.some(o => o.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchesRole = roleFilter === 'ALL' || u.role === roleFilter;
+      const matchesOrg = selectedOrgs.length === 0 || selectedOrgs.some(so => userOrgs.includes(so));
+      return matchesSearch && matchesRole && matchesOrg;
+    });
+  }, [users, searchTerm, roleFilter, selectedOrgs]);
+
+  const filteredRoles = useMemo(() => {
+    return roles.filter((r) => {
+      const matchesSearch = 
+        r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        r.description.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesRole = roleFilter === 'ALL' || r.name === roleFilter;
       return matchesSearch && matchesRole;
     });
-  }, [users, roleSearchTerm, roleFilter]);
+  }, [roles, searchTerm, roleFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / itemsPerPage));
+  const paginatedUsers = filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div className="space-y-6">
-      {/* Top Tabs: Providers vs Roles & Permissions */}
-      <div className="flex items-center gap-6 border-b border-gray-200">
-        <button
-          onClick={() => setActiveMainTab("providers")}
-          className={`pb-3 text-sm font-semibold transition-all relative ${
-            activeMainTab === "providers" ? "text-[#2563EB]" : "text-gray-500 hover:text-gray-900"
-          }`}
-        >
-          Providers
-          {activeMainTab === "providers" && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#2563EB] rounded-full" />
-          )}
-        </button>
-        <button
-          onClick={() => setActiveMainTab("roles")}
-          className={`pb-3 text-sm font-semibold transition-all relative ${
-            activeMainTab === "roles" ? "text-[#2563EB]" : "text-gray-500 hover:text-gray-900"
-          }`}
-        >
-          Roles & Permissions
-          {activeMainTab === "roles" && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#2563EB] rounded-full" />
-          )}
-        </button>
+      {/* Top Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-[#002B49] tracking-tight">Users Management</h1>
+        <p className="text-xs text-slate-500 mt-1">
+          Manage system users, assigned organizations, roles, and profiles.
+        </p>
       </div>
 
-      {/* ======================================================== */}
-      {/* TAB 1: PROVIDERS ROSTER (Screenshot 3)                  */}
-      {/* ======================================================== */}
-      {activeMainTab === "providers" && (
-        <div className="space-y-6">
-          {/* Page Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Providers</h1>
-              <p className="text-sm text-gray-500 mt-1">Manage all providers and their credentialing status</p>
-            </div>
+      {/* Control Bar */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-3 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+        {/* Left Side: Toggles + Search + Org Filter + Role Filter */}
+        <div className="flex flex-wrap items-center gap-3 flex-1">
+          <div className="bg-slate-100 p-1 rounded-full flex items-center gap-1 border border-slate-200/60 shrink-0">
             <button
-              onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-2 px-5 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-xl text-sm font-semibold shadow-sm transition-all cursor-pointer self-start sm:self-auto"
+              onClick={() => {
+                setActiveTab('users');
+                setCurrentPage(1);
+              }}
+              className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                activeTab === 'users'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-500 hover:text-slate-900'
+              }`}
             >
-              <Plus className="w-4 h-4" />
-              Add Provider
-            </button>
-          </div>
-
-          {/* Main Card with Search Bar and Data Table */}
-          <div className="bg-white rounded-2xl border border-gray-200/80 shadow-sm overflow-hidden p-6 space-y-5">
-            <div className="flex flex-wrap items-center gap-3">
-              {/* Search */}
-              <div className="relative flex-1 min-w-[240px] max-w-sm">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                <input
-                  type="text"
-                  placeholder="Search by name, phone, or email"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                />
-              </div>
-
-              {/* Credentialing Status Filter */}
-              <div className="relative">
-                <select
-                  value={credentialingStatusFilter}
-                  onChange={(e) => setCredentialingStatusFilter(e.target.value)}
-                  className="appearance-none px-4 py-2 pr-10 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none bg-white cursor-pointer text-gray-700"
-                >
-                  <option value="all">Credentialing Status</option>
-                  <option value="Done">Done</option>
-                  <option value="In process">In process</option>
-                  <option value="Re-credential">Re-credential</option>
-                  <option value="Not started">Not started</option>
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-              </div>
-
-              {/* Health Status Filter */}
-              <div className="relative">
-                <select
-                  value={healthStatusFilter}
-                  onChange={(e) => setHealthStatusFilter(e.target.value)}
-                  className="appearance-none px-4 py-2 pr-10 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none bg-white cursor-pointer text-gray-700"
-                >
-                  <option value="all">Health Status</option>
-                  <option value="Ok">Ok</option>
-                  <option value="Expirations">Expirations</option>
-                  <option value="Issues">Issues</option>
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-              </div>
-
-              {(credentialingStatusFilter !== "all" || healthStatusFilter !== "all") && (
-                <button
-                  onClick={() => {
-                    setCredentialingStatusFilter("all");
-                    setHealthStatusFilter("all");
-                  }}
-                  className="text-sm text-[#2563EB] hover:underline whitespace-nowrap"
-                >
-                  Clear filters
-                </button>
-              )}
-            </div>
-
-            {/* Providers Table (Matching Screenshot 3) */}
-            <div className="overflow-x-auto rounded-xl border border-gray-200">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-[#0B2545] text-white">
-                    <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a3a60]">
-                      PROVIDER
-                    </th>
-                    <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a3a60]">
-                      COUNTRY
-                    </th>
-                    <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a3a60]">
-                      SPECIALTY
-                    </th>
-                    <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a3a60]">
-                      CREDENTIALING
-                    </th>
-                    <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a3a60]">
-                      STATUS
-                    </th>
-                    <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider">
-                      ACTIONS
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-100">
-                  {filteredProviders.length > 0 ? (
-                    filteredProviders.map((provider) => (
-                      <tr key={provider.id} className="hover:bg-gray-50/70 transition-colors">
-                        <td className="px-5 py-4">
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => navigate(`/admin/providers/${provider.id}`)}
-                              className="font-medium text-[#2563EB] hover:underline text-left cursor-pointer"
-                            >
-                              {provider.name}
-                            </button>
-                            {provider.role && (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-blue-50 text-blue-700 border border-blue-200">
-                                {provider.role}
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-xs text-gray-500 mt-0.5">{provider.email}</div>
-                        </td>
-                        <td className="px-5 py-4">
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-gray-50 border border-gray-200 text-gray-700">
-                            🇺🇸 US
-                          </span>
-                        </td>
-                        <td className="px-5 py-4 text-sm text-gray-700">{provider.specialty}</td>
-                        <td className="px-5 py-4">
-                          <StatusBadge status={provider.credentialingStatus} variant="credentialing" />
-                        </td>
-                        <td className="px-5 py-4">
-                          <StatusBadge status={provider.healthStatus} variant="health" />
-                        </td>
-                        <td className="px-5 py-4">
-                          <div className="flex items-center gap-2">
-                            <div className="relative">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setOpenDropdownId(openDropdownId === provider.id ? null : provider.id);
-                                }}
-                                className="p-1.5 text-gray-400 hover:text-[#2563EB] hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                                title="Add enrollment / credentialing"
-                              >
-                                <Plus className="w-4 h-4" />
-                              </button>
-                              {openDropdownId === provider.id && (
-                                <div className="absolute left-0 mt-1 w-56 bg-white border border-gray-200 rounded-xl shadow-lg z-10 py-1">
-                                  <button
-                                    onClick={() => handleRequestCredentialing(provider)}
-                                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                  >
-                                    Request Credentialing
-                                  </button>
-                                  <button
-                                    onClick={() => handleRequestEnrollment(provider)}
-                                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors border-t border-gray-100"
-                                  >
-                                    Request Enrollment
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                            <button
-                              onClick={() => navigate(`/admin/providers/${provider.id}`)}
-                              className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-                              title="View Profile"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleSendEmail(provider)}
-                              className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-                              title="Send Email"
-                            >
-                              <Mail className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={6} className="py-20 text-center text-sm text-gray-400">
-                        No providers found in this organization.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ======================================================== */}
-      {/* TAB 2: ROLES & PERMISSIONS (Screenshots 1 & 2)          */}
-      {/* ======================================================== */}
-      {activeMainTab === "roles" && (
-        <div className="space-y-6">
-          {/* Header matching Screenshot 1 */}
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 tracking-tight">User Management</h2>
-            <p className="text-sm text-gray-500 mt-1">
-              Orchestrate your team's access, permissions, and operational credits.
-            </p>
-          </div>
-
-          {/* Control Bar matching Screenshot 1 */}
-          <div className="bg-white rounded-2xl border border-gray-200/80 shadow-sm p-3 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-            {/* Pill Group: Users | Roles (Department removed as requested) */}
-            <div className="flex items-center gap-3 overflow-x-auto">
-              <div className="bg-gray-100 p-1 rounded-full flex items-center gap-1 border border-gray-200 shrink-0">
-                <button
-                  onClick={() => {
-                    setUmTab("users");
-                    setSelectedRoleItems([]);
-                  }}
-                  className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-                    umTab === "users"
-                      ? "bg-white text-gray-900 shadow-xs"
-                      : "text-gray-500 hover:text-gray-900"
-                  }`}
-                >
-                  Users
-                </button>
-                <button
-                  onClick={() => {
-                    setUmTab("roles");
-                    setSelectedRoleItems([]);
-                  }}
-                  className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-                    umTab === "roles"
-                      ? "bg-white text-gray-900 shadow-xs"
-                      : "text-gray-500 hover:text-gray-900"
-                  }`}
-                >
-                  Roles
-                </button>
-              </div>
-
-              <div className="hidden sm:block h-6 w-px bg-gray-200" />
-
-              {/* Search & All Roles Dropdown */}
-              <div className="flex items-center gap-2 flex-1 min-w-[240px]">
-                <Search size={16} className="text-gray-400 shrink-0 ml-1" />
-
-                <div className="relative">
-                  <select
-                    value={roleFilter}
-                    onChange={(e) => setRoleFilter(e.target.value)}
-                    className="px-3 py-1 rounded-full border border-blue-200 bg-blue-50/70 text-xs font-semibold text-blue-600 cursor-pointer focus:outline-none appearance-none pr-7"
-                  >
-                    <option value="ALL">All Roles</option>
-                    {roles.map((r) => (
-                      <option key={r.id} value={r.name}>
-                        {r.name}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown size={12} className="text-blue-600 absolute right-2.5 top-2 pointer-events-none" />
-                </div>
-
-                <input
-                  type="text"
-                  value={roleSearchTerm}
-                  onChange={(e) => setRoleSearchTerm(e.target.value)}
-                  placeholder="Search..."
-                  className="text-xs text-gray-700 placeholder-gray-400 focus:outline-none bg-transparent w-full max-w-[200px]"
-                />
-              </div>
-            </div>
-
-            {/* Right Side Actions: Count + Black circular Plus button */}
-            <div className="flex items-center gap-3 self-end md:self-auto pr-2">
-              {umTab === "roles" ? (
-                <>
-                  <span className="text-xs font-medium text-gray-500 whitespace-nowrap">
-                    {filteredRoles.length} roles
-                  </span>
-                  <button
-                    onClick={handleOpenCreateModal}
-                    className="w-8 h-8 rounded-full bg-gray-900 hover:bg-gray-800 text-white flex items-center justify-center shadow-xs transition-all cursor-pointer"
-                    title="Create Role"
-                  >
-                    <Plus size={16} />
-                  </button>
-                </>
-              ) : (
-                <>
-                  <span className="text-xs font-medium text-gray-500 whitespace-nowrap">
-                    {filteredUsers.length} users
-                  </span>
-                  <button
-                    onClick={() => setIsAddUserModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gray-900 hover:bg-gray-800 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-                  >
-                    <Plus size={14} />
-                    Add User
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Sub-tab 1: Roles Table (Screenshot 1 Exact Match) */}
-          {umTab === "roles" && (
-            <div className="bg-white rounded-2xl border border-gray-200/80 shadow-sm overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-[#0B2545] text-white text-[11px] font-bold uppercase tracking-wider">
-                      <th className="py-3.5 px-4 w-10 text-center border-r border-[#1a3a60]">
-                        <input
-                          type="checkbox"
-                          checked={selectedRoleItems.length === filteredRoles.length && filteredRoles.length > 0}
-                          onChange={() => {
-                            if (selectedRoleItems.length === filteredRoles.length) {
-                              setSelectedRoleItems([]);
-                            } else {
-                              setSelectedRoleItems(filteredRoles.map((r) => r.id));
-                            }
-                          }}
-                          className="w-4 h-4 rounded border-gray-400 text-blue-600 focus:ring-0 cursor-pointer bg-white"
-                        />
-                      </th>
-                      <th className="py-3.5 px-3 w-10 text-center border-r border-[#1a3a60]">
-                        <SettingsIcon size={14} className="text-gray-300 mx-auto" />
-                      </th>
-                      <th className="py-3.5 px-6 border-r border-[#1a3a60]">ROLE NAME</th>
-                      <th className="py-3.5 px-6 border-r border-[#1a3a60]">DESCRIPTION</th>
-                      <th className="py-3.5 px-6 border-r border-[#1a3a60]">CREATED AT</th>
-                      <th className="py-3.5 px-6">USERS ASSIGNED</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 text-xs">
-                    {filteredRoles.map((role) => (
-                      <tr key={role.id} className="hover:bg-gray-50/80 transition-colors">
-                        <td className="py-3.5 px-4 text-center">
-                          <input
-                            type="checkbox"
-                            checked={selectedRoleItems.includes(role.id)}
-                            onChange={() => {
-                              setSelectedRoleItems((prev) =>
-                                prev.includes(role.id) ? prev.filter((i) => i !== role.id) : [...prev, role.id]
-                              );
-                            }}
-                            className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-0 cursor-pointer"
-                          />
-                        </td>
-                        <td className="py-3.5 px-3 text-center">
-                          <button
-                            onClick={() => handleOpenEditModal(role)}
-                            className="text-gray-400 hover:text-blue-600 transition-colors cursor-pointer"
-                            title="Edit Role Configuration"
-                          >
-                            <Menu size={14} className="mx-auto" />
-                          </button>
-                        </td>
-                        <td className="py-3.5 px-6 font-semibold text-blue-600 hover:underline cursor-pointer">
-                          <button onClick={() => handleOpenEditModal(role)} className="cursor-pointer">
-                            {role.name}
-                          </button>
-                        </td>
-                        <td className="py-3.5 px-6 text-gray-500 max-w-[280px] truncate">{role.description}</td>
-                        <td className="py-3.5 px-6 text-gray-600">{role.createdAt}</td>
-                        <td className="py-3.5 px-6">
-                          <div className="flex items-center gap-1.5 text-gray-600 font-medium">
-                            <UsersIcon size={13} className="text-gray-400" />
-                            <span>{role.usersAssigned}</span>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Table Footer */}
-              <div className="px-6 py-3 border-t border-gray-100 bg-gray-50/50 flex items-center justify-between text-xs text-gray-500">
-                <div className="flex items-center gap-2">
-                  <span>ROWS PER PAGE</span>
-                  <select className="border border-gray-200 rounded px-2 py-0.5 text-xs bg-white text-gray-700">
-                    <option>20</option>
-                    <option>50</option>
-                  </select>
-                  <span className="ml-4">Showing 1-{filteredRoles.length} of {filteredRoles.length}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span>PAGE 1 / 1</span>
-                  <div className="flex items-center gap-1">
-                    <button className="p-1 hover:bg-gray-200 rounded disabled:opacity-40" disabled>
-                      <ChevronsLeft size={14} />
-                    </button>
-                    <button className="p-1 hover:bg-gray-200 rounded disabled:opacity-40" disabled>
-                      <ChevronLeft size={14} />
-                    </button>
-                    <button className="p-1 hover:bg-gray-200 rounded disabled:opacity-40" disabled>
-                      <ChevronRight size={14} />
-                    </button>
-                    <button className="p-1 hover:bg-gray-200 rounded disabled:opacity-40" disabled>
-                      <ChevronsRight size={14} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Sub-tab 2: Users Table */}
-          {umTab === "users" && (
-            <div className="bg-white rounded-2xl border border-gray-200/80 shadow-sm overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-[#0B2545] text-white text-[11px] font-bold uppercase tracking-wider">
-                      <th className="py-3.5 px-6 border-r border-[#1a3a60]">USER NAME</th>
-                      <th className="py-3.5 px-6 border-r border-[#1a3a60]">EMAIL</th>
-                      <th className="py-3.5 px-6 border-r border-[#1a3a60]">ASSIGNED ROLE</th>
-                      <th className="py-3.5 px-6 border-r border-[#1a3a60]">JOINED DATE</th>
-                      <th className="py-3.5 px-6">STATUS</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 text-xs">
-                    {filteredUsers.map((user) => (
-                      <tr key={user.id} className="hover:bg-gray-50/80 transition-colors">
-                        <td className="py-3.5 px-6 font-semibold text-gray-900">{user.name}</td>
-                        <td className="py-3.5 px-6 text-gray-500">{user.email}</td>
-                        <td className="py-3.5 px-6">
-                          <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                            {user.role}
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-6 text-gray-600">{user.createdAt}</td>
-                        <td className="py-3.5 px-6">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700">
-                            {user.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ======================================================== */}
-      {/* MODAL: ADD PROVIDER (Screenshot with Role Selection)    */}
-      {/* ======================================================== */}
-      <ModalWrapper
-        isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        title="Add Provider"
-        size="md"
-      >
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-            <input
-              type="text"
-              value={newProvider.firstName}
-              onChange={(e) => setNewProvider({ ...newProvider, firstName: e.target.value })}
-              className="w-full px-3.5 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-sm"
-              placeholder="Enter first name"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-            <input
-              type="text"
-              value={newProvider.lastName}
-              onChange={(e) => setNewProvider({ ...newProvider, lastName: e.target.value })}
-              className="w-full px-3.5 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-sm"
-              placeholder="Enter last name"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input
-              type="email"
-              value={newProvider.email}
-              onChange={(e) => setNewProvider({ ...newProvider, email: e.target.value })}
-              className="w-full px-3.5 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-sm"
-              placeholder="Enter email"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Specialty</label>
-            <div className="relative">
-              <select
-                value={newProvider.specialty}
-                onChange={(e) => setNewProvider({ ...newProvider, specialty: e.target.value })}
-                className="w-full px-3.5 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-sm bg-white appearance-none pr-8 cursor-pointer text-gray-800"
-              >
-                <option value="Psychiatry">Psychiatry</option>
-                <option value="Psychology">Psychology</option>
-                <option value="Therapy">Therapy</option>
-                <option value="Physiotherapy">Physiotherapy</option>
-                <option value="Dietitian">Dietitian</option>
-              </select>
-              <ChevronDown size={14} className="text-gray-400 absolute right-3.5 top-3.5 pointer-events-none" />
-            </div>
-          </div>
-
-          {/* Select Role (Latter Option - Dropdown) */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Select Role</label>
-            <div className="relative">
-              <select
-                value={newProvider.role}
-                onChange={(e) => setNewProvider({ ...newProvider, role: e.target.value })}
-                className="w-full px-3.5 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-sm bg-white appearance-none pr-8 cursor-pointer text-gray-800"
-              >
-                {roles.map((r) => (
-                  <option key={r.id} value={r.name}>
-                    {r.name}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown size={14} className="text-gray-400 absolute right-3.5 top-3.5 pointer-events-none" />
-            </div>
-          </div>
-
-          <div className="flex items-start gap-3 p-4 bg-blue-50/60 rounded-xl border border-blue-100">
-            <input
-              type="checkbox"
-              id="sendInviteProvider"
-              checked={newProvider.sendInvite}
-              onChange={(e) => setNewProvider({ ...newProvider, sendInvite: e.target.checked })}
-              className="mt-1 w-4 h-4 text-[#2563EB] border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
-            />
-            <label htmlFor="sendInviteProvider" className="text-xs text-gray-700 cursor-pointer">
-              <span className="font-semibold text-gray-900 block mb-0.5">Send Invitation Email</span>
-              Sends an invite giving the provider access to update/edit their MantraComply profile and complete compliance tasks.
-            </label>
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-            <button
-              onClick={() => setShowAddModal(false)}
-              className="px-4 py-2 border border-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleAddProvider}
-              className="px-5 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-xl text-sm font-semibold shadow-sm transition-colors cursor-pointer"
-            >
-              Add Provider
-            </button>
-          </div>
-        </div>
-      </ModalWrapper>
-
-      {/* ======================================================== */}
-      {/* MODAL: CREATE / EDIT ROLE (Screenshot 2 Exact Match)    */}
-      {/* ======================================================== */}
-      {isRoleModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full border border-gray-200 overflow-hidden max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-150">
-            {/* Modal Header */}
-            <div className="px-6 py-4 flex items-center justify-between border-b border-gray-100">
-              <h2 className="text-xl font-bold text-gray-900">
-                {editingRoleId ? "Edit Role" : "Create Role"}
-              </h2>
-              <button
-                type="button"
-                onClick={() => setIsRoleModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center cursor-pointer transition-colors"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <form onSubmit={handleSaveRole} className="flex-1 overflow-y-auto p-6 space-y-6">
-              {/* Form Inputs: Role Name & Description */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
-                    ROLE NAME <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={roleNameInput}
-                    onChange={(e) => setRoleNameInput(e.target.value)}
-                    placeholder="e.g. Compliance Officer"
-                    className="w-full px-4 py-2.5 rounded-full border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder-gray-400"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
-                    DESCRIPTION
-                  </label>
-                  <input
-                    type="text"
-                    value={roleDescInput}
-                    onChange={(e) => setRoleDescInput(e.target.value)}
-                    placeholder="e.g. Can manage provider credentials and enrollment filings"
-                    className="w-full px-4 py-2.5 rounded-full border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder-gray-400"
-                  />
-                </div>
-              </div>
-
-              {/* Matrix Table: MODULE | PERMISSION | LEVEL */}
-              <div className="rounded-xl border border-gray-200 overflow-hidden shadow-xs">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-[#0B2545] text-white text-xs font-bold uppercase tracking-wider">
-                      <th className="py-3 px-6 w-1/3 border-r border-[#1a3a60]">MODULE</th>
-                      <th className="py-3 px-6 w-1/3 border-r border-[#1a3a60]">PERMISSION</th>
-                      <th className="py-3 px-6 w-1/3">LEVEL</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 text-xs">
-                    {ROLE_MODULES.map((module) => {
-                      const perm = modalPermissions[module] || { permission: "none", level: "ALL" };
-
-                      return (
-                        <tr key={module} className="hover:bg-gray-50/60 transition-colors">
-                          <td className="py-3.5 px-6 font-semibold text-gray-800">{module}</td>
-                          <td className="py-3.5 px-6">
-                            <div className="relative">
-                              <select
-                                value={perm.permission}
-                                onChange={(e) => {
-                                  const val = e.target.value as any;
-                                  setModalPermissions((prev) => ({
-                                    ...prev,
-                                    [module]: { ...perm, permission: val },
-                                  }));
-                                }}
-                                className="w-full appearance-none px-4 py-2 rounded-full border border-gray-200 text-xs text-gray-700 bg-white focus:outline-none focus:border-blue-500 pr-8 cursor-pointer"
-                              >
-                                <option value="none">Select an option...</option>
-                                <option value="view">View</option>
-                                <option value="view_edit">View & Edit</option>
-                                <option value="full">Full Access</option>
-                              </select>
-                              <ChevronDown size={14} className="text-gray-400 absolute right-3 top-3 pointer-events-none" />
-                            </div>
-                          </td>
-                          <td className="py-3.5 px-6">
-                            <div className="relative">
-                              <select
-                                value={perm.level}
-                                onChange={(e) => {
-                                  const val = e.target.value as any;
-                                  setModalPermissions((prev) => ({
-                                    ...prev,
-                                    [module]: { ...perm, level: val },
-                                  }));
-                                }}
-                                className="w-full appearance-none px-4 py-2 rounded-full border border-gray-200 text-xs text-gray-700 bg-white focus:outline-none focus:border-blue-500 pr-8 cursor-pointer"
-                              >
-                                <option value="ALL">All Records</option>
-                                <option value="ASSIGNED_ONLY">Assigned Records Only</option>
-                              </select>
-                              <ChevronDown size={14} className="text-gray-400 absolute right-3 top-3 pointer-events-none" />
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Modal Footer */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
-                <button
-                  type="button"
-                  onClick={() => setIsRoleModalOpen(false)}
-                  className="px-6 py-2.5 rounded-full border border-gray-300 text-gray-700 text-xs font-semibold hover:bg-gray-50 transition-colors cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2.5 rounded-full bg-gray-600 hover:bg-gray-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-                >
-                  Save Role
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ======================================================== */}
-      {/* MODAL: ADD USER (In Roles View)                         */}
-      {/* ======================================================== */}
-      <ModalWrapper
-        isOpen={isAddUserModalOpen}
-        onClose={() => setIsAddUserModalOpen(false)}
-        title="Add Team Member"
-        size="md"
-      >
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-            <input
-              type="text"
-              value={newUserName}
-              onChange={(e) => setNewUserName(e.target.value)}
-              className="w-full px-3.5 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-sm"
-              placeholder="e.g. Rachel Adams"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input
-              type="email"
-              value={newUserEmail}
-              onChange={(e) => setNewUserEmail(e.target.value)}
-              className="w-full px-3.5 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-sm"
-              placeholder="rachel.a@organization.com"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Select Role</label>
-            <div className="relative">
-              <select
-                value={newUserRole}
-                onChange={(e) => setNewUserRole(e.target.value)}
-                className="w-full px-3.5 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-sm bg-white appearance-none pr-8 cursor-pointer text-gray-800"
-              >
-                {roles.map((r) => (
-                  <option key={r.id} value={r.name}>
-                    {r.name}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown size={14} className="text-gray-400 absolute right-3.5 top-3.5 pointer-events-none" />
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-            <button
-              onClick={() => setIsAddUserModalOpen(false)}
-              className="px-4 py-2 border border-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
-            >
-              Cancel
+              Users
             </button>
             <button
               onClick={() => {
-                if (!newUserName.trim() || !newUserEmail.trim()) {
-                  showToast("Please enter name and email", "error");
-                  return;
-                }
-                const newUser: OrgUserItem = {
-                  id: Date.now(),
-                  name: newUserName.trim(),
-                  email: newUserEmail.trim(),
-                  role: newUserRole,
-                  createdAt: "Today",
-                  status: "Active",
-                };
-                setUsers([newUser, ...users]);
-                setRoles(
-                  roles.map((r) =>
-                    r.name === newUserRole ? { ...r, usersAssigned: r.usersAssigned + 1 } : r
-                  )
-                );
-                showToast(`Team member "${newUserName.trim()}" added`, "success");
-                setIsAddUserModalOpen(false);
-                setNewUserName("");
-                setNewUserEmail("");
+                setActiveTab('roles');
+                setCurrentPage(1);
               }}
-              className="px-5 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-xl text-sm font-semibold shadow-sm transition-colors cursor-pointer"
+              className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                activeTab === 'roles'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-500 hover:text-slate-900'
+              }`}
             >
-              Add User
+              Roles
             </button>
           </div>
-        </div>
-      </ModalWrapper>
 
-      {/* Request Enrollment Modal */}
-      {selectedProviderForEnrollment && (
-        <RequestEnrollmentModal
-          isOpen={showEnrollmentModal}
-          onClose={() => setShowEnrollmentModal(false)}
-          providers={payerProviders}
-          payers={payers}
-          preSelectedProviderId={selectedProviderForEnrollment.id.toString()}
-          onSubmit={(data) => {
-            const requests = data.selectedPayers.map((payerId: string) => {
-              const payer = payers.find((p) => p.id === payerId);
-              return {
-                providerId: selectedProviderForEnrollment.id.toString(),
-                providerName: selectedProviderForEnrollment.name,
-                specialty: selectedProviderForEnrollment.specialty,
-                payerId,
-                payerName: payer?.name || "",
-                state: "FL",
-                type: payer?.type || "Commercial",
-                submittedDate: new Date().toLocaleDateString("en-US"),
-                status: "Pending" as const,
-                priority: "Normal" as const,
-                lastUpdated: "Just now",
-                timeline: [],
-                comments: [],
-                documents: [],
-              };
-            });
-            addEnrollmentRequests(requests);
-            showToast("Enrollment request submitted", "success");
-            setShowEnrollmentModal(false);
-          }}
-        />
+          <div className="hidden sm:block h-6 w-px bg-slate-200"></div>
+
+          {/* Search Box */}
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50/50 flex-1 max-w-sm focus-within:border-blue-500 focus-within:bg-white transition-all">
+            <Search size={15} className="text-slate-400 shrink-0" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+              placeholder="Search by name, email, service or org..."
+              className="text-xs text-slate-700 placeholder-slate-400 focus:outline-none bg-transparent w-full"
+            />
+            {searchTerm && (
+              <button onClick={() => setSearchTerm('')} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                <X size={13} />
+              </button>
+            )}
+          </div>
+
+          {/* Organization Multi-Select Dropdown Filter */}
+          <div className="relative" ref={orgFilterRef}>
+            <button
+              type="button"
+              onClick={() => setIsOrgFilterOpen(!isOrgFilterOpen)}
+              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+                selectedOrgs.length > 0
+                  ? 'bg-blue-50 border-blue-300 text-blue-700'
+                  : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              <Building2 size={13} className={selectedOrgs.length > 0 ? 'text-blue-600' : 'text-slate-400'} />
+              <span>
+                {selectedOrgs.length === 0 
+                  ? 'All Organizations' 
+                  : `${selectedOrgs.length} Org${selectedOrgs.length > 1 ? 's' : ''} Selected`}
+              </span>
+              <ChevronDown size={12} className="opacity-70" />
+            </button>
+
+            {isOrgFilterOpen && (
+              <div className="absolute left-0 mt-1.5 w-64 rounded-2xl bg-white border border-slate-200 shadow-xl p-3 z-50 text-xs animate-in fade-in zoom-in-95 duration-100">
+                <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
+                  <span className="font-bold text-slate-800 text-[11px] uppercase tracking-wider">Filter by Org</span>
+                  {selectedOrgs.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedOrgs([])}
+                      className="text-[11px] text-blue-600 hover:underline font-semibold cursor-pointer"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+
+                <div className="max-h-48 overflow-y-auto space-y-1">
+                  {availableOrganizations.map((org) => {
+                    const isChecked = selectedOrgs.includes(org);
+                    return (
+                      <label
+                        key={org}
+                        className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer text-slate-700 font-medium"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => toggleOrgSelection(org)}
+                          className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        />
+                        <span className="truncate">{org}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Role Filter Dropdown */}
+          <div className="relative">
+            <select
+              value={roleFilter}
+              onChange={(e) => {
+                setRoleFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="text-xs font-semibold px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer appearance-none pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="ALL">All Roles</option>
+              <option value="PROVIDER">Provider</option>
+              <option value="ADMIN">Admin</option>
+              <option value="CREDENTIALING_SPECIALIST">Credentialing Specialist</option>
+              <option value="ORG ADMIN">Org Admin</option>
+              <option value="SUPER_ADMIN">Super Admin</option>
+            </select>
+            <ChevronDown size={12} className="text-slate-400 absolute right-2.5 top-2.5 pointer-events-none" />
+          </div>
+        </div>
+
+        {/* Right Side: Total Count and Add User / Create Role button */}
+        <div className="flex items-center gap-3 shrink-0 self-end md:self-auto">
+          {activeTab === 'users' ? (
+            <>
+              <span className="text-xs font-bold text-slate-600 whitespace-nowrap bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
+                {filteredUsers.length} users
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsAddUserModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+              >
+                <Plus size={14} />
+                <span>Add User</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <span className="text-xs font-bold text-slate-600 whitespace-nowrap bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
+                {filteredRoles.length} roles
+              </span>
+              <button
+                type="button"
+                onClick={handleOpenCreateRole}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+              >
+                <Plus size={14} />
+                <span>Create Role</span>
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Selected Org Chips */}
+      {selectedOrgs.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap text-xs">
+          <span className="text-slate-400 text-[11px] font-semibold uppercase tracking-wider">Filtered Orgs:</span>
+          {selectedOrgs.map((org) => (
+            <span
+              key={org}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 font-semibold text-[11px]"
+            >
+              <Building2 size={11} />
+              <span>{org}</span>
+              <button
+                type="button"
+                onClick={() => toggleOrgSelection(org)}
+                className="hover:text-blue-900 cursor-pointer"
+              >
+                <X size={11} />
+              </button>
+            </span>
+          ))}
+          <button
+            type="button"
+            onClick={() => setSelectedOrgs([])}
+            className="text-[11px] text-slate-500 hover:text-slate-800 font-semibold underline ml-1 cursor-pointer"
+          >
+            Clear all
+          </button>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* TAB 1: USERS TABLE (MATCHING SCREENSHOT + FULL COLUMNS) */}
+      {/* ======================================================== */}
+      {activeTab === 'users' && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-separate border-spacing-0 min-w-[1900px]">
+              <thead>
+                <tr className="bg-[#002B49] text-white text-[11px] font-bold uppercase tracking-wider">
+                  {/* Col 1: Action Menu Icon (sticky left-0) */}
+                  <th className="py-3.5 px-0 w-[44px] min-w-[44px] max-w-[44px] text-center border-r border-b border-[#1a4a6e] box-border sticky left-0 bg-[#002B49] z-30">
+                    <div className="w-[44px] flex items-center justify-center">
+                      <span className="text-slate-300">≡</span>
+                    </div>
+                  </th>
+
+                  {/* Col 2: USER (Avatar + Name + ID) (sticky left-44px) */}
+                  <th className="py-3.5 px-5 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[220px] sticky left-[44px] bg-[#002B49] z-30 shadow-[4px_0_6px_-1px_rgba(0,0,0,0.25)]">
+                    USER
+                  </th>
+
+                  <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[220px]">EMAIL</th>
+                  <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[150px]">PHONE</th>
+                  <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[200px]">ORGANIZATION</th>
+                  <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[150px]">COUNTRY</th>
+                  <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[160px]">SERVICE</th>
+                  <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[130px]">SIGNUP DATE</th>
+                  <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[140px]">ROLE</th>
+                  <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[160px]">REFERRED BY</th>
+                  <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[160px]">ONBOARDED BY</th>
+                  <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[190px]">OPS RESPONSIBLE</th>
+                  <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[170px]">CREDENTIALING START DATE</th>
+                  <th className="py-3.5 px-4 border-b border-[#1a4a6e] whitespace-nowrap min-w-[170px]">ENROLLMENT START DATE</th>
+                </tr>
+              </thead>
+              <tbody className="text-xs">
+                {paginatedUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={14} className="text-center py-16 text-slate-400 text-sm border-b border-slate-100">
+                      No users found matching your filters.
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedUsers.map((user, idx) => {
+                    const isNearBottom = idx >= paginatedUsers.length - 2 && paginatedUsers.length > 2;
+                    const userOrgs = user.organizations && user.organizations.length > 0 
+                      ? user.organizations 
+                      : [user.organization];
+
+                    return (
+                      <tr key={user.id} className={`hover:bg-slate-50/80 transition-colors group ${openMenuUserId === user.id ? 'relative z-50' : ''}`}>
+                        {/* Col 1: Action Hamburger (≡) with Edit Option */}
+                        <td className={`py-3 px-0 w-[44px] min-w-[44px] max-w-[44px] text-center border-r border-b border-slate-100 box-border sticky left-0 bg-white group-hover:bg-slate-50 transition-colors relative ${
+                          openMenuUserId === user.id ? 'z-50' : 'z-20'
+                        }`}>
+                          <div className={`relative inline-block text-center user-action-menu-container ${openMenuUserId === user.id ? 'z-50' : ''}`}>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenMenuUserId(openMenuUserId === user.id ? null : user.id);
+                              }}
+                              className={`w-7 h-7 rounded-md flex items-center justify-center transition-all cursor-pointer mx-auto ${
+                                openMenuUserId === user.id
+                                  ? 'bg-blue-100 text-blue-700 font-bold'
+                                  : 'text-slate-400 hover:text-slate-800 hover:bg-slate-100'
+                              }`}
+                              title="Actions"
+                              aria-label="Actions"
+                            >
+                              <span className="text-base select-none font-bold leading-none">≡</span>
+                            </button>
+
+                            {openMenuUserId === user.id && (
+                              <div
+                                onClick={(e) => e.stopPropagation()}
+                                className={`absolute left-full ml-1 w-32 rounded-xl bg-white border border-slate-200 shadow-xl py-1 z-[100] text-left font-medium text-xs tracking-wide animate-in fade-in zoom-in-95 duration-100 ${
+                                  isNearBottom ? 'bottom-0' : 'top-0'
+                                }`}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenEditUser(user);
+                                  }}
+                                  className="w-full flex items-center gap-2.5 px-3 py-2 text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition-colors text-left cursor-pointer font-semibold"
+                                >
+                                  <Edit3 size={14} className="text-blue-600 shrink-0" />
+                                  <span>Edit</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Col 2: USER (Avatar Circle + Name + ID) */}
+                        <td className="py-3 px-5 border-r border-b border-slate-100 whitespace-nowrap sticky left-[44px] bg-white group-hover:bg-slate-50 transition-colors z-10 shadow-[4px_0_6px_-1px_rgba(0,0,0,0.06)]">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 shrink-0">
+                              <UserIcon size={14} />
+                            </div>
+                            <div>
+                              <div className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                                {user.name}
+                              </div>
+                              <div className="text-[10px] text-slate-400 font-normal">
+                                ID: {user.id}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Email */}
+                        <td className="py-3 px-4 text-slate-600 font-medium whitespace-nowrap border-r border-b border-slate-100">
+                          {user.email}
+                        </td>
+
+                        {/* Phone */}
+                        <td className="py-3 px-4 text-slate-700 whitespace-nowrap font-medium border-r border-b border-slate-100">
+                          {user.phone || '—'}
+                        </td>
+
+                        {/* Organization */}
+                        <td className="py-3 px-4 whitespace-nowrap border-r border-b border-slate-100">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {userOrgs.map((org, oIdx) => (
+                              <span key={oIdx} className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-100">
+                                {org}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+
+                        {/* Country */}
+                        <td className="py-3 px-4 text-slate-700 whitespace-nowrap font-medium border-r border-b border-slate-100">
+                          <span className="mr-1.5">{user.countryFlag}</span>
+                          <span>{user.country}</span>
+                        </td>
+
+                        {/* Service */}
+                        <td className="py-3 px-4 whitespace-nowrap font-semibold border-r border-b border-slate-100">
+                          {user.service && user.service !== '—' ? (
+                            <span className="text-blue-700 uppercase tracking-tight">{user.service}</span>
+                          ) : (
+                            <span className="text-slate-400 font-normal">—</span>
+                          )}
+                        </td>
+
+                        {/* Signup Date */}
+                        <td className="py-3 px-4 text-slate-600 whitespace-nowrap font-medium border-r border-b border-slate-100">
+                          {user.signupDate}
+                        </td>
+
+                        {/* Role */}
+                        <td className="py-3 px-4 whitespace-nowrap border-r border-b border-slate-100">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditUser(user)}
+                            title="Click to edit user role & details"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 hover:border-blue-300 transition-colors uppercase tracking-tight cursor-pointer"
+                          >
+                            <UserIcon size={11} className="text-blue-500" />
+                            <span>{user.role}</span>
+                          </button>
+                        </td>
+
+                        {/* Referred by */}
+                        <td className="py-3 px-4 whitespace-nowrap border-r border-b border-slate-100">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium text-slate-600 bg-slate-100 border border-slate-200">
+                            {user.referredBy || 'Portal (Direct)'}
+                          </span>
+                        </td>
+
+                        {/* Onboarded by (Dropdown) */}
+                        <td className="py-3 px-4 whitespace-nowrap border-r border-b border-slate-100">
+                          <div className="relative inline-block text-left">
+                            <select
+                              value={user.onboardedBy || 'Sarah Jenkins'}
+                              onChange={(e) => updateOnboardedBy(user.id, e.target.value)}
+                              className="text-xs font-semibold px-2.5 py-1 rounded-lg border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer appearance-none pr-6 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            >
+                              {availableOnboarders.map((ob) => (
+                                <option key={ob} value={ob}>{ob}</option>
+                              ))}
+                            </select>
+                            <ChevronDown size={12} className="text-slate-400 absolute right-2 top-2 pointer-events-none" />
+                          </div>
+                        </td>
+
+                        {/* Ops Responsible (Dropdown) */}
+                        <td className="py-3 px-4 whitespace-nowrap border-r border-b border-slate-100">
+                          <div className="relative inline-block text-left">
+                            <select
+                              value={user.opsResponsible || availableSpecialists[0]}
+                              onChange={(e) => updateOpsResponsible(user.id, e.target.value)}
+                              className="text-xs font-semibold px-2.5 py-1 rounded-lg border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer appearance-none pr-6 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            >
+                              {availableSpecialists.map((s) => (
+                                <option key={s} value={s}>{s}</option>
+                              ))}
+                            </select>
+                            <ChevronDown size={12} className="text-slate-400 absolute right-2 top-2 pointer-events-none" />
+                          </div>
+                        </td>
+
+                        {/* Credentialing Start Date */}
+                        <td className="py-3 px-4 text-slate-600 font-medium whitespace-nowrap border-r border-b border-slate-100">
+                          {user.credentialingStartDate || 'Oct 28, 2026'}
+                        </td>
+
+                        {/* Enrollment Start Date */}
+                        <td className="py-3 px-4 whitespace-nowrap border-b border-slate-100">
+                          {user.enrollmentStartDate && user.enrollmentStartDate !== 'Pending' && user.enrollmentStartDate !== '—' ? (
+                            <span className="font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 text-xs">
+                              {user.enrollmentStartDate}
+                            </span>
+                          ) : (
+                            <span className="text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 text-[11px] font-semibold">
+                              {user.enrollmentStartDate || 'Pending'}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination Bar */}
+          <div className="px-5 py-3.5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
+            <div className="flex items-center gap-2">
+              <span>Showing</span>
+              <span className="font-bold text-slate-900">
+                {filteredUsers.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}
+              </span>
+              <span>to</span>
+              <span className="font-bold text-slate-900">
+                {Math.min(currentPage * itemsPerPage, filteredUsers.length)}
+              </span>
+              <span>of</span>
+              <span className="font-bold text-slate-900">{filteredUsers.length}</span>
+              <span>users</span>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setCurrentPage(1)}
+                disabled={currentPage === 1}
+                className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              >
+                <ChevronsLeft size={14} />
+              </button>
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              >
+                <ChevronLeft size={14} />
+              </button>
+
+              {Array.from({ length: totalPages }).map((_, pIdx) => {
+                const pNum = pIdx + 1;
+                return (
+                  <button
+                    key={pNum}
+                    onClick={() => setCurrentPage(pNum)}
+                    className={`w-7 h-7 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                      currentPage === pNum
+                        ? 'bg-blue-600 text-white'
+                        : 'border border-slate-200 bg-white hover:bg-slate-100 text-slate-700'
+                    }`}
+                  >
+                    {pNum}
+                  </button>
+                );
+              })}
+
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              >
+                <ChevronRight size={14} />
+              </button>
+              <button
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={currentPage === totalPages}
+                className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              >
+                <ChevronsRight size={14} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* TAB 2: ROLES TABLE (PERMISSIONS MATRIX) */}
+      {/* ======================================================== */}
+      {activeTab === 'roles' && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-[#002B49] text-white text-[11px] font-bold uppercase tracking-wider">
+                  <th className="py-3.5 px-3 w-10 text-center border-r border-[#1a4a6e]">
+                    <Settings size={14} className="text-slate-300 mx-auto" />
+                  </th>
+                  <th className="py-3.5 px-6 border-r border-[#1a4a6e]">Role Name</th>
+                  <th className="py-3.5 px-6 border-r border-[#1a4a6e]">Description</th>
+                  <th className="py-3.5 px-6 border-r border-[#1a4a6e]">Data Scope</th>
+                  <th className="py-3.5 px-6">Users Assigned</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-xs">
+                {filteredRoles.map((role) => (
+                  <tr key={role.id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="py-3.5 px-3 text-center text-slate-400 border-r border-slate-100">
+                      <button
+                        onClick={() => handleOpenEditRole(role)}
+                        className="hover:text-blue-600 transition-colors cursor-pointer"
+                        title="Edit Role Permissions"
+                      >
+                        <Edit3 size={14} />
+                      </button>
+                    </td>
+                    <td className="py-3.5 px-6 font-bold text-slate-900 border-r border-slate-100">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 text-[11px]">
+                          {role.name}
+                        </span>
+                        {role.isSystem && (
+                          <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                            (System)
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-3.5 px-6 text-slate-600 border-r border-slate-100 max-w-md">
+                      {role.description}
+                    </td>
+                    <td className="py-3.5 px-6 border-r border-slate-100">
+                      <span className="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 text-[11px]">
+                        {role.dataScope}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-6 font-semibold text-slate-700">
+                      {role.userCount} users
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* EDIT USER MODAL (With Working Role, No Org Option, Button Says "Edit") */}
+      {/* ======================================================== */}
+      {isEditUserModalOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-screen items-center justify-center p-4">
+            <div 
+              className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
+              onClick={() => setIsEditUserModalOpen(false)}
+            />
+
+            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-xl p-6 transform transition-all z-10 border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <Edit3 size={18} className="text-blue-600" />
+                    <span>Edit User Details</span>
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Modify profile information, role assignment, and ops ownership.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsEditUserModalOpen(false)}
+                  className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors cursor-pointer"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveEditUser} className="space-y-4 text-xs">
+                {/* Full Name & Email */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs outline-none focus:border-blue-500 font-semibold text-slate-800"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={editEmail}
+                      onChange={(e) => setEditEmail(e.target.value)}
+                      className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs outline-none focus:border-blue-500 text-slate-800"
+                    />
+                  </div>
+                </div>
+
+                {/* Phone & Role (Working Role Selector) */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Phone Number
+                    </label>
+                    <input
+                      type="text"
+                      value={editPhone}
+                      onChange={(e) => setEditPhone(e.target.value)}
+                      className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs outline-none focus:border-blue-500 text-slate-800"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      System Role
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={editRole}
+                        onChange={(e) => setEditRole(e.target.value as any)}
+                        className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs outline-none focus:border-blue-500 bg-white cursor-pointer appearance-none pr-8 font-semibold text-slate-800"
+                      >
+                        <option value="PROVIDER">Provider</option>
+                        <option value="ADMIN">Admin</option>
+                        <option value="CREDENTIALING_SPECIALIST">Credentialing Specialist</option>
+                        <option value="ORG ADMIN">Org Admin</option>
+                        <option value="SUPER_ADMIN">Super Admin</option>
+                      </select>
+                      <ChevronDown size={14} className="text-slate-400 absolute right-3 top-3 pointer-events-none" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Country & Service */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Country
+                    </label>
+                    <select
+                      value={editCountry}
+                      onChange={(e) => setEditCountry(e.target.value)}
+                      className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs outline-none focus:border-blue-500 bg-white cursor-pointer font-medium text-slate-800"
+                    >
+                      <option value="United States">🇺🇸 United States</option>
+                      <option value="Canada">🇨🇦 Canada</option>
+                      <option value="United Kingdom">🇬🇧 United Kingdom</option>
+                      <option value="Philippines">🇵🇭 Philippines</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Service
+                    </label>
+                    <input
+                      type="text"
+                      value={editService}
+                      onChange={(e) => setEditService(e.target.value)}
+                      className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs outline-none focus:border-blue-500 uppercase font-semibold text-blue-700"
+                    />
+                  </div>
+                </div>
+
+                {/* Referred by & Onboarded by */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Referred by
+                    </label>
+                    <input
+                      type="text"
+                      value={editReferredBy}
+                      onChange={(e) => setEditReferredBy(e.target.value)}
+                      className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs outline-none focus:border-blue-500 text-slate-800"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Onboarded by
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={editOnboardedBy}
+                        onChange={(e) => setEditOnboardedBy(e.target.value)}
+                        className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs outline-none focus:border-blue-500 bg-white cursor-pointer font-semibold text-slate-800 appearance-none pr-8"
+                      >
+                        {availableOnboarders.map((ob) => (
+                          <option key={ob} value={ob}>{ob}</option>
+                        ))}
+                      </select>
+                      <ChevronDown size={14} className="text-slate-400 absolute right-3 top-3 pointer-events-none" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Ops Responsible & Start Dates */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Ops Responsible
+                    </label>
+                    <select
+                      value={editOpsResponsible}
+                      onChange={(e) => setEditOpsResponsible(e.target.value)}
+                      className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs outline-none focus:border-blue-500 bg-white cursor-pointer font-semibold text-slate-800"
+                    >
+                      {availableSpecialists.map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Credentialing Start Date
+                    </label>
+                    <input
+                      type="text"
+                      value={editCredStartDate}
+                      onChange={(e) => setEditCredStartDate(e.target.value)}
+                      className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs outline-none focus:border-blue-500 text-slate-800"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Enrollment Start Date
+                    </label>
+                    <input
+                      type="text"
+                      value={editEnrollStartDate}
+                      onChange={(e) => setEditEnrollStartDate(e.target.value)}
+                      className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs outline-none focus:border-blue-500 text-slate-800"
+                    />
+                  </div>
+                </div>
+
+                {/* Footer Buttons - Button just says "Edit" as requested */}
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditUserModalOpen(false)}
+                    className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-50 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs cursor-pointer"
+                  >
+                    Edit
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* ADD USER MODAL */}
+      {/* ======================================================== */}
+      {isAddUserModalOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-screen items-center justify-center p-4">
+            <div 
+              className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
+              onClick={() => setIsAddUserModalOpen(false)}
+            />
+
+            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-xl p-6 transform transition-all z-10 border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <UserIcon size={18} className="text-blue-600" />
+                    <span>Add New User</span>
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Create system account and configure initial assignments.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsAddUserModalOpen(false)}
+                  className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors cursor-pointer"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+
+              <form onSubmit={handleAddUserSubmit} className="space-y-4 text-xs">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Full Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Nancy Brooks"
+                      value={newUserName}
+                      onChange={(e) => setNewUserName(e.target.value)}
+                      className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs outline-none focus:border-blue-500 font-semibold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Email *
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="e.g. nancy@example.com"
+                      value={newUserEmail}
+                      onChange={(e) => setNewUserEmail(e.target.value)}
+                      className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs outline-none focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Phone Number
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. +1 7174905619"
+                      value={newUserPhone}
+                      onChange={(e) => setNewUserPhone(e.target.value)}
+                      className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs outline-none focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      System Role
+                    </label>
+                    <select
+                      value={newUserRole}
+                      onChange={(e) => setNewUserRole(e.target.value as any)}
+                      className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs outline-none focus:border-blue-500 bg-white cursor-pointer font-semibold"
+                    >
+                      <option value="PROVIDER">Provider</option>
+                      <option value="ADMIN">Admin</option>
+                      <option value="CREDENTIALING_SPECIALIST">Credentialing Specialist</option>
+                      <option value="ORG ADMIN">Org Admin</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Country
+                    </label>
+                    <select
+                      value={newUserCountry}
+                      onChange={(e) => setNewUserCountry(e.target.value)}
+                      className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs outline-none focus:border-blue-500 bg-white cursor-pointer"
+                    >
+                      <option value="United States">🇺🇸 United States</option>
+                      <option value="Canada">🇨🇦 Canada</option>
+                      <option value="United Kingdom">🇬🇧 United Kingdom</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Service
+                    </label>
+                    <input
+                      type="text"
+                      value={newUserService}
+                      onChange={(e) => setNewUserService(e.target.value)}
+                      className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs outline-none focus:border-blue-500 uppercase font-semibold text-blue-700"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddUserModalOpen(false)}
+                    className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-50 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs cursor-pointer"
+                  >
+                    Create User Account
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* CREATE / EDIT ROLE MODAL */}
+      {/* ======================================================== */}
+      {isRoleModalOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-screen items-center justify-center p-4">
+            <div 
+              className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
+              onClick={() => setIsRoleModalOpen(false)}
+            />
+
+            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl transform transition-all overflow-hidden border border-slate-200">
+              <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-white">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                    <Shield size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900">
+                      {editingRoleId ? 'Edit Role & Permissions' : 'Create Custom Role'}
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Define module permission levels and operational scope.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsRoleModalOpen(false)}
+                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors cursor-pointer"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveRole} className="p-6 space-y-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Role Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. COMPLIANCE_OFFICER"
+                      value={roleName}
+                      onChange={(e) => setRoleName(e.target.value.toUpperCase().replace(/\s+/g, '_'))}
+                      className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs font-semibold uppercase text-slate-800 outline-none focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Description
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Role purpose and responsibility..."
+                      value={roleDescription}
+                      onChange={(e) => setRoleDescription(e.target.value)}
+                      className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs text-slate-800 outline-none focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                    Module Access & Permissions Matrix
+                  </h4>
+                  <div className="border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-[#002B49] text-white text-[10px] font-bold uppercase tracking-wider">
+                        <tr>
+                          <th className="py-2.5 px-4">Compliance Module</th>
+                          <th className="py-2.5 px-4">Permission Level</th>
+                          <th className="py-2.5 px-4">Data Scope</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {complianceModules.map((mod) => (
+                          <tr key={mod} className="hover:bg-slate-50/80">
+                            <td className="py-3 px-4 font-semibold text-slate-800">{mod}</td>
+                            <td className="py-3 px-4">
+                              <select
+                                value={modulePermissions[mod]?.permission || 'none'}
+                                onChange={(e) => {
+                                  const val = e.target.value as PermissionLevel;
+                                  setModulePermissions(prev => ({
+                                    ...prev,
+                                    [mod]: { ...prev[mod], permission: val }
+                                  }));
+                                }}
+                                className="px-2.5 py-1 border border-slate-200 rounded-lg text-xs bg-white font-medium text-slate-700 cursor-pointer"
+                              >
+                                <option value="none">No Access</option>
+                                <option value="view">View Only</option>
+                                <option value="view_edit">View & Edit</option>
+                                <option value="full">Full Control</option>
+                              </select>
+                            </td>
+                            <td className="py-3 px-4">
+                              <select
+                                value={modulePermissions[mod]?.level || 'ALL'}
+                                onChange={(e) => {
+                                  const val = e.target.value as 'ALL' | 'ASSIGNED_ONLY';
+                                  setModulePermissions(prev => ({
+                                    ...prev,
+                                    [mod]: { ...prev[mod], level: val }
+                                  }));
+                                }}
+                                className="px-2.5 py-1 border border-slate-200 rounded-lg text-xs bg-white font-medium text-slate-700 cursor-pointer"
+                              >
+                                <option value="ALL">All Records</option>
+                                <option value="ASSIGNED_ONLY">Assigned Only</option>
+                              </select>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setIsRoleModalOpen(false)}
+                    className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-50 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs cursor-pointer"
+                  >
+                    Save Role Definition
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
-}
+};
 
 export default Providers;
+

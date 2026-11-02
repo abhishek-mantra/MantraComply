@@ -283,20 +283,20 @@ export function Groups() {
             {activeTab === "groups" ? (
               <>
                 <thead>
-                  <tr className="bg-[#0B2545] text-white">
-                    <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a3a60]">
+                  <tr className="bg-[#002B49] text-white">
+                    <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a4a6e]">
                       NAME
                     </th>
-                    <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a3a60]">
+                    <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a4a6e]">
                       STATE
                     </th>
-                    <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a3a60]">
+                    <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a4a6e]">
                       NPI NUMBER
                     </th>
-                    <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a3a60]">
+                    <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a4a6e]">
                       TAX ID NUMBER
                     </th>
-                    <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a3a60]">
+                    <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a4a6e]">
                       PHONE
                     </th>
                     <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider">
@@ -343,20 +343,20 @@ export function Groups() {
             ) : (
               <>
                 <thead>
-                  <tr className="bg-[#0B2545] text-white">
-                    <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a3a60]">
+                  <tr className="bg-[#002B49] text-white">
+                    <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a4a6e]">
                       FACILITY NAME
                     </th>
-                    <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a3a60]">
+                    <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a4a6e]">
                       GROUP
                     </th>
-                    <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a3a60]">
+                    <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a4a6e]">
                       STATE
                     </th>
-                    <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a3a60]">
+                    <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a4a6e]">
                       NPI NUMBER
                     </th>
-                    <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a3a60]">
+                    <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider border-r border-[#1a4a6e]">
                       PHONE
                     </th>
                     <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider">

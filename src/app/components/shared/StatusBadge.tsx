@@ -1,88 +1,136 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { ChevronDown } from 'lucide-react';
+
+export type StatusType = 
+  | 'DRAFT' 
+  | 'PENDING' 
+  | 'ACTIVE' 
+  | 'APPROVED' 
+  | 'VERIFIED' 
+  | 'SUBMITTED' 
+  | 'RESUBMITTED' 
+  | 'UNDER REVIEW' 
+  | 'NEEDS INFO' 
+  | 'REJECTED' 
+  | 'UNVERIFIED'
+  | string;
+
 interface StatusBadgeProps {
   status: string;
   variant?: "credentialing" | "health" | "expiration" | "enrollment" | "generic";
+  interactive?: boolean;
+  options?: string[];
+  onChange?: (newStatus: any) => void;
+  className?: string;
 }
 
-export function StatusBadge({ status, variant = "generic" }: StatusBadgeProps) {
-  const getVariantStyles = () => {
-    const normalized = status.toLowerCase();
+export function StatusBadge({ 
+  status, 
+  variant = "generic",
+  interactive = false,
+  options = ['PENDING', 'VERIFIED', 'UNVERIFIED', 'RESUBMITTED'],
+  onChange,
+  className = ""
+}: StatusBadgeProps) {
+  const [open, setOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-    if (variant === "credentialing") {
-      if (normalized.includes("done") || normalized.includes("complete")) {
-        return "bg-green-100 text-green-800";
-      }
-      if (normalized.includes("in process") || normalized.includes("in progress")) {
-        return "bg-yellow-100 text-yellow-800";
-      }
-      if (normalized.includes("re-credential")) {
-        return "bg-orange-100 text-orange-800";
-      }
-      if (normalized.includes("not started")) {
-        return "bg-gray-100 text-gray-800";
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setOpen(false);
       }
     }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
-    if (variant === "health") {
-      if (normalized.includes("ok") || normalized.includes("valid")) {
-        return "bg-green-100 text-green-800";
-      }
-      if (normalized.includes("issues")) {
-        return "bg-red-100 text-red-800";
-      }
-      if (normalized.includes("expiration")) {
-        return "bg-yellow-100 text-yellow-800";
-      }
+  const getStyle = (st: string) => {
+    const upper = (st || '').toUpperCase();
+    
+    switch (upper) {
+      case 'ACTIVE':
+      case 'APPROVED':
+      case 'VERIFIED':
+      case 'COMPLETE':
+      case 'DONE':
+        return 'bg-[#DCFCE7] text-[#16A34A] border-[#86EFAC] hover:bg-[#c9f9d9]';
+      case 'PENDING':
+      case 'UNDER REVIEW':
+      case 'NEEDS INFO':
+      case 'IN PROCESS':
+      case 'IN PROGRESS':
+      case 'EXPIRATIONS':
+      case 'EXPIRING SOON':
+        return 'bg-[#FEF3C7] text-[#D97706] border-[#FDE68A] hover:bg-[#fde8a1]';
+      case 'SUBMITTED':
+      case 'READY':
+        return 'bg-[#DBEAFE] text-[#2563EB] border-[#93C5FD] hover:bg-[#c7e0fd]';
+      case 'RESUBMITTED':
+        return 'bg-[#EDE9FE] text-[#7C3AED] border-[#DDD6FE] hover:bg-[#ded5fd]';
+      case 'REJECTED':
+      case 'UNVERIFIED':
+      case 'EXPIRED':
+      case 'ISSUES':
+        return 'bg-[#FFE4E6] text-[#E11D48] border-[#FECDD3] hover:bg-[#fecdd3]';
+      case 'DRAFT':
+      case 'NOT CREDENTIAL':
+      case 'NOT STARTED':
+      default:
+        return 'bg-[#F1F5F9] text-[#475569] border-[#CBD5E1] hover:bg-[#e2e8f0]';
     }
-
-    if (variant === "expiration") {
-      if (normalized.includes("expired")) {
-        return "bg-red-100 text-red-800";
-      }
-      if (normalized.includes("nearing")) {
-        return "bg-orange-100 text-orange-800";
-      }
-      if (normalized.includes("valid") || normalized.includes("active")) {
-        return "bg-green-100 text-green-800";
-      }
-    }
-
-    if (variant === "enrollment") {
-      if (normalized.includes("enrolled") || normalized.includes("completed")) {
-        return "bg-green-100 text-green-800";
-      }
-      if (normalized.includes("processing") || normalized.includes("pending")) {
-        return "bg-yellow-100 text-yellow-800";
-      }
-      if (normalized.includes("ppo")) {
-        return "bg-orange-100 text-orange-800";
-      }
-      if (normalized.includes("hmo")) {
-        return "bg-blue-100 text-blue-800";
-      }
-      if (normalized.includes("medicaid")) {
-        return "bg-teal-100 text-teal-800";
-      }
-    }
-
-    // Generic fallback
-    if (normalized.includes("success") || normalized.includes("active") || normalized.includes("approved")) {
-      return "bg-green-100 text-green-800";
-    }
-    if (normalized.includes("warning") || normalized.includes("pending")) {
-      return "bg-yellow-100 text-yellow-800";
-    }
-    if (normalized.includes("error") || normalized.includes("failed") || normalized.includes("rejected")) {
-      return "bg-red-100 text-red-800";
-    }
-
-    return "bg-gray-100 text-gray-800";
   };
 
+  if (!interactive) {
+    return (
+      <span
+        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold tracking-wide border transition-all ${getStyle(
+          status
+        )} ${className}`}
+      >
+        {status}
+      </span>
+    );
+  }
+
   return (
-    <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium ${getVariantStyles()}`}
-    >
-      {status}
-    </span>
+    <div className={`relative inline-block text-left ${className}`} ref={dropdownRef}>
+      <button
+        type="button"
+        disabled={!interactive}
+        onClick={() => interactive && setOpen(!open)}
+        className={`inline-flex items-center justify-between gap-1.5 px-3 py-1 rounded-full text-xs font-semibold tracking-wide border transition-all ${getStyle(
+          status
+        )} ${interactive ? 'cursor-pointer min-w-[110px]' : 'cursor-default'}`}
+      >
+        <span>{status}</span>
+        {interactive && <ChevronDown size={13} className="opacity-70" />}
+      </button>
+
+      {interactive && open && (
+        <div className="absolute right-0 mt-1 w-36 rounded-xl bg-[#F5F3FF] border border-[#DDD6FE] shadow-xl py-1 z-50 text-center font-semibold text-xs tracking-wide overflow-hidden">
+          {options.map((option) => {
+            const isSelected = option.toUpperCase() === status.toUpperCase();
+            return (
+              <button
+                key={option}
+                type="button"
+                onClick={() => {
+                  onChange?.(option);
+                  setOpen(false);
+                }}
+                className={`w-full py-1.5 px-2 transition-colors cursor-pointer ${
+                  isSelected
+                    ? 'bg-[#2563EB] text-white'
+                    : 'text-[#6D28D9] hover:bg-[#EDE9FE]'
+                }`}
+              >
+                {option}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
