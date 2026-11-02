@@ -25,6 +25,7 @@ import {
   initialUsers, 
   initialRoles, 
   availableOrganizations, 
+  availableSpecialists,
   UserRecord, 
   RoleDefinition, 
   RoleType 
@@ -83,6 +84,7 @@ export const Providers: React.FC = () => {
   const [requestStep, setRequestStep] = useState<1 | 2>(1);
   const [requestType, setRequestType] = useState<'credentialing' | 'enrollment'>('credentialing');
   const [fulfillmentMethod, setFulfillmentMethod] = useState<'mantracomply' | 'manual'>('mantracomply');
+  const [assignedTeamMember, setAssignedTeamMember] = useState('Sarah Jenkins');
   const [targetPayer, setTargetPayer] = useState('ALL');
   const [planType, setPlanType] = useState('Commercial');
   const [practiceState, setPracticeState] = useState('NY');
@@ -202,13 +204,15 @@ export const Providers: React.FC = () => {
 
     const count = selectedUserIds.length;
     const typeLabel = requestType === 'credentialing' ? 'Credentialing' : 'Payer Enrollment';
-    const methodLabel = fulfillmentMethod === 'mantracomply' ? 'MantraComply Ops Managed' : 'Self-Service (In-House)';
+    const responsibleAssignee = fulfillmentMethod === 'mantracomply' ? 'MantraComply' : assignedTeamMember;
+    const methodLabel = fulfillmentMethod === 'mantracomply' ? 'Mantra AI' : `Manual (${assignedTeamMember})`;
 
-    // Update start dates in state to reflect the initiated request
+    // Update responsible & start dates in state to reflect the initiated request
     setUsers(prev => prev.map(u => {
       if (selectedUserIds.includes(u.id)) {
         return {
           ...u,
+          opsResponsible: responsibleAssignee,
           ...(requestType === 'credentialing' 
             ? { credentialingStartDate: 'Initiated' } 
             : { enrollmentStartDate: 'Initiated' })
@@ -222,6 +226,19 @@ export const Providers: React.FC = () => {
     setIsRequestModalOpen(false);
     setRequestStep(1);
     setRequestNotes('');
+  };
+
+  const handleUpdateResponsible = (userId: number, newResponsible: string) => {
+    setUsers(prev => prev.map(u => {
+      if (u.id === userId) {
+        return {
+          ...u,
+          opsResponsible: newResponsible
+        };
+      }
+      return u;
+    }));
+    showToast(`Updated responsible to ${newResponsible}`, 'success');
   };
 
   // Edit User Handlers
@@ -635,14 +652,13 @@ export const Providers: React.FC = () => {
                   <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[160px]">SERVICE</th>
                   <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[130px]">SIGNUP DATE</th>
                   <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[130px]">ROLE</th>
-                  <th className="py-3.5 px-4 border-r border-b border-[#1a4a6e] whitespace-nowrap min-w-[170px]">CREDENTIALING START DATE</th>
-                  <th className="py-3.5 px-4 border-b border-[#1a4a6e] whitespace-nowrap min-w-[170px]">ENROLLMENT START DATE</th>
+                  <th className="py-3.5 px-4 border-b border-[#1a4a6e] whitespace-nowrap min-w-[190px]">RESPONSIBLE</th>
                 </tr>
               </thead>
               <tbody className="text-xs">
                 {paginatedUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={12} className="text-center py-16 text-slate-400 text-sm border-b border-slate-100">
+                    <td colSpan={11} className="text-center py-16 text-slate-400 text-sm border-b border-slate-100">
                       No users found matching your filters.
                     </td>
                   </tr>
@@ -793,32 +809,35 @@ export const Providers: React.FC = () => {
                           </button>
                         </td>
 
-                        {/* Credentialing Start Date */}
-                        <td className="py-3 px-4 text-slate-600 font-medium whitespace-nowrap border-r border-b border-slate-100">
-                          {user.credentialingStartDate === 'Initiated' ? (
-                            <span className="font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 text-xs">
-                              Initiated
-                            </span>
-                          ) : (
-                            user.credentialingStartDate || 'Oct 28, 2026'
-                          )}
-                        </td>
-
-                        {/* Enrollment Start Date */}
+                        {/* Responsible Column */}
                         <td className="py-3 px-4 whitespace-nowrap border-b border-slate-100">
-                          {user.enrollmentStartDate === 'Initiated' ? (
-                            <span className="font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 text-xs">
-                              Initiated
-                            </span>
-                          ) : user.enrollmentStartDate && user.enrollmentStartDate !== 'Pending' && user.enrollmentStartDate !== '—' ? (
-                            <span className="font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 text-xs">
-                              {user.enrollmentStartDate}
-                            </span>
-                          ) : (
-                            <span className="text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 text-[11px] font-semibold">
-                              {user.enrollmentStartDate || 'Pending'}
-                            </span>
-                          )}
+                          <div className="relative inline-block">
+                            <select
+                              value={user.opsResponsible || 'Unassigned'}
+                              onChange={(e) => handleUpdateResponsible(user.id, e.target.value)}
+                              className={`px-3 py-1 pr-7 rounded-full text-xs font-semibold border transition-all cursor-pointer appearance-none ${
+                                user.opsResponsible === 'MantraComply' || user.opsResponsible === 'Mantra AI'
+                                  ? 'bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 shadow-2xs'
+                                  : user.opsResponsible && user.opsResponsible !== 'Unassigned' && user.opsResponsible !== '—'
+                                  ? 'bg-white border-slate-200 text-slate-800 hover:border-slate-300 shadow-2xs'
+                                  : 'bg-slate-50 border-slate-200 text-slate-400 hover:border-slate-300'
+                              }`}
+                            >
+                              <option value="Unassigned">Unassigned</option>
+                              <option value="MantraComply">MantraComply</option>
+                              {availableSpecialists.map((spec) => (
+                                <option key={spec} value={spec}>{spec}</option>
+                              ))}
+                            </select>
+                            <ChevronDown 
+                              size={12} 
+                              className={`absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none ${
+                                user.opsResponsible === 'MantraComply' || user.opsResponsible === 'Mantra AI'
+                                  ? 'text-blue-500' 
+                                  : 'text-slate-400'
+                              }`} 
+                            />
+                          </div>
                         </td>
                       </tr>
                     );
@@ -974,7 +993,7 @@ export const Providers: React.FC = () => {
                   <p className="text-xs text-slate-500 mt-1">
                     {requestStep === 1
                       ? `Move ${selectedUserIds.length} selected client${selectedUserIds.length > 1 ? 's' : ''} to a new workflow process and stage.`
-                      : `Configure ${fulfillmentMethod === 'mantracomply' ? 'MantraComply ops-managed' : 'self-service in-house'} details.`}
+                      : `Configure ${fulfillmentMethod === 'mantracomply' ? 'Mantra AI' : 'manual internal'} details.`}
                   </p>
                 </div>
                 <button
@@ -1021,8 +1040,8 @@ export const Providers: React.FC = () => {
                         onChange={(e) => setFulfillmentMethod(e.target.value as 'mantracomply' | 'manual')}
                         className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 hover:border-slate-300 focus:outline-none focus:border-slate-400 appearance-none pr-9 transition-colors cursor-pointer"
                       >
-                        <option value="mantracomply">Through MantraComply (Ops Managed)</option>
-                        <option value="manual">Manual (Self-Service / In-House)</option>
+                        <option value="mantracomply">Mantra AI</option>
+                        <option value="manual">Manual</option>
                       </select>
                       <ChevronDown size={14} className="text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                     </div>
@@ -1095,6 +1114,27 @@ export const Providers: React.FC = () => {
                           <ChevronDown size={14} className="text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                         </div>
                       </div>
+
+                      {/* Assign Team Member (When Manual) */}
+                      {fulfillmentMethod === 'manual' && (
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                            Assign Team Member
+                          </label>
+                          <div className="relative">
+                            <select
+                              value={assignedTeamMember}
+                              onChange={(e) => setAssignedTeamMember(e.target.value)}
+                              className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 hover:border-slate-300 focus:outline-none focus:border-slate-400 appearance-none pr-9 transition-colors cursor-pointer"
+                            >
+                              {availableSpecialists.map((spec) => (
+                                <option key={spec} value={spec}>{spec}</option>
+                              ))}
+                            </select>
+                            <ChevronDown size={14} className="text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                          </div>
+                        </div>
+                      )}
 
                       {/* Credentialing Field 3: Special Instructions */}
                       <div>
@@ -1169,6 +1209,27 @@ export const Providers: React.FC = () => {
                           <ChevronDown size={14} className="text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                         </div>
                       </div>
+
+                      {/* Assign Team Member (When Manual) */}
+                      {fulfillmentMethod === 'manual' && (
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                            Assign Team Member
+                          </label>
+                          <div className="relative">
+                            <select
+                              value={assignedTeamMember}
+                              onChange={(e) => setAssignedTeamMember(e.target.value)}
+                              className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 hover:border-slate-300 focus:outline-none focus:border-slate-400 appearance-none pr-9 transition-colors cursor-pointer"
+                            >
+                              {availableSpecialists.map((spec) => (
+                                <option key={spec} value={spec}>{spec}</option>
+                              ))}
+                            </select>
+                            <ChevronDown size={14} className="text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                          </div>
+                        </div>
+                      )}
 
                       {/* Enrollment Field 4: Special Instructions */}
                       <div>
