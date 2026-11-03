@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Info } from "lucide-react";
 import { FormButtons } from "../FormButtons";
 
 export interface ProviderAgreementReleaseFormProps {
@@ -88,6 +89,7 @@ export function ProviderAgreementReleaseForm({
   // Engagement Model Selection (From Section 2 & Annexure A)
   const [engagementModel, setEngagementModel] = useState<"model1" | "model2">("model1");
   const [includeRcmAddon, setIncludeRcmAddon] = useState(false);
+  const [ackModel1StateTerms, setAckModel1StateTerms] = useState(false);
 
   // Specific Contract Covenants (From Sections 5, 6 & 7)
   const [ackScope, setAckScope] = useState(false);
@@ -101,6 +103,11 @@ export function ProviderAgreementReleaseForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (engagementModel === "model1" && !ackModel1StateTerms) {
+      alert("Please acknowledge that state-specific enrollment and billing terms may apply to your Model 1 engagement.");
+      return;
+    }
+
     if (!providerAgreed || !providerSignature.trim() || !ackScope || !ackNotice) {
       alert("Please review, sign, and agree to the Provider Agreement and required covenants.");
       return;
@@ -109,6 +116,7 @@ export function ProviderAgreementReleaseForm({
     onNext({
       engagementModel,
       includeRcmAddon: engagementModel === "model2" ? includeRcmAddon : false,
+      ackModel1StateTerms: engagementModel === "model1" ? ackModel1StateTerms : false,
       contractingEntity: config.entityName,
       effectiveDate: todayFormatted,
       providerSignature: providerSignature.trim(),
@@ -179,6 +187,78 @@ export function ProviderAgreementReleaseForm({
                 </p>
               </div>
             </label>
+
+            {/* Model 1 State-Specific Terms (shown when Model 1 is selected) */}
+            {engagementModel === "model1" && (
+              <div className="mt-2.5 ml-6 p-4 sm:p-5 bg-blue-50/70 border border-blue-200 rounded-lg text-xs text-gray-700 space-y-3.5 animate-in fade-in duration-200 shadow-2xs">
+                <div className="flex items-center gap-2 text-[#002B49] font-bold text-sm">
+                  <Info className="w-4 h-4 text-blue-600 shrink-0" />
+                  <span>Important: State-Specific Credentialing, Enrollment &amp; Billing Terms</span>
+                </div>
+
+                <p className="leading-relaxed">
+                  In certain US states, Mantra may arrange for credentialing, payer enrollment and billing under your name and NPI, where permitted by applicable law and payer requirements. In these cases, payer payments may be made directly to your designated bank account, and additional terms governing enrollment fees, billing fees, authorization, responsibilities, commitment, termination, liability and HIPAA compliance will apply.
+                </p>
+
+                <div className="bg-white/90 border border-blue-100 rounded-md p-3 space-y-1.5">
+                  <p className="font-semibold text-gray-900">Applicable states</p>
+                  <p className="text-gray-700 leading-relaxed">
+                    California, Connecticut, Georgia, Hawaii, Illinois, Iowa, Kentucky, Maryland, Massachusetts, Michigan, Minnesota, Missouri, Nevada, New Jersey, New York, North Carolina, Ohio, Oregon, Pennsylvania, Rhode Island, Tennessee, Texas, Virginia, Washington and Wisconsin.
+                  </p>
+                  <p className="text-[11px] text-gray-500 italic">
+                    The applicable arrangement depends on your state and payer. Listing a state here does not guarantee that this arrangement is available to every provider in that state.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="font-semibold text-gray-900">Where this arrangement applies, the following additional terms govern:</p>
+                  <ul className="space-y-1.5 pl-3 list-disc text-gray-700 leading-relaxed">
+                    <li>
+                      <strong>First 5 Free Enrollments:</strong> The first five payer enrollments are provided at no charge. Each enrollment means one payer in one state, counted upon submission.
+                    </li>
+                    <li>
+                      <strong>Additional Enrollments:</strong> $180 per additional enrollment, charged upon submission.
+                    </li>
+                    <li>
+                      <strong>Commitment Period:</strong> 36 months, beginning on the earlier of the first enrollment approval or six months after the Effective Date.
+                    </li>
+                    <li>
+                      <strong>Early Exit Fee:</strong> If the Provider terminates before the commitment period ends, or Mantra terminates due to the Provider’s breach or conduct, an exit fee of $180 multiplied by the number of free enrollments completed will apply, subject to the exceptions specified in the contract.
+                    </li>
+                    <li>
+                      <strong>Billing Fee:</strong> 7% of collections actually received from payers on claims submitted or worked by Mantra, including qualifying collections received after termination. Where percentage-based fees are prohibited by applicable law or payer rules, a fee of $10 per claim applies instead.
+                    </li>
+                    <li>
+                      <strong>Payer Payments:</strong> Payer payments are made directly to the Provider’s designated bank account under this arrangement. The Provider remains responsible for clinical care, documentation, coding, medical necessity and overpayments.
+                    </li>
+                    <li>
+                      <strong>Authorization &amp; Compliance:</strong> The Provider authorizes Mantra to perform the permitted administrative activities described in the contract. Applicable payer rules, HIPAA obligations, confidentiality, liability, indemnity and termination provisions continue to apply.
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="space-y-1.5 text-gray-600 text-[11px] leading-relaxed">
+                  <p>
+                    After the 36-month commitment period, either party may terminate on one month’s written notice without an exit fee. Other termination rights, notice requirements and exceptions are governed by the contract.
+                  </p>
+                  <p>
+                    These terms apply only where the state-specific arrangement is used. The state list does not guarantee payer eligibility or availability. Please review the corresponding contractual provisions before signing.
+                  </p>
+                </div>
+
+                <label className="flex items-start gap-2.5 pt-2.5 border-t border-blue-200 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={ackModel1StateTerms}
+                    onChange={(e) => setAckModel1StateTerms(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 text-[#2196F3] border-gray-300 rounded focus:ring-[#2196F3]"
+                  />
+                  <span className="text-xs font-semibold text-gray-900">
+                    I acknowledge that state-specific enrollment and billing terms may apply to my Model 1 engagement.
+                  </span>
+                </label>
+              </div>
+            )}
 
             <label className="flex items-start gap-2.5 cursor-pointer pt-2 border-t border-gray-200">
               <input
