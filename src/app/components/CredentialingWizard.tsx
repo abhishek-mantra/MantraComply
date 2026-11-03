@@ -81,12 +81,6 @@ export function CredentialingWizard({
       if (data.selectedSpecialization) {
         setSelectedSpecialization(data.selectedSpecialization);
       }
-      // If user chose NOT to auto-fetch from CAQH, jump directly to Personal Information (step index 2)
-      if (data.autoFetch === "no") {
-        setCompletedSteps((prev) => new Set([...prev, 0]));
-        setCurrentStep(2);
-        return;
-      }
     }
 
     setCompletedSteps((prev) => new Set([...prev, currentStep]));

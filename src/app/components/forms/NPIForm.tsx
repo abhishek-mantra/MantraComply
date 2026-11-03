@@ -30,18 +30,16 @@ export function NPIForm({
   const [taxonomyCode, setTaxonomyCode] = useState("");
   const [npiNumber, setNpiNumber] = useState("");
   const [isNpiGuideOpen, setIsNpiGuideOpen] = useState(true);
-  const [autoFetch, setAutoFetch] = useState<"yes" | "no">("yes");
   const [showConsultantModal, setShowConsultantModal] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Pass specialty, doctor specialization, service, and autoFetch
+    // Pass specialty, doctor specialization, service, and npiNumber
     onNext({
       specialty,
       selectedSpecialization: specialty === "doctor" ? doctorSpecialization : "",
       serviceType: selectedService,
       npiNumber,
-      autoFetch,
     });
   };
 
@@ -359,68 +357,6 @@ export function NPIForm({
                 here
               </a>
             </p>
-          </div>
-
-          {/* Do you want to auto fetch? yes / no (if yes > then CAQH) */}
-          <div className="border border-gray-200 rounded-xl p-4 sm:p-5 bg-white space-y-3">
-            <div>
-              <label className="block text-sm font-semibold text-gray-900">
-                Do you want to auto fetch? <span className="text-red-500">*</span>
-              </label>
-              <p className="text-xs text-gray-500 mt-0.5">
-                If yes &gt; then CAQH will be used to auto-populate your provider details.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-              <label
-                className={`flex items-start p-3.5 border rounded-xl cursor-pointer transition-all ${
-                  autoFetch === "yes"
-                    ? "border-[#2196F3] bg-blue-50/50 shadow-sm"
-                    : "border-gray-200 hover:border-gray-300 bg-white"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="autoFetch"
-                  value="yes"
-                  checked={autoFetch === "yes"}
-                  onChange={() => setAutoFetch("yes")}
-                  className="mt-0.5 mr-3 w-4 h-4 text-[#2196F3] border-gray-300 focus:ring-[#2196F3]"
-                />
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-sm font-medium text-gray-900">Yes, auto-fetch details</span>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    Recommended — retrieve information from your CAQH ProView account
-                  </p>
-                </div>
-              </label>
-
-              <label
-                className={`flex items-start p-3.5 border rounded-xl cursor-pointer transition-all ${
-                  autoFetch === "no"
-                    ? "border-[#2196F3] bg-blue-50/50 shadow-sm"
-                    : "border-gray-200 hover:border-gray-300 bg-white"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="autoFetch"
-                  value="no"
-                  checked={autoFetch === "no"}
-                  onChange={() => setAutoFetch("no")}
-                  className="mt-0.5 mr-3 w-4 h-4 text-[#2196F3] border-gray-300 focus:ring-[#2196F3]"
-                />
-                <div>
-                  <span className="text-sm font-medium text-gray-900">No, enter manually</span>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    Provide all provider information manually in subsequent sections
-                  </p>
-                </div>
-              </label>
-            </div>
           </div>
         </>
       )}
