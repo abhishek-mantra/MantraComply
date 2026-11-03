@@ -452,40 +452,6 @@ export const ClientDetailDrawer: React.FC<ClientDetailDrawerProps> = ({
                 {/* LEFT COLUMN: Editable Info (lg:col-span-7) */}
                 <div className="lg:col-span-7 space-y-5">
                   
-                  {/* Card: CURRENT MILESTONE STAGE */}
-                  <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3">
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                      <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">Current Milestone Stage</h3>
-                      <span className="text-[10px] text-slate-400 font-semibold">12-Stage Progression</span>
-                    </div>
-                    <PipelineStageBar
-                      status={currentStatus}
-                      onChange={handleStageChange}
-                    />
-                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Responsible:</span>
-                      {responsibleUser === 'MantraComply' ? (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                          MantraComply
-                        </span>
-                      ) : (
-                        <select
-                          value={responsibleUser}
-                          onChange={(e) => {
-                            setResponsibleUser(e.target.value);
-                            onUpdate({ ...client, responsibleUser: e.target.value, assignedSpecialist: e.target.value });
-                          }}
-                          className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 cursor-pointer focus:outline-none"
-                        >
-                          <option value="MantraComply">MantraComply</option>
-                          {availableSpecialists.map((s) => (
-                            <option key={s} value={s}>{s}</option>
-                          ))}
-                        </select>
-                      )}
-                    </div>
-                  </div>
-
                   {/* Card: ABOUT */}
                   <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
                     <div className="flex items-center justify-between border-b border-slate-100 pb-2">
