@@ -7,11 +7,7 @@ import { UAEFormButtons } from "../uae/UAEFormButtons";
 import { StateDropdown } from "../StateDropdown";
 import { ContextualHelpLink } from "../../shared/ContextualHelpLink";
 import { 
-  UploadCloud, 
-  ExternalLink, 
-  X, 
   ShieldCheck, 
-  CheckCircle2, 
   Building 
 } from "lucide-react";
 
@@ -85,11 +81,6 @@ export function PersonalInformationForm({
   const [zipPostcode, setZipPostcode] = useState("");
   const [addressCountry, setAddressCountry] = useState("");
 
-  // US Only: W-9 Form state
-  const [w9File, setW9File] = useState<File | null>(null);
-  const [w9FileName, setW9FileName] = useState("");
-  const [isDragging, setIsDragging] = useState(false);
-
   // US Only: Bank Information state
   const [accountType, setAccountType] = useState<"checking" | "savings">("checking");
   const [bankName, setBankName] = useState("");
@@ -97,11 +88,6 @@ export function PersonalInformationForm({
   const [routingNumber, setRoutingNumber] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [confirmAccountNumber, setConfirmAccountNumber] = useState("");
-
-  const handleW9File = (file: File) => {
-    setW9File(file);
-    setW9FileName(file.name);
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,7 +107,6 @@ export function PersonalInformationForm({
       city,
       state: stateProvinceCounty,
       zip: zipPostcode,
-      w9FileName,
       bankInfo: country === "US" ? {
         accountType,
         bankName,
@@ -447,103 +432,9 @@ export function PersonalInformationForm({
         </div>
       </div>
 
-      {/* US Only: Upload Signed W-9 Form & Bank Section */}
+      {/* US Only: Bank Section */}
       {country === "US" && (
         <div className="space-y-8 pt-2">
-          {/* Upload Signed W-9 Form (Matching Image 5) */}
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-900">
-              Upload Signed W-9 Form <span className="text-red-500">*</span>
-            </label>
-
-            <div
-              onDragOver={(e) => {
-                e.preventDefault();
-                setIsDragging(true);
-              }}
-              onDragLeave={() => setIsDragging(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setIsDragging(false);
-                if (e.dataTransfer.files?.[0]) {
-                  handleW9File(e.dataTransfer.files[0]);
-                }
-              }}
-              onClick={() => {
-                document.getElementById("w9-file-input")?.click();
-              }}
-              className={`relative border-2 border-dashed rounded-2xl p-7 text-center transition-all cursor-pointer ${
-                isDragging
-                  ? "border-[#2196F3] bg-blue-50/50"
-                  : w9FileName
-                  ? "border-emerald-400 bg-emerald-50/30"
-                  : "border-gray-300 hover:border-gray-400 bg-gray-50/50"
-              }`}
-            >
-              {w9FileName && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setW9File(null);
-                    setW9FileName("");
-                  }}
-                  className="absolute top-3.5 right-3.5 p-1.5 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-200 transition-colors"
-                  title="Remove file"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-
-              <input
-                id="w9-file-input"
-                type="file"
-                accept=".pdf,.jpg,.jpeg,.png"
-                onChange={(e) => {
-                  if (e.target.files?.[0]) {
-                    handleW9File(e.target.files[0]);
-                  }
-                }}
-                className="hidden"
-              />
-
-              <div className="w-12 h-12 rounded-full bg-blue-50 text-[#2196F3] flex items-center justify-center mx-auto mb-3">
-                <UploadCloud className="w-6 h-6" />
-              </div>
-
-              {w9FileName ? (
-                <div className="space-y-1">
-                  <div className="flex items-center justify-center gap-1.5 text-sm font-semibold text-emerald-700">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    <span>{w9FileName}</span>
-                  </div>
-                  <p className="text-xs text-gray-500">File uploaded. Click to replace or drag a new file.</p>
-                </div>
-              ) : (
-                <>
-                  <p className="text-sm font-semibold text-gray-900 mb-1">
-                    Click to upload or drag and drop
-                  </p>
-                  <p className="text-xs text-gray-500">PDF, JPG, or PNG (max 10MB)</p>
-                </>
-              )}
-            </div>
-
-            <p className="text-xs text-gray-600 pt-1">
-              Don't have a signed W-9?{" "}
-              <a
-                href="https://www.irs.gov/pub/irs-pdf/fw9.pdf"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[#2196F3] underline font-medium hover:text-[#1976D2] inline-flex items-center gap-0.5"
-              >
-                <span>Download Form W-9</span>
-                <ExternalLink className="w-3 h-3 inline" />
-              </a>
-              , complete and sign it electronically, save it, and upload it here.
-            </p>
-          </div>
-
           {/* Bank Info Section with requested header line */}
           <div className="pt-6 border-t border-gray-100 space-y-4">
             <div>

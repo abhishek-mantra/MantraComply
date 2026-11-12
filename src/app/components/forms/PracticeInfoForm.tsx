@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Check } from "lucide-react";
 import { FormButtons } from "./FormButtons";
 import { MultiSelect } from "./MultiSelect";
 import { StateDropdown } from "./StateDropdown";
@@ -21,6 +22,10 @@ export function PracticeInfoForm({
   isFirstStep = false,
   isLastStep = false,
 }: PracticeInfoFormProps) {
+  const [practiceName, setPracticeName] = useState<string>("");
+  const [taxClassification, setTaxClassification] = useState<string>("");
+  const [llcTaxClassification, setLlcTaxClassification] = useState<string>("");
+  const [otherTaxClassification, setOtherTaxClassification] = useState<string>("");
   const [practiceType, setPracticeType] = useState<string>("Physical/Hybrid");
   const [officePhone, setOfficePhone] = useState<string>("123");
   const [clinicalSpecialties, setClinicalSpecialties] = useState<string[]>(["Anxiety"]);
@@ -35,7 +40,27 @@ export function PracticeInfoForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!practiceName.trim()) {
+      alert("Please enter your Practice Name.");
+      return;
+    }
+    if (!taxClassification) {
+      alert("Please check the appropriate box for federal tax classification.");
+      return;
+    }
+    if (taxClassification === "LLC" && !["C", "S", "P"].includes(llcTaxClassification)) {
+      alert("Please select the LLC tax classification (C, S, or P).");
+      return;
+    }
+    if (taxClassification === "Others" && !otherTaxClassification.trim()) {
+      alert("Please specify the other federal tax classification.");
+      return;
+    }
     onNext({
+      practiceName: practiceName.trim(),
+      taxClassification,
+      llcTaxClassification: taxClassification === "LLC" ? llcTaxClassification : undefined,
+      otherTaxClassification: taxClassification === "Others" ? otherTaxClassification.trim() : undefined,
       practiceType,
       officePhone,
       clinicalSpecialties,
@@ -47,6 +72,20 @@ export function PracticeInfoForm({
       zipCode: isPhysicalHybrid ? zipCode : "",
     });
   };
+
+  const taxClassificationOptions = [
+    { id: "Individual/sole proprietor", label: "Individual/sole proprietor" },
+    { id: "C corporation", label: "C corporation" },
+    { id: "S corporation", label: "S corporation" },
+    { id: "Partnership", label: "Partnership" },
+    { id: "Trust/estate", label: "Trust/estate" },
+    {
+      id: "LLC",
+      label: "LLC",
+      hint: "Enter the tax classification (C = C corporation, S = S corporation, P = Partnership)",
+    },
+    { id: "Others", label: "Others" },
+  ];
 
   const practiceTypeOptions = [
     { id: "Virtual Only", label: "Virtual Only" },
@@ -116,6 +155,101 @@ export function PracticeInfoForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Practice Name */}
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-900 mb-2">
+            Practice Name <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            required
+            value={practiceName}
+            onChange={(e) => setPracticeName(e.target.value)}
+            placeholder="Enter Practice Name"
+            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#2196F3] focus:ring-2 focus:ring-[#2196F3] outline-none text-sm text-gray-900 transition-all placeholder:text-gray-400"
+          />
+        </div>
+
+        {/* Federal Tax Classification */}
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-900 mb-2.5">
+            Check the appropriate box for federal tax classification <span className="text-red-500">*</span>
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {taxClassificationOptions.map((option) => {
+              const isSelected = taxClassification === option.id;
+              return (
+                <div
+                  key={option.id}
+                  onClick={() => setTaxClassification(option.id)}
+                  className={`flex flex-col justify-center px-4 py-3 rounded-xl border transition-all cursor-pointer ${
+                    option.id === "LLC" || option.id === "Others" ? "sm:col-span-2" : ""
+                  } ${
+                    isSelected
+                      ? "border-[#2196F3] bg-[#F0F7FF] text-gray-900 shadow-2xs"
+                      : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50/50"
+                  }`}
+                >
+                  <div className="flex items-start gap-2.5">
+                    <div
+                      className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
+                        isSelected
+                          ? "bg-[#2196F3] border-[#2196F3] text-white"
+                          : "border-gray-300 bg-white"
+                      }`}
+                    >
+                      {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                    </div>
+                    <div className="text-sm leading-snug">
+                      <span className={isSelected ? "font-medium text-gray-900" : "text-gray-800"}>
+                        {option.label}
+                      </span>
+                      {option.hint && (
+                        <span className="block text-xs text-gray-500 mt-0.5">{option.hint}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {option.id === "LLC" && isSelected && (
+                    <div
+                      className="mt-3 ml-6"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <select
+                        required
+                        value={llcTaxClassification}
+                        onChange={(e) => setLlcTaxClassification(e.target.value)}
+                        className="w-full sm:w-80 px-3.5 py-2 rounded-lg border border-gray-300 bg-white focus:border-[#2196F3] focus:ring-2 focus:ring-[#2196F3] outline-none text-sm text-gray-900"
+                      >
+                        <option value="">Select LLC tax classification...</option>
+                        <option value="C">C — C corporation</option>
+                        <option value="S">S — S corporation</option>
+                        <option value="P">P — Partnership</option>
+                      </select>
+                    </div>
+                  )}
+
+                  {option.id === "Others" && isSelected && (
+                    <div
+                      className="mt-3 ml-6"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <input
+                        type="text"
+                        required
+                        value={otherTaxClassification}
+                        onChange={(e) => setOtherTaxClassification(e.target.value)}
+                        placeholder="Specify federal tax classification..."
+                        className="w-full sm:w-80 px-3.5 py-2 rounded-lg border border-gray-300 bg-white focus:border-[#2196F3] focus:ring-2 focus:ring-[#2196F3] outline-none text-sm text-gray-900 placeholder:text-gray-400"
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Practice Type */}
         <div>
           <label className="block text-sm font-medium text-gray-900 mb-2">

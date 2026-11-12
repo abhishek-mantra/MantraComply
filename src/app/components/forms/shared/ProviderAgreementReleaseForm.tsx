@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Info } from "lucide-react";
+import { Info, UploadCloud, CheckCircle2, X } from "lucide-react";
 import { FormButtons } from "../FormButtons";
 
 export interface ProviderAgreementReleaseFormProps {
@@ -78,12 +78,17 @@ export function ProviderAgreementReleaseForm({
   onPrevious,
   onBack,
   isFirstStep = false,
+  isLastStep = false,
 }: ProviderAgreementReleaseFormProps) {
   const normCountry = (country || "us").toLowerCase();
   const config = REGIONAL_CONFIGS[normCountry] || REGIONAL_CONFIGS.us;
 
   // Signatures and agreement states
   const [providerSignature, setProviderSignature] = useState("");
+  const [signatureFile, setSignatureFile] = useState<File | null>(null);
+  const [signatureFileName, setSignatureFileName] = useState("");
+  const [signaturePreviewUrl, setSignaturePreviewUrl] = useState("");
+  const [isDraggingSignature, setIsDraggingSignature] = useState(false);
   const [providerAgreed, setProviderAgreed] = useState(false);
 
   // Engagement Model Selection (From Section 2 & Annexure A)
@@ -101,6 +106,31 @@ export function ProviderAgreementReleaseForm({
     year: "numeric",
   }).format(new Date());
 
+  const handleSignatureFile = (file: File | undefined) => {
+    if (!file) return;
+    setSignatureFile(file);
+    setSignatureFileName(file.name);
+    if (file.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === "string") {
+          setSignaturePreviewUrl(reader.result);
+        }
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setSignaturePreviewUrl("");
+    }
+  };
+
+  const handleClearSignatureFile = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSignatureFile(null);
+    setSignatureFileName("");
+    setSignaturePreviewUrl("");
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (engagementModel === "model1" && !ackModel1StateTerms) {
@@ -108,8 +138,8 @@ export function ProviderAgreementReleaseForm({
       return;
     }
 
-    if (!providerAgreed || !providerSignature.trim() || !ackScope || !ackNotice) {
-      alert("Please review, sign, and agree to the Provider Agreement and required covenants.");
+    if (!providerAgreed || !providerSignature.trim() || !signatureFileName || !ackScope || !ackNotice) {
+      alert("Please review, sign, upload your signature, and agree to the Provider Agreement and required covenants.");
       return;
     }
 
@@ -120,6 +150,8 @@ export function ProviderAgreementReleaseForm({
       contractingEntity: config.entityName,
       effectiveDate: todayFormatted,
       providerSignature: providerSignature.trim(),
+      signatureFileName,
+      signatureFile,
     });
   };
 
@@ -628,6 +660,72 @@ export function ProviderAgreementReleaseForm({
           </p>
         </div>
 
+        {/* Upload Signature */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-900 mb-2">
+            Upload Signature <span className="text-red-500">*</span>
+          </label>
+          <label
+            onDragOver={(e) => {
+              e.preventDefault();
+              setIsDraggingSignature(true);
+            }}
+            onDragLeave={() => setIsDraggingSignature(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setIsDraggingSignature(false);
+              handleSignatureFile(e.dataTransfer.files?.[0]);
+            }}
+            className={`flex flex-col items-center justify-center w-full px-4 py-5 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
+              isDraggingSignature
+                ? "border-[#2196F3] bg-blue-50"
+                : signatureFileName
+                  ? "border-emerald-300 bg-emerald-50/40"
+                  : "border-gray-300 bg-gray-50/60 hover:border-[#2196F3] hover:bg-blue-50/30"
+            }`}
+          >
+            <input
+              type="file"
+              accept=".png,.jpg,.jpeg,.svg,.pdf"
+              onChange={(e) => handleSignatureFile(e.target.files?.[0])}
+              className="hidden"
+            />
+            {signatureFileName ? (
+              <div className="flex flex-col items-center gap-2 w-full">
+                {signaturePreviewUrl && (
+                  <img
+                    src={signaturePreviewUrl}
+                    alt="Uploaded signature preview"
+                    className="max-h-20 object-contain rounded border border-gray-200 bg-white px-3 py-1.5"
+                  />
+                )}
+                <div className="flex items-center gap-2 text-sm text-emerald-700 font-medium">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  <span className="truncate max-w-xs">{signatureFileName}</span>
+                  <button
+                    type="button"
+                    onClick={handleClearSignatureFile}
+                    className="p-0.5 rounded-full text-gray-500 hover:text-red-600 hover:bg-red-50"
+                    aria-label="Remove uploaded signature"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center text-center">
+                <UploadCloud className="w-6 h-6 text-[#2196F3] mb-1.5" />
+                <span className="text-sm font-medium text-gray-700">
+                  Click to upload or drag and drop your signature
+                </span>
+                <span className="text-xs text-gray-500 mt-0.5">
+                  PNG, JPG, SVG, or PDF
+                </span>
+              </div>
+            )}
+          </label>
+        </div>
+
         {/* Final Agreement Checkbox */}
         <label className="flex items-start">
           <input
@@ -642,7 +740,7 @@ export function ProviderAgreementReleaseForm({
         </label>
       </div>
 
-      <FormButtons onPrevious={onPrevious || onBack} isFirstStep={isFirstStep} />
+      <FormButtons onPrevious={onPrevious || onBack} isFirstStep={isFirstStep} isLastStep={isLastStep} />
     </form>
   );
 }
