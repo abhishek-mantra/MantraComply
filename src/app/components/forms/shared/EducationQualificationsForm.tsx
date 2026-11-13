@@ -302,21 +302,6 @@ export function EducationQualificationsForm({
               </div>
             </div>
 
-            {/* Country */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Country Where Degree Was Obtained <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={entry.country}
-                onChange={(e) => updateEntry(entry.id, "country", e.target.value)}
-                placeholder="Enter country"
-                className={inputClassName}
-              />
-            </div>
-
             {/* Doctor-specific fields */}
             {country === "US" && specialty === "doctor" && (
               <>
@@ -453,34 +438,18 @@ export function EducationQualificationsForm({
             )}
 
             {/* Dates */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Start Date <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={entry.startDate}
-                  onChange={(e) => updateEntry(entry.id, "startDate", e.target.value)}
-                  className={inputClassName}
-                  placeholder="MM/DD/YYYY"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Graduation Date <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={entry.endDate}
-                  onChange={(e) => updateEntry(entry.id, "endDate", e.target.value)}
-                  className={inputClassName}
-                  placeholder="MM/DD/YYYY"
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Graduation Date <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={entry.endDate}
+                onChange={(e) => updateEntry(entry.id, "endDate", e.target.value)}
+                className={inputClassName}
+                placeholder="MM/DD/YYYY"
+              />
             </div>
 
             {/* UAE-specific: Attestation */}

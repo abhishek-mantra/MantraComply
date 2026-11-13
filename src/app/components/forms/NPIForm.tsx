@@ -2,7 +2,7 @@ import { useState } from "react";
 import { FormButtons } from "./FormButtons";
 import { CountrySwitcher } from "../CountrySwitcher";
 import { ContextualHelpLink } from "../shared/ContextualHelpLink";
-import { ChevronUp, ChevronDown, ExternalLink, Phone, CheckCircle2 } from "lucide-react";
+import { ChevronUp, ChevronDown, ExternalLink, CheckCircle2 } from "lucide-react";
 
 interface FormProps {
   specialty?: string;
@@ -30,7 +30,6 @@ export function NPIForm({
   const [taxonomyCode, setTaxonomyCode] = useState("");
   const [npiNumber, setNpiNumber] = useState("");
   const [isNpiGuideOpen, setIsNpiGuideOpen] = useState(true);
-  const [showConsultantModal, setShowConsultantModal] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -247,7 +246,7 @@ export function NPIForm({
                     <span className="w-5 h-5 rounded-full bg-black text-white text-[11px] font-bold flex items-center justify-center shrink-0">
                       1
                     </span>
-                    <span>Go to the NPPES NPI Registry use the button below</span>
+                    <span>Go to the NPPES NPI Registry</span>
                   </li>
                   <li className="flex items-center gap-3 text-sm text-gray-700">
                     <span className="w-5 h-5 rounded-full bg-black text-white text-[11px] font-bold flex items-center justify-center shrink-0">
@@ -275,7 +274,7 @@ export function NPIForm({
                   </a>
                 </div>
 
-                <p className="text-xs text-gray-600 mb-4">
+                <p className="text-xs text-gray-600">
                   If you don't have an NPI,{" "}
                   <a
                     href="https://nppes.cms.hhs.gov/login"
@@ -287,21 +286,6 @@ export function NPIForm({
                   </a>{" "}
                   for one now
                 </p>
-
-                <div className="pt-3.5 border-t border-gray-200 flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-semibold text-gray-900">Need help?</p>
-                    <p className="text-xs text-gray-500">Book with your dedicated consultant</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowConsultantModal(true)}
-                    className="p-2 border border-gray-300 rounded-xl bg-white hover:bg-gray-50 text-gray-700 transition-colors shadow-sm"
-                    title="Book with your dedicated consultant"
-                  >
-                    <Phone className="w-4 h-4 text-gray-700" />
-                  </button>
-                </div>
               </div>
             )}
           </div>
@@ -359,43 +343,6 @@ export function NPIForm({
             </p>
           </div>
         </>
-      )}
-
-      {/* Consultant Modal */}
-      {showConsultantModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-gray-100 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-blue-50 text-[#2196F3] flex items-center justify-center shrink-0">
-                <Phone className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-base font-semibold text-gray-900">Dedicated Consultant Support</h3>
-                <p className="text-xs text-gray-500">MantraComply Credentialing Team</p>
-              </div>
-            </div>
-            <p className="text-sm text-gray-600 mb-4 leading-relaxed">
-              Need assistance finding your NPI or setting up your NPPES registry profile? Our dedicated credentialing team is available Monday through Friday, 8am – 6pm EST.
-            </p>
-            <div className="bg-gray-50 p-3.5 rounded-xl border border-gray-200 text-xs text-gray-700 space-y-1.5 mb-5">
-              <div className="flex justify-between">
-                <span className="font-medium text-gray-600">Direct Phone:</span>
-                <span className="font-semibold text-gray-900">+1 (800) 555-6268</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-medium text-gray-600">Email:</span>
-                <span className="font-semibold text-[#2196F3]">support@mantracomply.com</span>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowConsultantModal(false)}
-              className="w-full py-2.5 bg-[#2196F3] hover:bg-[#1976D2] text-white font-medium rounded-xl text-sm transition-colors shadow-sm"
-            >
-              Got it, close
-            </button>
-          </div>
-        </div>
       )}
 
       <FormButtons onPrevious={onPrevious} isFirstStep={isFirstStep} />

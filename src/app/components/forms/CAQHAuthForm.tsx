@@ -190,18 +190,7 @@ export function CAQHAuthForm({
                   className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] outline-none text-sm transition-all"
                   placeholder="Enter your CAQH Provider ID"
                 />
-                <div className="flex flex-wrap items-center justify-between gap-2 mt-1.5">
-                  <p className="text-xs text-gray-500">
-                    Don't have a CAQH ID?{" "}
-                    <a
-                      href="https://proview.caqh.org/PR/Registration/SelfRegistration"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[#2196F3] hover:underline font-medium"
-                    >
-                      Create an account
-                    </a>
-                  </p>
+                <div className="flex justify-end mt-1.5">
                   <a
                     href="https://help.mantracomply.com/articles/caqh-authorization-and-cvo-access"
                     target="_blank"
