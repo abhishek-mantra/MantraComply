@@ -487,25 +487,6 @@ export function EducationQualificationsForm({
                 />
               </div>
             </div>
-
-            {/* Transcript Upload */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Upload Official Transcript <span className="text-red-500">*</span>
-              </label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-[#2196F3] transition-colors cursor-pointer">
-                <Upload className="w-6 h-6 text-gray-400 mx-auto mb-2" />
-                <p className="text-xs text-gray-600 mb-1">
-                  Click to upload or drag and drop
-                </p>
-                <p className="text-xs text-gray-500">PDF, PNG, or JPG (max. 10MB)</p>
-                <input
-                  type="file"
-                  accept=".pdf,.png,.jpg,.jpeg"
-                  className="hidden"
-                />
-              </div>
-            </div>
           </div>
         ))}
       </div>
