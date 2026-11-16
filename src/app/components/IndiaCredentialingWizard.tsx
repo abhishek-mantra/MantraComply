@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-import { ChevronLeft, Check, CheckCircle2, ShieldCheck, Building2 } from "lucide-react";
-import { CountrySwitcher } from "./CountrySwitcher";
+import { ChevronLeft, Check, CheckCircle2 } from "lucide-react";
 import { GeneralInformationForm } from "./forms/india/GeneralInformationForm";
 import { SpecialtiesOfferedForm } from "./forms/india/SpecialtiesOfferedForm";
 import { InfraDetailsForm } from "./forms/india/InfraDetailsForm";
@@ -140,13 +139,16 @@ export function IndiaCredentialingWizard({
 
   return (
     <div className="max-w-7xl mx-auto pb-16">
-      {/* Dev Mode Country Switcher */}
-      {showCountrySwitcher && onCountryChange && (
-        <CountrySwitcher
-          selectedCountry={selectedCountry || "india"}
-          onCountryChange={onCountryChange}
-        />
-      )}
+      {/* Header */}
+      <div className="mb-6 flex items-center gap-4">
+        <button
+          onClick={() => window.history.back()}
+          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          <ChevronLeft className="w-5 h-5 text-gray-600" />
+        </button>
+        <h1 className="text-2xl font-semibold text-gray-900">Credentialing</h1>
+      </div>
 
       {/* Floating Success Toast */}
       {toastMessage && (
@@ -155,40 +157,6 @@ export function IndiaCredentialingWizard({
           <span>{toastMessage}</span>
         </div>
       )}
-
-      {/* GIC Header Chrome */}
-      <div className="mb-8 bg-white border border-gray-200/80 rounded-2xl p-6 shadow-xs">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-blue-50 border border-blue-100 text-[#1976D2] flex items-center justify-center shrink-0">
-              <Building2 className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="text-sm font-bold text-gray-900 tracking-tight">
-                General Insurance Council
-              </div>
-              <div className="text-xs text-gray-500">
-                Industry Association of General Insurance Companies
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 text-xs font-medium text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200/60 w-fit">
-            <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            <span>Official GIC Hospital Empanelment Portal</span>
-          </div>
-        </div>
-
-        <div className="mt-4">
-          <h1 className="text-2xl font-bold text-gray-900">
-            Common Empanelment for the Hospital
-          </h1>
-          <p className="text-sm text-gray-600 mt-1">
-            Complete these steps to register your hospital and expand your patient reach. The
-            process is simple and takes just a few minutes.
-          </p>
-        </div>
-      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Progress Sidebar */}
@@ -283,11 +251,6 @@ export function IndiaCredentialingWizard({
               />
             )}
           </div>
-
-          {/* Footer branding */}
-          <footer className="text-center text-xs text-gray-400 mt-8">
-            Powered by Vitraya
-          </footer>
         </div>
       </div>
     </div>
