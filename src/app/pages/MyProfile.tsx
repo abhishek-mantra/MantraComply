@@ -127,12 +127,13 @@ export function MyProfile() {
   };
 
   const getCountryLabel = (country: Country) => {
-    const labels = {
+    const labels: Record<Country, string> = {
       us: "🇺🇸 United States",
       uk: "🇬🇧 United Kingdom",
       canada: "🇨🇦 Canada",
       australia: "🇦🇺 Australia",
       uae: "🇦🇪 UAE",
+      india: "🇮🇳 India",
     };
     return labels[country];
   };
@@ -178,7 +179,7 @@ export function MyProfile() {
               Country Form
             </p>
             <div className="space-y-1">
-              {(["us", "uk", "canada", "australia", "uae"] as Country[]).map((country) => (
+              {(["us", "uk", "canada", "australia", "uae", "india"] as Country[]).map((country) => (
                 <button
                   key={country}
                   onClick={() => {

@@ -9,7 +9,6 @@ import { HospitalContactDetailsForm } from "./forms/india/HospitalContactDetails
 import { ProposedRatesForm } from "./forms/india/ProposedRatesForm";
 import { DocumentationForm } from "./forms/india/DocumentationForm";
 import { InfrastructureImagesForm } from "./forms/india/InfrastructureImagesForm";
-import { FinalConsentForm } from "./forms/india/FinalConsentForm";
 import { STEP_SAVE_MESSAGES } from "../config/indiaGicConfig";
 
 const DRAFT_STORAGE_KEY = "mantra_india_gic_empanelment_draft";
@@ -23,7 +22,6 @@ export const INDIA_GIC_STEPS = [
   { id: 6, name: "Proposed Rates", component: ProposedRatesForm },
   { id: 7, name: "Documentation", component: DocumentationForm },
   { id: 8, name: "Infrastructure Images", component: InfrastructureImagesForm },
-  { id: 9, name: "Final Consent", component: FinalConsentForm },
 ];
 
 interface IndiaCredentialingWizardProps {
@@ -108,7 +106,7 @@ export function IndiaCredentialingWizard({
     const msg = STEP_SAVE_MESSAGES[currentStep] || "Information saved successfully!";
     showToast(msg);
 
-    if (currentStep === 8) {
+    if (currentStep === INDIA_GIC_STEPS.length - 1) {
       // Final submission
       setIsRatesLocked(true);
       saveDraft(updatedFormData, updatedCompleted, currentStep, true);
@@ -280,6 +278,7 @@ export function IndiaCredentialingWizard({
                 onNext={handleStepComplete}
                 onBack={currentStep > 0 ? handleBack : undefined}
                 isFirstStep={currentStep === 0}
+                isLastStep={currentStep === INDIA_GIC_STEPS.length - 1}
                 isLocked={isRatesLocked}
               />
             )}

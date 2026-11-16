@@ -8,6 +8,7 @@ interface InfrastructureImagesFormProps {
   onNext: (data: any) => void;
   onBack?: () => void;
   isFirstStep?: boolean;
+  isLastStep?: boolean;
 }
 
 interface ImageUploadData {
@@ -21,6 +22,7 @@ export function InfrastructureImagesForm({
   onNext,
   onBack,
   isFirstStep = false,
+  isLastStep = true,
 }: InfrastructureImagesFormProps) {
   const [images, setImages] = useState<Record<string, ImageUploadData>>(
     initialData?.images || {}
@@ -178,7 +180,12 @@ export function InfrastructureImagesForm({
         })}
       </div>
 
-      <IndiaFormButtons onBack={onBack} isFirstStep={isFirstStep} submitText="Save" />
+      <IndiaFormButtons
+        onBack={onBack}
+        isFirstStep={isFirstStep}
+        isLastStep={isLastStep}
+        submitText={isLastStep ? "Submit Application" : "Save"}
+      />
     </form>
   );
 }

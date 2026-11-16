@@ -210,6 +210,5 @@ export const STEP_SAVE_MESSAGES = [
   "Contact information saved successfully!",
   "Proposed rates saved successfully!",
   "Documents saved successfully!",
-  "Images saved successfully!",
-  "Application submitted successfully!",
+  "Infrastructure images and application submitted successfully!",
 ] as const;
