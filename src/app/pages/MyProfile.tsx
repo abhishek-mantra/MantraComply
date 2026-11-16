@@ -5,11 +5,12 @@ import { UKCredentialingWizard } from "../components/UKCredentialingWizard";
 import { CanadaCredentialingWizard } from "../components/CanadaCredentialingWizard";
 import { AustraliaCredentialingWizard } from "../components/AustraliaCredentialingWizard";
 import { UAECredentialingWizard } from "../components/UAECredentialingWizard";
+import { IndiaCredentialingWizard } from "../components/IndiaCredentialingWizard";
 import { FormSubmittedScreen } from "../components/FormSubmittedScreen";
 import { ProfileScreen } from "../components/ProfileScreen";
 
 type ViewState = "credentialing" | "submitted" | "profile";
-type Country = "us" | "uk" | "canada" | "australia" | "uae";
+type Country = "us" | "uk" | "canada" | "australia" | "uae" | "india";
 
 export function MyProfile() {
   const [currentView, setCurrentView] = useState<ViewState>("credentialing");
@@ -76,6 +77,15 @@ export function MyProfile() {
           case "uae":
             return (
               <UAECredentialingWizard
+                onFormComplete={handleFormComplete}
+                showCountrySwitcher={true}
+                selectedCountry={selectedCountry}
+                onCountryChange={handleCountryChange}
+              />
+            );
+          case "india":
+            return (
+              <IndiaCredentialingWizard
                 onFormComplete={handleFormComplete}
                 showCountrySwitcher={true}
                 selectedCountry={selectedCountry}

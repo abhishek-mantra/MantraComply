@@ -10,6 +10,7 @@ export function CountrySwitcher({ selectedCountry, onCountryChange }: CountrySwi
     { code: 'canada', label: '🇨🇦 Canada', flag: '🇨🇦' },
     { code: 'australia', label: '🇦🇺 Australia', flag: '🇦🇺' },
     { code: 'uae', label: '🇦🇪 UAE', flag: '🇦🇪' },
+    { code: 'india', label: '🇮🇳 India', flag: '🇮🇳' },
   ];
 
   return (
