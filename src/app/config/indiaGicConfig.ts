@@ -301,17 +301,17 @@ export const MANDATORY_DOCUMENTS = [
   "PCB NOC",
   "Fire Safety NOC",
   "BMW management certificate",
+  "SOC",
+  "FDA Licences for Inhouse Pharmacy",
 ] as const;
 
 export const OPTIONAL_DOCUMENTS = [
   "GST number of the Hospital, if applicable",
-  "SOC",
   "Accreditation certificate-NABH,JCI,JACHO",
   "Lift commission certificate",
   "PCPNDT Reg Certificate",
   "MTP certificate",
   "AERB Licences for imaging services",
-  "FDA Licences for Inhouse Pharmacy",
   "FDA Licences for Inhouse Blood bank",
   "NDPS licences for inhouse pharmacy",
   "HOTA Registration Certificate",
@@ -328,17 +328,17 @@ export interface ImageSlotConfig {
 export const INFRASTRUCTURE_IMAGE_SLOTS: ImageSlotConfig[] = [
   { id: "addressProof", label: "Hospitals Address Proof Photo", required: true },
   { id: "frontEntrance", label: "Hospital Front Entrance Photo", required: true },
-  { id: "exteriorView", label: "Hospital Exterior View (Optional)", required: false },
-  { id: "mainReception", label: "Main Reception Area (Optional)", required: false },
-  { id: "patientWaiting", label: "Patient Waiting Area (Optional)", required: false },
-  { id: "opdView", label: "OPD View (Optional)", required: false },
-  { id: "otView", label: "Operation Theatre (OT) View (Optional)", required: false },
-  { id: "icuView", label: "ICU View (Optional)", required: false },
-  { id: "consultationChamber", label: "Consultation Chamber (Optional)", required: false },
-  { id: "patientRoomInterior", label: "Patient Room Interior (Optional)", required: false },
-  { id: "pathologyLab", label: "Pathology Lab (Optional)", required: false },
-  { id: "specializedEquipment", label: "Specialized Equipment (Optional)", required: false },
-  { id: "otherSupporting", label: "Other Supporting Image (Optional)", required: false },
+  { id: "exteriorView", label: "Hospital Exterior View", required: true },
+  { id: "mainReception", label: "Main Reception Area", required: true },
+  { id: "patientWaiting", label: "Patient Waiting Area", required: true },
+  { id: "opdView", label: "OPD View", required: true },
+  { id: "otView", label: "Operation Theatre (OT) View", required: true },
+  { id: "icuView", label: "ICU View", required: true },
+  { id: "consultationChamber", label: "Consultation Chamber", required: true },
+  { id: "patientRoomInterior", label: "Patient Room Interior", required: true },
+  { id: "pathologyLab", label: "Pathology Lab", required: true },
+  { id: "specializedEquipment", label: "Specialized Equipment", required: true },
+  { id: "otherSupporting", label: "Other Supporting Image", required: true },
 ];
 
 export const STEP_SAVE_MESSAGES = [

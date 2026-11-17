@@ -129,24 +129,14 @@ export function ProposedRatesForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
-      {/* Disclaimer Box */}
+      {/* Proposed Tariffs Notice Box */}
       <div className="p-5 bg-[#F8FAFC] border border-[#CBD5E1] rounded-2xl">
-        <h3 className="text-base font-semibold text-gray-900 mb-2">Disclaimer</h3>
-        <p className="text-xs sm:text-sm text-gray-600 mb-3 leading-relaxed">
-          This section captures your hospital's proposed rates for room rent, procedures, packages,
-          investigations, and other services — required for tariff negotiation with GIC.
-        </p>
-        <ul className="text-xs text-gray-600 space-y-1 list-disc list-inside">
-          <li>Please fill in rates for all listed procedures/packages.</li>
-          <li>Do not leave any cell blank.</li>
-          <li>If a procedure is not applicable to your hospital, enter 0.</li>
-          <li>Rates once submitted will be considered final and cannot be edited later.</li>
-          <li>Ensure all values are entered in INR (₹) only.</li>
-          <li>
-            Only enter pricing for Single Room / Single AC room, the system will auto calculate
-            comparative pricing for Twin Sharing &amp; General Ward.
-          </li>
-          <li>Please go through the inclusions &amp; exclusions carefully before entering the rates.</li>
+        <h3 className="text-base font-semibold text-gray-900 mb-2.5">
+          Enter your hospital’s proposed tariffs (in INR ₹) for tariff negotiation
+        </h3>
+        <ul className="text-sm text-gray-600 space-y-1.5 list-disc list-inside">
+          <li>Do not leave any cell blank; enter 0 if a procedure is not applicable.</li>
+          <li>Check all inclusions and exclusions carefully before entering rates.</li>
         </ul>
       </div>
 

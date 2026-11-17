@@ -76,7 +76,7 @@ export function InfrastructureImagesForm({
 
     if (missing.length > 0) {
       setMissingRequiredSlots(missing);
-      alert("Please upload the required infrastructure images (Address Proof Photo and Front Entrance Photo).");
+      alert("Please upload all required infrastructure images before submitting your application.");
       return;
     }
 
