@@ -314,6 +314,7 @@ export function InfraDetailsForm({
             <input
               type="text"
               required
+              placeholder="e.g. 4:1"
               value={washroomRatioSemiPrivate}
               onChange={(e) => setWashroomRatioSemiPrivate(e.target.value)}
               className={inputClass}
@@ -326,6 +327,7 @@ export function InfraDetailsForm({
             <input
               type="text"
               required
+              placeholder="e.g. 4:1"
               value={washroomRatioGeneral}
               onChange={(e) => setWashroomRatioGeneral(e.target.value)}
               className={inputClass}
@@ -338,6 +340,7 @@ export function InfraDetailsForm({
             <input
               type="text"
               required
+              placeholder="e.g. 1:1"
               value={washroomRatioPrivate}
               onChange={(e) => setWashroomRatioPrivate(e.target.value)}
               className={inputClass}
@@ -369,6 +372,7 @@ export function InfraDetailsForm({
             <input
               type="text"
               required
+              placeholder="e.g. 6.5"
               value={areaSemiPrivate}
               onChange={(e) => setAreaSemiPrivate(e.target.value)}
               className={inputClass}
@@ -381,6 +385,7 @@ export function InfraDetailsForm({
             <input
               type="text"
               required
+              placeholder="e.g. 6.0"
               value={areaGeneral}
               onChange={(e) => setAreaGeneral(e.target.value)}
               className={inputClass}
@@ -393,6 +398,7 @@ export function InfraDetailsForm({
             <input
               type="text"
               required
+              placeholder="e.g. 10.0"
               value={areaPrivate}
               onChange={(e) => setAreaPrivate(e.target.value)}
               className={inputClass}
@@ -733,7 +739,7 @@ export function InfraDetailsForm({
         </div>
       </div>
 
-      <IndiaFormButtons onBack={onBack} isFirstStep={isFirstStep} submitText="Save" />
+      <IndiaFormButtons onBack={onBack} isFirstStep={isFirstStep} submitText="Save and Continue" />
     </form>
   );
 }

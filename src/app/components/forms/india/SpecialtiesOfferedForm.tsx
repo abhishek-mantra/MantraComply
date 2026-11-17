@@ -28,7 +28,19 @@ export function SpecialtiesOfferedForm({
     return initial;
   });
 
+  const handleOfferChange = (opt: "Yes" | "No") => {
+    setOfferSpecialities(opt);
+    if (opt === "No") {
+      const allNo: Record<string, "Yes" | "No"> = {};
+      MEDICAL_SPECIALTIES.forEach((spec) => {
+        allNo[spec] = "No";
+      });
+      setSpecialtyChoices(allNo);
+    }
+  };
+
   const handleChoiceChange = (spec: string, value: "Yes" | "No") => {
+    if (offerSpecialities === "No") return;
     setSpecialtyChoices((prev) => ({ ...prev, [spec]: value }));
   };
 
@@ -40,16 +52,27 @@ export function SpecialtiesOfferedForm({
       return;
     }
 
+    // If Yes, at least 1 specialty must have Yes
+    if (offerSpecialities === "Yes") {
+      const hasAtLeastOneYes = Object.values(specialtyChoices).some((val) => val === "Yes");
+      if (!hasAtLeastOneYes) {
+        alert("Please select 'Yes' for at least one medical specialty offered by your facility.");
+        return;
+      }
+    }
+
     onNext({
       offerSpecialities,
       specialtyChoices,
     });
   };
 
+  const isDisabled = offerSpecialities === "No";
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Blue highlighted box for Does your facility offer medical specialities */}
-      <div className="p-4 bg-[#E3F2FD]/40 border border-[#90CAF9]/80 rounded-xl">
+      {/* Top box: Does your facility offer medical specialities */}
+      <div className="p-4 bg-[#E3F2FD]/40 border border-[#90CAF9]/80 rounded-2xl">
         <label className="block text-sm font-semibold text-gray-900 mb-2">
           Does your facility offer medical specialities? <span className="text-red-500">*</span>
         </label>
@@ -59,7 +82,7 @@ export function SpecialtiesOfferedForm({
               key={opt}
               className={`flex items-center gap-2 px-4 py-2 border rounded-xl cursor-pointer transition-all ${
                 offerSpecialities === opt
-                  ? "border-[#2196F3] bg-white text-[#1976D2] font-medium shadow-xs"
+                  ? "border-[#2196F3] bg-white text-[#1976D2] font-semibold shadow-2xs"
                   : "border-gray-200 bg-white/70 hover:bg-white text-gray-700"
               }`}
             >
@@ -69,10 +92,10 @@ export function SpecialtiesOfferedForm({
                 value={opt}
                 required
                 checked={offerSpecialities === opt}
-                onChange={() => setOfferSpecialities(opt)}
+                onChange={() => handleOfferChange(opt)}
                 className="w-4 h-4 text-[#2196F3] focus:ring-[#2196F3]"
               />
-              <span className="text-sm">{opt}</span>
+              <span className="text-sm font-medium">{opt}</span>
             </label>
           ))}
         </div>
@@ -90,28 +113,39 @@ export function SpecialtiesOfferedForm({
       </div>
 
       {/* 3-column grid for the 20 specialties */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+      <div
+        className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 transition-opacity ${
+          isDisabled ? "opacity-50 pointer-events-none select-none" : ""
+        }`}
+      >
         {MEDICAL_SPECIALTIES.map((spec) => (
           <div
             key={spec}
-            className="flex flex-col justify-between p-3.5 border border-gray-200 rounded-xl bg-white hover:border-gray-300 transition-all space-y-2.5"
+            className={`flex flex-col justify-between p-3.5 border rounded-xl transition-all space-y-2.5 ${
+              isDisabled
+                ? "border-gray-200 bg-gray-50/60"
+                : "border-gray-200 bg-white hover:border-gray-300 shadow-2xs"
+            }`}
           >
             <div className="text-sm font-medium text-gray-900 leading-snug">
               {spec} <span className="text-red-500">*</span>
             </div>
 
-            <div className="flex items-center gap-3 pt-1 border-t border-gray-100">
+            <div className="flex items-center gap-2.5 pt-1 border-t border-gray-100">
               <label
-                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg border text-xs font-medium cursor-pointer transition-all ${
-                  specialtyChoices[spec] === "Yes"
-                    ? "bg-[#E3F2FD] border-[#2196F3] text-[#1976D2]"
-                    : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg border text-xs font-medium transition-all ${
+                  isDisabled
+                    ? "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : specialtyChoices[spec] === "Yes"
+                    ? "bg-[#E3F2FD] border-[#2196F3] text-[#1976D2] font-semibold cursor-pointer"
+                    : "border-gray-200 text-gray-600 hover:bg-gray-50 cursor-pointer"
                 }`}
               >
                 <input
                   type="radio"
                   name={`spec_${spec}`}
                   value="Yes"
+                  disabled={isDisabled}
                   checked={specialtyChoices[spec] === "Yes"}
                   onChange={() => handleChoiceChange(spec, "Yes")}
                   className="sr-only"
@@ -120,16 +154,19 @@ export function SpecialtiesOfferedForm({
               </label>
 
               <label
-                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg border text-xs font-medium cursor-pointer transition-all ${
-                  specialtyChoices[spec] === "No"
-                    ? "bg-gray-100 border-gray-300 text-gray-800"
-                    : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg border text-xs font-medium transition-all ${
+                  isDisabled
+                    ? "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : specialtyChoices[spec] === "No"
+                    ? "bg-gray-100 border-gray-300 text-gray-800 font-semibold cursor-pointer"
+                    : "border-gray-200 text-gray-600 hover:bg-gray-50 cursor-pointer"
                 }`}
               >
                 <input
                   type="radio"
                   name={`spec_${spec}`}
                   value="No"
+                  disabled={isDisabled}
                   checked={specialtyChoices[spec] === "No"}
                   onChange={() => handleChoiceChange(spec, "No")}
                   className="sr-only"
@@ -141,7 +178,7 @@ export function SpecialtiesOfferedForm({
         ))}
       </div>
 
-      <IndiaFormButtons onBack={onBack} isFirstStep={isFirstStep} submitText="Save" />
+      <IndiaFormButtons onBack={onBack} isFirstStep={isFirstStep} submitText="Save and Continue" />
     </form>
   );
 }

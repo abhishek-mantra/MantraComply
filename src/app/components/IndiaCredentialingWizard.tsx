@@ -13,13 +13,13 @@ import { STEP_SAVE_MESSAGES } from "../config/indiaGicConfig";
 const DRAFT_STORAGE_KEY = "mantra_india_gic_empanelment_draft";
 
 export const INDIA_GIC_STEPS = [
-  { id: 1, name: "General Information", component: GeneralInformationForm },
-  { id: 2, name: "Provider Information", component: SpecialtiesOfferedForm },
-  { id: 3, name: "Infra Details", component: InfraDetailsForm },
-  { id: 4, name: "Staff & Quality", component: StaffQualityForm },
-  { id: 5, name: "Hospital Contact Details", component: HospitalContactDetailsForm },
-  { id: 6, name: "Proposed Rates", component: ProposedRatesForm },
-  { id: 7, name: "Documentation", component: DocumentationForm },
+  { id: 1, name: "Documentation", component: DocumentationForm },
+  { id: 2, name: "General Information", component: GeneralInformationForm },
+  { id: 3, name: "Provider Information", component: SpecialtiesOfferedForm },
+  { id: 4, name: "Infra Details", component: InfraDetailsForm },
+  { id: 5, name: "Staff & Quality", component: StaffQualityForm },
+  { id: 6, name: "Hospital Contact Details", component: HospitalContactDetailsForm },
+  { id: 7, name: "Proposed Rates", component: ProposedRatesForm },
   { id: 8, name: "Infrastructure Images", component: InfrastructureImagesForm },
 ];
 

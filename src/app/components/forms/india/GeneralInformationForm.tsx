@@ -7,11 +7,10 @@ import {
   Award,
   Phone,
   ChevronDown,
-  Pencil,
   Search,
+  CheckCircle2,
 } from "lucide-react";
 import { IndiaFormButtons } from "./IndiaFormButtons";
-import { SpecialityModal } from "./SpecialityModal";
 import {
   INDIA_STATES,
   LICENSING_LAWS,
@@ -32,11 +31,32 @@ export function GeneralInformationForm({
   initialData,
   onNext,
   onBack,
-  isFirstStep = true,
+  isFirstStep = false,
 }: GeneralInformationFormProps) {
-  // Speciality
-  const [speciality, setSpeciality] = useState(initialData?.speciality || "Multi Speciality");
-  const [isSpecModalOpen, setIsSpecModalOpen] = useState(false);
+  // ROHINI Registry & GIC Account
+  const [rohiniId, setRohiniId] = useState(initialData?.rohiniId || "");
+  const [gicAccountExists, setGicAccountExists] = useState<"Yes" | "No" | "">(
+    initialData?.gicAccountExists || ""
+  );
+  const [gicRegisteredEmail, setGicRegisteredEmail] = useState(
+    initialData?.gicRegisteredEmail || ""
+  );
+
+  // Speciality (Outside Options)
+  const isInitialSingle =
+    initialData?.speciality?.includes("ENT") ||
+    initialData?.speciality?.includes("Ophthalmology") ||
+    initialData?.specialityMode === "Single";
+
+  const [specialityMode, setSpecialityMode] = useState<"Multi Speciality" | "Single">(
+    isInitialSingle ? "Single" : "Multi Speciality"
+  );
+  const [singleSpecialityType, setSingleSpecialityType] = useState(
+    isInitialSingle ? initialData?.speciality || initialData?.singleSpecialityType || "" : ""
+  );
+  const [speciality, setSpeciality] = useState(
+    initialData?.speciality || (isInitialSingle ? initialData?.singleSpecialityType || "" : "Multi Speciality")
+  );
 
   // Profile & Classification
   const [hospitalName, setHospitalName] = useState(initialData?.hospitalName || "");
@@ -138,6 +158,26 @@ export function GeneralInformationForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Rohini validation
+    if (!rohiniId.trim() || rohiniId.trim().length !== 13) {
+      alert("Please enter a valid 13-digit Rohini ID.");
+      return;
+    }
+    if (!gicAccountExists) {
+      alert("Please indicate whether a GIC account with this Rohini ID already exists.");
+      return;
+    }
+    if (gicAccountExists === "Yes" && !gicRegisteredEmail.trim()) {
+      alert("Please provide the Email ID registered on GIC.");
+      return;
+    }
+
+    // Speciality validation
+    if (specialityMode === "Single" && !singleSpecialityType) {
+      alert("Please select the Single Speciality type (ENT or Ophthalmology).");
+      return;
+    }
+
     // Required radio/toggle validations
     if (!providerCategory) {
       alert("Please select the Provider Category.");
@@ -216,8 +256,16 @@ export function GeneralInformationForm({
       return;
     }
 
+    const finalSpeciality =
+      specialityMode === "Single" ? singleSpecialityType : "Multi Speciality";
+
     onNext({
-      speciality,
+      rohiniId: rohiniId.trim(),
+      gicAccountExists,
+      gicRegisteredEmail: gicAccountExists === "Yes" ? gicRegisteredEmail.trim() : "",
+      speciality: finalSpeciality,
+      specialityMode,
+      singleSpecialityType,
       hospitalName,
       address1,
       address2,
@@ -263,7 +311,87 @@ export function GeneralInformationForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       {/* ───────────────────────────────────────────────────────────── */}
-      {/* 1. Facility Profile & Speciality */}
+      {/* 0. Rohini ID & GIC Account Verification (Requested at top)    */}
+      {/* ───────────────────────────────────────────────────────────── */}
+      <div className="bg-white rounded-2xl border border-gray-200/80 p-6 space-y-5 shadow-2xs">
+        <div className="flex items-center gap-3 pb-3 border-b border-gray-100">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#1976D2] border border-blue-100 flex items-center justify-center shrink-0">
+            <FileText className="w-5 h-5 text-[#2196F3]" />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-gray-900">ROHINI ID & GIC Account</h3>
+            <p className="text-xs text-gray-500">
+              Registry of Hospitals in Network of Insurance (ROHINI) credentials
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Rohini ID - Numeric text - 13 digits */}
+          <div>
+            <label className={labelClass}>
+              Rohini ID <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              required
+              maxLength={13}
+              value={rohiniId}
+              onChange={(e) => setRohiniId(e.target.value.replace(/\D/g, ""))}
+              placeholder="Enter 13-digit Rohini ID"
+              className={inputClass}
+            />
+            <p className="text-[11px] text-gray-500 mt-1">Numeric text — exactly 13 digits</p>
+          </div>
+
+          {/* Does a GIC account with this Rohini ID already exist? */}
+          <div>
+            <label className={labelClass}>
+              Does a GIC account with this Rohini ID already exist?{" "}
+              <span className="text-red-500">*</span>
+            </label>
+            <div className="inline-flex p-1 bg-gray-100 rounded-xl border border-gray-200 mt-1">
+              {(["Yes", "No"] as const).map((opt) => (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => {
+                    setGicAccountExists(opt);
+                    if (opt === "No") setGicRegisteredEmail("");
+                  }}
+                  className={`px-6 py-2 rounded-lg text-xs font-semibold transition-all ${
+                    gicAccountExists === opt
+                      ? "bg-[#2196F3] text-white shadow-2xs"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* If Yes, show: Email ID registered on GIC */}
+        {gicAccountExists === "Yes" && (
+          <div className="pt-2 animate-in fade-in duration-200">
+            <label className={labelClass}>
+              Email ID registered on GIC <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="email"
+              required
+              value={gicRegisteredEmail}
+              onChange={(e) => setGicRegisteredEmail(e.target.value)}
+              placeholder="Enter email ID registered on GIC portal"
+              className={inputClass}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* ───────────────────────────────────────────────────────────── */}
+      {/* 1. Facility Profile & Speciality                             */}
       {/* ───────────────────────────────────────────────────────────── */}
       <div className="bg-white rounded-2xl border border-gray-200/80 p-6 space-y-6 shadow-2xs">
         <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
@@ -278,30 +406,98 @@ export function GeneralInformationForm({
           </div>
         </div>
 
-        {/* Speciality Badge Card */}
-        <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50/80 to-indigo-50/40 border border-blue-200/70 rounded-2xl">
-          <div>
-            <div className="text-[11px] font-bold text-[#1976D2] tracking-wider uppercase">
-              Hospital / Daycare Centre Speciality
+        {/* Speciality Options Outside (Directly accessible without modal) */}
+        <div>
+          <label className={labelClass}>
+            Hospital/Daycare Centre Speciality <span className="text-red-500">*</span>
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1.5">
+            {/* Multi Speciality */}
+            <div
+              onClick={() => {
+                setSpecialityMode("Multi Speciality");
+                setSpeciality("Multi Speciality");
+              }}
+              className={`flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer ${
+                specialityMode === "Multi Speciality"
+                  ? "border-[#2196F3] bg-blue-50/50 text-gray-900 shadow-2xs"
+                  : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50/50"
+              }`}
+            >
+              <div
+                className={`mt-0.5 w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-colors ${
+                  specialityMode === "Multi Speciality"
+                    ? "border-[#2196F3] bg-[#2196F3]"
+                    : "border-gray-300 bg-white"
+                }`}
+              >
+                {specialityMode === "Multi Speciality" && (
+                  <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                )}
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-gray-900">Multi Speciality</div>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Offers multiple clinical, medical, and surgical specialties
+                </p>
+              </div>
             </div>
-            <div className="text-base font-bold text-gray-900 mt-0.5">{speciality}</div>
-          </div>
-          <button
-            type="button"
-            onClick={() => setIsSpecModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white border border-gray-300 rounded-xl text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all shadow-2xs"
-          >
-            <Pencil className="w-3.5 h-3.5 text-gray-500" />
-            Edit Speciality
-          </button>
-        </div>
 
-        <SpecialityModal
-          isOpen={isSpecModalOpen}
-          onClose={() => setIsSpecModalOpen(false)}
-          currentSpeciality={speciality}
-          onSave={(newSpec) => setSpeciality(newSpec)}
-        />
+            {/* Single Speciality */}
+            <div
+              onClick={() => {
+                setSpecialityMode("Single");
+                setSpeciality(singleSpecialityType || "Single Speciality");
+              }}
+              className={`flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer ${
+                specialityMode === "Single"
+                  ? "border-[#2196F3] bg-blue-50/50 text-gray-900 shadow-2xs"
+                  : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50/50"
+              }`}
+            >
+              <div
+                className={`mt-0.5 w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-colors ${
+                  specialityMode === "Single"
+                    ? "border-[#2196F3] bg-[#2196F3]"
+                    : "border-gray-300 bg-white"
+                }`}
+              >
+                {specialityMode === "Single" && (
+                  <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                )}
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-gray-900">Single Speciality</div>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Dedicated facility for single clinical domain (ENT or Eye Care)
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* If Single Speciality, choose the type of Speciality */}
+          {specialityMode === "Single" && (
+            <div className="mt-3 pt-2 animate-in fade-in duration-200">
+              <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                If Single Speciality, choose the type of Speciality{" "}
+                <span className="text-red-500">*</span>
+              </label>
+              <select
+                required
+                value={singleSpecialityType}
+                onChange={(e) => {
+                  setSingleSpecialityType(e.target.value);
+                  setSpeciality(e.target.value || "Single Speciality");
+                }}
+                className={inputClass}
+              >
+                <option value="">Select the Specialty Type</option>
+                <option value="ENT (Ear, Nose, and Throat)">ENT (Ear, Nose, and Throat)</option>
+                <option value="Ophthalmology (Eye Care)">Ophthalmology (Eye Care)</option>
+              </select>
+            </div>
+          )}
+        </div>
 
         {/* Hospital Name */}
         <div>
@@ -412,7 +608,7 @@ export function GeneralInformationForm({
       </div>
 
       {/* ───────────────────────────────────────────────────────────── */}
-      {/* 2. Hospital Location & Geographic Coordinates */}
+      {/* 2. Hospital Location & Geographic Coordinates                */}
       {/* ───────────────────────────────────────────────────────────── */}
       <div className="bg-white rounded-2xl border border-gray-200/80 p-6 space-y-6 shadow-2xs">
         <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
@@ -512,18 +708,14 @@ export function GeneralInformationForm({
           </div>
         </div>
 
-        {/* Aspirational District Card */}
+        {/* Aspirational District Card (exact text, subtext removed, complete list) */}
         <div className="p-4 bg-gray-50/70 border border-gray-200/80 rounded-2xl space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <div className="text-sm font-semibold text-gray-900">
-                Is the Hospital situated in an Aspirational District?{" "}
-                <span className="text-red-500">*</span>
+                Is the Hospital/Daycare Centre situated in any of the Aspirational Districts listed
+                in Annexure? <span className="text-red-500">*</span>
               </div>
-              <p className="text-xs text-gray-500 mt-0.5">
-                Check whether your district is part of NITI Aayog's Aspirational Districts
-                initiative.
-              </p>
             </div>
 
             <div className="inline-flex p-1 bg-white rounded-xl border border-gray-200 shrink-0">
@@ -547,7 +739,7 @@ export function GeneralInformationForm({
             </div>
           </div>
 
-          {/* Conditional Searchable Dropdown */}
+          {/* Conditional Searchable Dropdown with Complete 115 Districts */}
           {inAspirationalDistrict === "Yes" && (
             <div ref={districtDropdownRef} className="relative pt-2">
               <label className={labelClass}>
@@ -584,7 +776,7 @@ export function GeneralInformationForm({
                   <div className="space-y-1">
                     {filteredDistricts.map((item) => (
                       <div
-                        key={item.district}
+                        key={`${item.district}-${item.state}`}
                         onClick={() => {
                           setSelectedDistrict(item);
                           setIsDistrictDropdownOpen(false);
@@ -638,7 +830,7 @@ export function GeneralInformationForm({
       </div>
 
       {/* ───────────────────────────────────────────────────────────── */}
-      {/* 3. Licensing & Statutory Registrations */}
+      {/* 3. Licensing & Statutory Registrations                       */}
       {/* ───────────────────────────────────────────────────────────── */}
       <div className="bg-white rounded-2xl border border-gray-200/80 p-6 space-y-6 shadow-2xs">
         <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
@@ -793,7 +985,7 @@ export function GeneralInformationForm({
       </div>
 
       {/* ───────────────────────────────────────────────────────────── */}
-      {/* 4. Statutory Compliances & Environmental Clearances */}
+      {/* 4. Statutory Compliances & Environmental Clearances         */}
       {/* ───────────────────────────────────────────────────────────── */}
       <div className="bg-white rounded-2xl border border-gray-200/80 p-6 space-y-6 shadow-2xs">
         <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
@@ -982,7 +1174,7 @@ export function GeneralInformationForm({
       </div>
 
       {/* ───────────────────────────────────────────────────────────── */}
-      {/* 5. Quality Accreditations & Hospital Services */}
+      {/* 5. Quality Accreditations & Hospital Services               */}
       {/* ───────────────────────────────────────────────────────────── */}
       <div className="bg-white rounded-2xl border border-gray-200/80 p-6 space-y-6 shadow-2xs">
         <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
@@ -1133,7 +1325,7 @@ export function GeneralInformationForm({
       </div>
 
       {/* ───────────────────────────────────────────────────────────── */}
-      {/* 6. Hospital Contact Person */}
+      {/* 6. Hospital Contact Person                                  */}
       {/* ───────────────────────────────────────────────────────────── */}
       <div className="bg-white rounded-2xl border border-gray-200/80 p-6 space-y-6 shadow-2xs">
         <div className="flex items-center gap-3 pb-4 border-b border-gray-100">

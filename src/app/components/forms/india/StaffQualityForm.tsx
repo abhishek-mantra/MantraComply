@@ -371,7 +371,7 @@ export function StaffQualityForm({
         </div>
       </div>
 
-      <IndiaFormButtons onBack={onBack} isFirstStep={isFirstStep} submitText="Save" />
+      <IndiaFormButtons onBack={onBack} isFirstStep={isFirstStep} submitText="Save and Continue" />
     </form>
   );
 }

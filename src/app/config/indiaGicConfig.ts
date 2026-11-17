@@ -74,18 +74,157 @@ export const SERVICE_AVAILABILITY_OPTIONS = [
   "In-house",
 ] as const;
 
-// Sample Aspirational Districts from Annexure (TODO: Load complete Annexure list from NITI Aayog source)
+// Complete Aspirational Districts from NITI Aayog Annexure (112 official + state reorganized/replica entries)
 export interface AspirationalDistrict {
   district: string;
   state: string;
 }
 
 export const ASPIRATIONAL_DISTRICTS: AspirationalDistrict[] = [
-  { district: "Vizianagaram", state: "Andhra Pradesh" },
+  // Andhra Pradesh
+  { district: "Alluri Sitharama Raju", state: "Andhra Pradesh" },
+  { district: "Parvathipuram Manyam", state: "Andhra Pradesh" },
   { district: "Visakhapatnam", state: "Andhra Pradesh" },
+  { district: "Vizianagaram", state: "Andhra Pradesh" },
   { district: "Y.S.R. Kadapa", state: "Andhra Pradesh" },
+  // Arunachal Pradesh
   { district: "Namsai", state: "Arunachal Pradesh" },
+  // Assam
+  { district: "Baksa", state: "Assam" },
+  { district: "Barpeta", state: "Assam" },
+  { district: "Darrang", state: "Assam" },
+  { district: "Dhubri", state: "Assam" },
+  { district: "Goalpara", state: "Assam" },
+  { district: "Hailakandi", state: "Assam" },
+  { district: "Udalguri", state: "Assam" },
+  // Bihar
+  { district: "Araria", state: "Bihar" },
+  { district: "Aurangabad", state: "Bihar" },
+  { district: "Banka", state: "Bihar" },
+  { district: "Begusarai", state: "Bihar" },
+  { district: "Gaya", state: "Bihar" },
+  { district: "Jamui", state: "Bihar" },
+  { district: "Katihar", state: "Bihar" },
+  { district: "Khagaria", state: "Bihar" },
+  { district: "Muzaffarpur", state: "Bihar" },
+  { district: "Nawada", state: "Bihar" },
+  { district: "Purnia", state: "Bihar" },
+  { district: "Sheikhpura", state: "Bihar" },
+  { district: "Sitamarhi", state: "Bihar" },
+  // Chhattisgarh
+  { district: "Bastar", state: "Chhattisgarh" },
+  { district: "Bijapur", state: "Chhattisgarh" },
+  { district: "Dantewada (Dakshin Bastar)", state: "Chhattisgarh" },
+  { district: "Kanker (Uttar Bastar)", state: "Chhattisgarh" },
+  { district: "Kondagaon", state: "Chhattisgarh" },
+  { district: "Korba", state: "Chhattisgarh" },
+  { district: "Mahasamund", state: "Chhattisgarh" },
+  { district: "Narayanpur", state: "Chhattisgarh" },
+  { district: "Rajnandgaon", state: "Chhattisgarh" },
+  { district: "Sukma", state: "Chhattisgarh" },
+  // Gujarat
+  { district: "Dahod", state: "Gujarat" },
+  { district: "Narmada", state: "Gujarat" },
+  // Haryana
+  { district: "Nuh (Mewat)", state: "Haryana" },
+  // Himachal Pradesh
+  { district: "Chamba", state: "Himachal Pradesh" },
+  // Jammu & Kashmir
+  { district: "Baramulla", state: "Jammu & Kashmir" },
+  { district: "Kupwara", state: "Jammu & Kashmir" },
+  // Jharkhand
+  { district: "Bokaro", state: "Jharkhand" },
+  { district: "Chatra", state: "Jharkhand" },
+  { district: "Dumka", state: "Jharkhand" },
+  { district: "Garhwa", state: "Jharkhand" },
+  { district: "Giridih", state: "Jharkhand" },
+  { district: "Godda", state: "Jharkhand" },
+  { district: "Gumla", state: "Jharkhand" },
+  { district: "Hazaribagh", state: "Jharkhand" },
+  { district: "Khunti", state: "Jharkhand" },
+  { district: "Latehar", state: "Jharkhand" },
+  { district: "Lohardaga", state: "Jharkhand" },
+  { district: "Pakur", state: "Jharkhand" },
+  { district: "Palamu", state: "Jharkhand" },
+  { district: "Pashchimi Singhbhum (West Singhbhum)", state: "Jharkhand" },
+  { district: "Purbi Singhbhum (East Singhbhum)", state: "Jharkhand" },
+  { district: "Ramgarh", state: "Jharkhand" },
+  { district: "Ranchi", state: "Jharkhand" },
+  { district: "Sahibganj", state: "Jharkhand" },
+  { district: "Simdega", state: "Jharkhand" },
+  // Karnataka
+  { district: "Raichur", state: "Karnataka" },
+  { district: "Yadgir", state: "Karnataka" },
+  // Kerala
+  { district: "Wayanad", state: "Kerala" },
+  // Madhya Pradesh
+  { district: "Barwani", state: "Madhya Pradesh" },
+  { district: "Chhatarpur", state: "Madhya Pradesh" },
+  { district: "Damoh", state: "Madhya Pradesh" },
+  { district: "Guna", state: "Madhya Pradesh" },
+  { district: "Khandwa (East Nimar)", state: "Madhya Pradesh" },
+  { district: "Rajgarh", state: "Madhya Pradesh" },
+  { district: "Singrauli", state: "Madhya Pradesh" },
+  { district: "Vidisha", state: "Madhya Pradesh" },
+  // Maharashtra
+  { district: "Gadchiroli", state: "Maharashtra" },
+  { district: "Nandurbar", state: "Maharashtra" },
+  { district: "Osmanabad (Dharashiv)", state: "Maharashtra" },
+  { district: "Washim", state: "Maharashtra" },
+  // Manipur
+  { district: "Chandel", state: "Manipur" },
+  // Meghalaya
+  { district: "Ri Bhoi", state: "Meghalaya" },
+  // Mizoram
+  { district: "Mamit", state: "Mizoram" },
+  { district: "Saiha", state: "Mizoram" },
+  // Nagaland
+  { district: "Kiphire", state: "Nagaland" },
+  // Odisha
+  { district: "Balangir", state: "Odisha" },
+  { district: "Dhenkanal", state: "Odisha" },
+  { district: "Gajapati", state: "Odisha" },
+  { district: "Kalahandi", state: "Odisha" },
+  { district: "Kandhamal", state: "Odisha" },
+  { district: "Koraput", state: "Odisha" },
+  { district: "Malkangiri", state: "Odisha" },
+  { district: "Nabarangpur", state: "Odisha" },
+  { district: "Nuapada", state: "Odisha" },
+  { district: "Rayagada", state: "Odisha" },
+  { district: "Subarnapur (Sonepur)", state: "Odisha" },
+  // Punjab
+  { district: "Faridkot", state: "Punjab" },
+  { district: "Ferozepur", state: "Punjab" },
+  { district: "Moga", state: "Punjab" },
+  // Rajasthan
+  { district: "Baran", state: "Rajasthan" },
+  { district: "Churu", state: "Rajasthan" },
+  { district: "Dholpur", state: "Rajasthan" },
+  { district: "Jaisalmer", state: "Rajasthan" },
+  { district: "Karauli", state: "Rajasthan" },
+  { district: "Sirohi", state: "Rajasthan" },
+  // Sikkim
+  { district: "West Sikkim (Gyalshing)", state: "Sikkim" },
+  // Tamil Nadu
+  { district: "Ramanathapuram", state: "Tamil Nadu" },
+  { district: "Sivaganga", state: "Tamil Nadu" },
+  { district: "Virudhunagar", state: "Tamil Nadu" },
+  // Telangana
+  { district: "Asifabad (Kumuram Bheem)", state: "Telangana" },
+  { district: "Bhadradri Kothagudem", state: "Telangana" },
+  { district: "Jayashankar Bhupalpally", state: "Telangana" },
+  // Tripura
+  { district: "Dhalai", state: "Tripura" },
+  // Uttar Pradesh
+  { district: "Bahraich", state: "Uttar Pradesh" },
+  { district: "Balrampur", state: "Uttar Pradesh" },
+  { district: "Chandauli", state: "Uttar Pradesh" },
+  { district: "Chitrakoot", state: "Uttar Pradesh" },
+  { district: "Fatehpur", state: "Uttar Pradesh" },
+  { district: "Shravasti", state: "Uttar Pradesh" },
+  { district: "Siddharthnagar", state: "Uttar Pradesh" },
   { district: "Sonbhadra", state: "Uttar Pradesh" },
+  // Uttarakhand
   { district: "Haridwar", state: "Uttarakhand" },
   { district: "Udham Singh Nagar", state: "Uttarakhand" },
 ];
@@ -203,12 +342,12 @@ export const INFRASTRUCTURE_IMAGE_SLOTS: ImageSlotConfig[] = [
 ];
 
 export const STEP_SAVE_MESSAGES = [
+  "Documents saved successfully!",
   "General information saved successfully!",
   "Provider information saved successfully!",
   "Infrastructure information saved successfully!",
   "Staff & quality information saved successfully!",
   "Contact information saved successfully!",
   "Proposed rates saved successfully!",
-  "Documents saved successfully!",
   "Infrastructure images and application submitted successfully!",
 ] as const;
