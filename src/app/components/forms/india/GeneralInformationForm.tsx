@@ -713,8 +713,16 @@ export function GeneralInformationForm({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <div className="text-sm font-semibold text-gray-900">
-                Is the Hospital/Daycare Centre situated in any of the Aspirational Districts listed
-                in Annexure? <span className="text-red-500">*</span>
+                Is the Hospital/Daycare Centre situated in any of the Aspirational Districts listed in{" "}
+                <a
+                  href="https://commonpanel.gicouncil.in/aspirational-districts.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#2196F3] underline hover:text-[#1976D2] transition-colors"
+                >
+                  Annexure
+                </a>
+                ? <span className="text-red-500">*</span>
               </div>
             </div>
 
